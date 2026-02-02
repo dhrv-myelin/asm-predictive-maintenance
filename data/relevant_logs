@@ -1,0 +1,48 @@
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - Dispenser Pallet Clamp unclamped
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] WARN  Services.Services.Pipelines.XHDP - Attempt <NUM>: Failed to read barcode for pallet .
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - Pallet state rising edge detected for ShuttlePalletPresenceSensorDI
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - Pallet entered from the Trigger Sensor
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - Pallet is at Barcode
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - Pallet detected. Count = <NUM>
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - Shuttle Stopper keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - Shuttle Stopper keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - Dispenser Pallet Clamp clamped
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - Dispenser Pallet stopperout OUT
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - Dispenser Pallet stopperout IN
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - Pallet T{E04}O{250711P01-511P-<NUM>-<NUM>}P{HE00EJ6DH000}Q{<NUM>}S{C9145}G{b693c901-d6e6-438e-ad42-f996825e14bc}L{} sent to L1ConveyorBufferA successfully.
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L1 Buffer A stopper keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L1 Buffer A stopper keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L2 Buffer A stopper keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L2 Buffer A stopper keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L1 Inspection Lifter keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L1 Buffer B stopper keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L1 Buffer B stopper keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L1DispensingStopper keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L2 Buffer B stopper keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L2 Buffer B stopper keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - InspectionGantryWorker started for l1
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - Pallet  sent to L2ConveyorBufferA successfully.
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L2DispensingStopper keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L2 Inspection Lifter keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L1DispensingStopper keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L2 Inspection Stopper keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - InspectionGantryWorker started for l2
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - InspectionGantryWorker completed for l2
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L2 Inspection Lifter keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L2DispensingStopper keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L1 Inspection Stopper keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L1 Inspection Stopper keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L1 Inspection Lifter keeping down
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - InspectionGantryWorker completed for l1
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] DEBUG Services.Services.Pipelines.XHDP - L2 Inspection Stopper keeping up
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - SN T{E04}O{250711P01-511P-<NUM>-<NUM>}P{HE00EJ6DH000}Q{<NUM>}S{C9145}G{3b51b53e-<NUM>-47c6-836d-5fc5117c79a7}L{} read from pallet
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - Barcode  detected from pallet
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] ERROR Services.Services.Pipelines.XHDP - Failed to read barcode for pallet  after <NUM> attempts. Taking alternative action.
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - Barcode T{E04}O{250711P01-511P-<NUM>-<NUM>}P{HE00EJ6DH000}Q{<NUM>}S{C9145}G{b693c901-d6e6-438e-ad42-f996825e14bc}L{} detected from pallet
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - L2BufferAWorker started
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - L2BufferBWorker started
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - L1DispensingAWorker started
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - L1InspectionWorker started
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - L2DispensingAWorker started
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - L2InspectionWorker started
+<NUM>-<NUM>-<NUM> <TIME>,<NUM> [<NUM>] INFO  Services.Services.Pipelines.XHDP - Shuttle Worker started

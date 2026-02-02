@@ -1,0 +1,86 @@
+description: "MVP Visualization: Simple Primitive Blocks"
+version: "1.0"
+
+# ==========================================
+# UNIT CONVENTION
+# ==========================================
+metadata:
+  units: "meters"
+  coordinate_system: "Z-Up" # Z is height (standard in Robotics/Rerun/Digital Twins)
+
+resources:
+  # ==========================================
+  # ENTRY: SHUTTLE
+  # ==========================================
+  shuttle_station:
+    # ID matches machine_graph.yaml
+    position: [0.0, 0.0, 0.0]  # X, Y, Z
+    shape: "box"
+    size: [1.2, 1.5, 0.2]      # Width, Depth, Height
+    color: [180, 180, 180]     # Light Grey
+    label_offset: [0.0, 0.0, 0.5] # Where to draw text label
+
+  # ==========================================
+  # LINE 1 (Y = +2.0)
+  # ==========================================
+  l1_buffer_a:
+    position: [2.0, 2.0, 0.0]
+    shape: "box"
+    size: [1.0, 0.8, 0.2]
+    color: [100, 200, 100]     # Light Green
+    label_offset: [0.0, 0.0, 0.5]
+
+  l1_dispenser:
+    position: [4.0, 2.0, 0.0]
+    shape: "box"
+    size: [1.2, 1.0, 0.9]      # Taller box (Machine)
+    color: [50, 100, 200]      # Blue
+    label_offset: [0.0, 0.0, 1.0]
+
+  l1_buffer_b:
+    position: [6.0, 2.0, 0.0]
+    shape: "box"
+    size: [1.0, 0.8, 0.2]
+    color: [100, 200, 100]     # Light Green
+    label_offset: [0.0, 0.0, 0.5]
+
+  # ==========================================
+  # LINE 2 (Y = -2.0)
+  # ==========================================
+  l2_buffer_a:
+    position: [2.0, -2.0, 0.0]
+    shape: "box"
+    size: [1.0, 0.8, 0.2]
+    color: [100, 200, 100]     # Light Green
+    label_offset: [0.0, 0.0, 0.5]
+
+  l2_dispenser:
+    position: [4.0, -2.0, 0.0]
+    shape: "box"
+    size: [1.2, 1.0, 0.9]
+    color: [50, 100, 200]      # Blue
+    label_offset: [0.0, 0.0, 1.0]
+
+  l2_buffer_b:
+    position: [6.0, -2.0, 0.0]
+    shape: "box"
+    size: [1.0, 0.8, 0.2]
+    color: [100, 200, 100]     # Light Green
+    label_offset: [0.0, 0.0, 0.5]
+
+  # ==========================================
+  # SHARED & EXIT
+  # ==========================================
+  inspection_station:
+    position: [8.0, 0.0, 0.0]
+    shape: "box"
+    size: [1.5, 3.0, 1.5]      # Large box spanning both lines
+    color: [200, 100, 50]      # Orange
+    label_offset: [0.0, 0.0, 1.6]
+
+  exit_sink:
+    position: [10.0, 0.0, 0.0]
+    shape: "box"
+    size: [0.5, 3.0, 0.1]      # Thin strip
+    color: [50, 50, 50]        # Dark Grey
+    label_offset: [0.0, 0.0, 0.5]

@@ -1,0 +1,510 @@
+{
+  "DI": [
+    {
+      "Name": "Shuttle PalletPresence Sensor",
+      "Key": "ShuttlePalletPresenceSensorDI",
+      "DeviceIndex": 1,
+      "Channel": 9
+    },
+    {
+      "Name": "L1 Buffer A pallet Presence Sensor",
+      "Key": "L1BufferAPalletPresenceSensorDI",
+      "DeviceIndex": 1,
+      "Channel": 14
+    },
+    {
+      "Name": "L1 Dispensing Station Pallet Presence Sensor",
+      "Key": "L1DispensingStationPalletPresenceSensorDI",
+      "DeviceIndex": 1,
+      "Channel": 15
+    },
+    {
+      "Name": "L1 Buffer B pallet Presence Sensor",
+      "Key": "L1BufferBPalletPresenceSensorDI",
+      "DeviceIndex": 1,
+      "Channel": 16
+    },
+    {
+      "Name": "L1 Inspection Station pallet Presence Sensor",
+      "Key": "L1InspectionStationPalletPresenceSensorDI",
+      "DeviceIndex": 1,
+      "Channel": 17
+    },
+    {
+      "Name": "L1 Buffer A Cylinder Up ",
+      "Key": "L1BufferACylinderUpDI",
+      "DeviceIndex": 1,
+      "Channel": 52
+    },
+    {
+      "Name": "L1 Buffer A Cylinder Down ",
+      "Key": "L1BufferACylinderDownDI",
+      "DeviceIndex": 1,
+      "Channel": 51
+    },
+    {
+      "Name": "L1 Dispensing Cylinder IN",
+      "Key": "L1DispensingCylinderInDI",
+      "DeviceIndex": 1,
+      "Channel": 56
+    },
+    {
+      "Name": "L1 Dispensing Cylinder OUT ",
+      "Key": "L1DispensingCylinderOutDI",
+      "DeviceIndex": 1,
+      "Channel": 55
+    },
+    {
+      "Name": "L1 Dispensing Cylinder Up",
+      "Key": "L1DispensingCylinderUpDI",
+      "DeviceIndex": 1,
+      "Channel": 54
+    },
+    {
+      "Name": "L1 Dispensing Cylinder Down",
+      "Key": "L1DispensingCylinderDownDI",
+      "DeviceIndex": 1,
+      "Channel": 53
+    },
+    {
+      "Name": "L1 Dispensing Clamp Cylinder  In ",
+      "Key": "L1DispensingClampCylinderInDI",
+      "DeviceIndex": 1,
+      "Channel": 58
+    },
+    {
+      "Name": "L1 Dispensing Clamp Cylinder Out",
+      "Key": "L1DispensingClampCylinderOutDI",
+      "DeviceIndex": 1,
+      "Channel": 60
+    },
+    {
+      "Name": "L1 Buffer B Buffer Cylinder Up ",
+      "Key": "L1BufferBBufferCylinderUpDI",
+      "DeviceIndex": 1,
+      "Channel": 62
+    },
+    {
+      "Name": "L1 Buffer B Buffer Cylinder Down ",
+      "Key": "L1BufferBBufferCylinderDownDI",
+      "DeviceIndex": 1,
+      "Channel": 61
+    },
+    {
+      "Name": "L1 Inspection Cylinder Up",
+      "Key": "L1InspectionCylinderUpDI",
+      "DeviceIndex": 1,
+      "Channel": 64
+    },
+    {
+      "Name": "L1 Inspection Cylinder Down ",
+      "Key": "L1InspectionCylinderDownDI",
+      "DeviceIndex": 1,
+      "Channel": 63
+    },
+    {
+      "Name": "L1 Inspection Lifter Up",
+      "Key": "L1InspectionLifterUpDI",
+      "DeviceIndex": 1,
+      "Channel": 65
+    },
+    {
+      "Name": "L1 Inspection Lifter Down",
+      "Key": "L1InspectionLifterDownDI",
+      "DeviceIndex": 1,
+      "Channel": 66
+    },
+    {
+      "Name": "L2 Buffer A pallet Presence Sensor",
+      "Key": "L2BufferAPalletPresenceSensorDI",
+      "DeviceIndex": 1,
+      "Channel": 10
+    },
+    {
+      "Name": "L2 Dispensing Station Pallet Presence Sensor",
+      "Key": "L2DispensingStationPalletPresenceSensorDI",
+      "DeviceIndex": 1,
+      "Channel": 11
+    },
+    {
+      "Name": "L2 Buffer B pallet Presence Sensor",
+      "Key": "L2BufferBPalletPresenceSensorDI",
+      "DeviceIndex": 1,
+      "Channel": 12
+    },
+    {
+      "Name": "L2 Inspection Station pallet Presence Sensor",
+      "Key": "L2InspectionStationPalletPresenceSensorDI",
+      "DeviceIndex": 1,
+      "Channel": 13
+    },
+    {
+      "Name": "L2 Buffer A Cylinder Up ",
+      "Key": "L2BufferABufferCylinderUpDI",
+      "DeviceIndex": 1,
+      "Channel": 36
+    },
+    {
+      "Name": "L2 Buffer A Cylinder Down ",
+      "Key": "L2BufferABufferCylinderDownDI",
+      "DeviceIndex": 1,
+      "Channel": 35
+    },
+    {
+      "Name": "L2 Dispensing Cylinder IN ",
+      "Key": "L2DispensingCylinderInDI",
+      "DeviceIndex": 1,
+      "Channel": 40
+    },
+    {
+      "Name": "L2 Dispensing Cylinder OUT ",
+      "Key": "L2DispensingCylinderOutDI",
+      "DeviceIndex": 1,
+      "Channel": 39
+    },
+    {
+      "Name": "L2 Dispensing Cylinder UP",
+      "Key": "L2DispensingCylinderUpDI",
+      "DeviceIndex": 1,
+      "Channel": 38
+    },
+    {
+      "Name": "L2 Dispensing Cylinder DOWN",
+      "Key": "L2DispensingCylinderDownDI",
+      "DeviceIndex": 1,
+      "Channel": 37
+    },
+    {
+      "Name": "L2 Dispensing Cylinder Clamp In",
+      "Key": "L2DispensingCylinderClampInDI",
+      "DeviceIndex": 1,
+      "Channel": 43
+    },
+    {
+      "Name": "L2 Dispensing Cylinder Clamp Out",
+      "Key": "L2DispensingCylinderClampOutDI",
+      "DeviceIndex": 1,
+      "Channel": 42
+    },
+    {
+      "Name": "L2 Buffer B Cylinder Up",
+      "Key": "L2BufferBCylinderUpDI",
+      "DeviceIndex": 1,
+      "Channel": 45
+    },
+    {
+      "Name": "L2 Buffer B Cylinder Down",
+      "Key": "L2BufferBCylinderDownDI",
+      "DeviceIndex": 1,
+      "Channel": 46
+    },
+    {
+      "Name": "L2 Inspection Cylinder Up",
+      "Key": "L2InspectionCylinderUpDI",
+      "DeviceIndex": 1,
+      "Channel": 48
+    },
+    {
+      "Name": "L2 Inspection Cylinder Down",
+      "Key": "L2InspectionCylinderDownDI",
+      "DeviceIndex": 1,
+      "Channel": 47
+    },
+    {
+      "Name": "L2 Inspection Lifter Up",
+      "Key": "L2InspectionLifterUpDI",
+      "DeviceIndex": 1,
+      "Channel": 50
+    },
+    {
+      "Name": "L2 Inspection Lifter Down",
+      "Key": "L2InspectionLifterDownDI",
+      "DeviceIndex": 1,
+      "Channel": 49
+    },
+    {
+      "Name": "Auto Position Switch",
+      "Key": "AutoPositionSwitchDI",
+      "DeviceIndex": 1,
+      "Channel": 24
+    },
+    {
+      "Name": "Manual Position Switch",
+      "Key": "ManualPositionSwitchDI",
+      "DeviceIndex": 1,
+      "Channel": 25
+    },
+    {
+      "Name": "Bypass Conveyar ON",
+      "Key": "BypassConveyarOnDI",
+      "DeviceIndex": 1,
+      "Channel": 26
+    },
+    {
+      "Name": "Bypass Conveyar OFF",
+      "Key": "BypassConveyarOffDI",
+      "DeviceIndex": 1,
+      "Channel": 27
+    },
+    {
+      "Name": "Conveyar-1 Start",
+      "Key": "Conveyar1StartDI",
+      "DeviceIndex": 1,
+      "Channel": 28
+    },
+    {
+      "Name": "Conveyar-1 Stop",
+      "Key": "Conveyar1StopDI",
+      "DeviceIndex": 1,
+      "Channel": 29
+    },
+    {
+      "Name": "Conveyar-1 Pause",
+      "Key": "Conveyar1PauseDI",
+      "DeviceIndex": 1,
+      "Channel": 30
+    },
+    {
+      "Name": "Conveyar-1 Reset",
+      "Key": "Conveyar1ResetDI",
+      "DeviceIndex": 1,
+      "Channel": 31
+    },
+    {
+      "Name": "Conveyar-2 Start",
+      "Key": "Conveyar2StartDI",
+      "DeviceIndex": 1,
+      "Channel": 32
+    },
+    {
+      "Name": "Conveyar-2 Stop",
+      "Key": "Conveyar2StopDI",
+      "DeviceIndex": 1,
+      "Channel": 33
+    },
+    {
+      "Name": "Conveyar-2 Pause",
+      "Key": "Conveyar2PauseDI",
+      "DeviceIndex": 1,
+      "Channel": 34
+    },
+    {
+      "Name": "Conveyar-2 Reset",
+      "Key": "Conveyar2ResetDI",
+      "DeviceIndex": 1,
+      "Channel": 35
+    }
+  ],
+  "DO": [
+    {
+      "Name": "Shuttle Cylinder UP",
+      "Key": "ShuttleCylinderUpDO",
+      "DeviceIndex": 1,
+      "Channel": 9
+    },
+    {
+      "Name": "Shuttle Cylinder DOWN",
+      "Key": "ShuttleCylinderDownDO",
+      "DeviceIndex": 1,
+      "Channel": 8
+    },
+    {
+      "Name": "Entry Output",
+      "Key": "EntryDO",
+      "DeviceIndex": 0,
+      "Channel": 50
+    },
+    {
+      "Name": "L1 Buffer A Cylinder Up",
+      "Key": "L1BufferACylinderUpDO",
+      "DeviceIndex": 1,
+      "Channel": 25
+    },
+    {
+      "Name": "L1 Buffer A Cylinder Down ",
+      "Key": "L1BufferACylinderDownDO",
+      "DeviceIndex": 1,
+      "Channel": 24
+    },
+    {
+      "Name": "L1 Dispensing Cylinder IN",
+      "Key": "L1DispensingCylinderInDO",
+      "DeviceIndex": 1,
+      "Channel": 29
+    },
+    {
+      "Name": "L1 Dispensing Cylinder OUT",
+      "Key": "L1DispensingCylinderOutDO",
+      "DeviceIndex": 1,
+      "Channel": 28
+    },
+    {
+      "Name": "L1 Dispensing Cylinder UP",
+      "Key": "L1DispensingCylinderUpDO",
+      "DeviceIndex": 1,
+      "Channel": 27
+    },
+    {
+      "Name": "L1 Dispensing Cylinder DOWN",
+      "Key": "L1DispensingCylinderDownDO",
+      "DeviceIndex": 1,
+      "Channel": 26
+    },
+    {
+      "Name": "L1 Dispensing Cylinder Clamp",
+      "Key": "L1DispensingCylinderclampDO",
+      "DeviceIndex": 1,
+      "Channel": 30
+    },
+    {
+      "Name": "L1 Dispensing Cylinder unClamp",
+      "Key": "L1DispensingCylinderunclampDO",
+      "DeviceIndex": 1,
+      "Channel": 31
+    },
+    {
+      "Name": "L1 Buffer B Cylinder Up",
+      "Key": "L1BufferBCylinderUpDO",
+      "DeviceIndex": 1,
+      "Channel": 33
+    },
+    {
+      "Name": "L1 Buffer B Cylinder Down",
+      "Key": "L1BufferBCylinderDownDO",
+      "DeviceIndex": 1,
+      "Channel": 32
+    },
+    {
+      "Name": "L1 Inspection Cylinder Up",
+      "Key": "L1InspectionCylinderUpDO",
+      "DeviceIndex": 1,
+      "Channel": 35
+    },
+    {
+      "Name": "L1 Inspection Cylinder Down",
+      "Key": "L1InspectionCylinderDownDO",
+      "DeviceIndex": 1,
+      "Channel": 34
+    },
+    {
+      "Name": "L1 Inspection Lifter Up",
+      "Key": "L1InspectionLifterUpDO",
+      "DeviceIndex": 1,
+      "Channel": 37
+    },
+    {
+      "Name": "L1 Inspection Lifter Down",
+      "Key": "L1InspectionLifterDownDO",
+      "DeviceIndex": 1,
+      "Channel": 36
+    },
+    {
+      "Name": "L2 Buffer A Cylinder Up",
+      "Key": "L2BufferACylinderUpDO",
+      "DeviceIndex": 1,
+      "Channel": 11
+    },
+    {
+      "Name": "L2 Buffer A Cylinder Down",
+      "Key": "L2BufferACylinderDownDO",
+      "DeviceIndex": 1,
+      "Channel": 10
+    },
+    {
+      "Name": "L2 Dispensing Cylinder IN",
+      "Key": "L2DispensingCylinderInDO",
+      "DeviceIndex": 1,
+      "Channel": 15
+    },
+    {
+      "Name": "L2 Dispensing Cylinder OUT",
+      "Key": "L2DispensingCylinderOutDO",
+      "DeviceIndex": 1,
+      "Channel": 14
+    },
+    {
+      "Name": "L2 Dispensing Cylinder Up",
+      "Key": "L2DispensingCylinderUpDO",
+      "DeviceIndex": 1,
+      "Channel": 13
+    },
+    {
+      "Name": "L2 Dispensing Cylinder Down",
+      "Key": "L2DispensingCylinderDownDO",
+      "DeviceIndex": 1,
+      "Channel": 12
+    },
+    {
+      "Name": "L2 Dispensing Cylinder Clamp",
+      "Key": "L2DispensingCylinderClampInDO",
+      "DeviceIndex": 1,
+      "Channel": 17
+    },
+    {
+      "Name": "L2 Dispensing Cylinder unClamp",
+      "Key": "L2DispensingCylinderClampOutDO",
+      "DeviceIndex": 1,
+      "Channel": 16
+    },
+    {
+      "Name": "L2 Buffer B Cylinder Up",
+      "Key": "L2BufferBCylinderUpDO",
+      "DeviceIndex": 1,
+      "Channel": 19
+    },
+    {
+      "Name": "L2 Buffer B Cylinder Down",
+      "Key": "L2BufferBCylinderDownDO",
+      "DeviceIndex": 1,
+      "Channel": 18
+    },
+    {
+      "Name": "L2 Inspection Cylinder Up",
+      "Key": "L2InspectionCylinderUpDO",
+      "DeviceIndex": 1,
+      "Channel": 21
+    },
+    {
+      "Name": "L2 Inspection Cylinder Down",
+      "Key": "L2InspectionCylinderDownDO",
+      "DeviceIndex": 1,
+      "Channel": 20
+    },
+    {
+      "Name": "L2 Inspection Lifter Up",
+      "Key": "L2InspectionLifterUpDO",
+      "DeviceIndex": 1,
+      "Channel": 23
+    },
+    {
+      "Name": "L2 Inspection Lifter Down",
+      "Key": "L2InspectionLifterDownDO",
+      "DeviceIndex": 1,
+      "Channel": 22
+    },
+    {
+      "Name": "IonizeAir",
+      "Key": "IonizeAirDO",
+      "DeviceIndex": 1,
+      "Channel": 68
+    },
+    {
+      "Name": "ShuttleBrake",
+      "Key": "ShuttleBrakeDO",
+      "DeviceIndex": 1,
+      "Channel": 63
+    },
+    {
+      "Name": "L1ZBrake",
+      "Key": "L1ZBrakeDO",
+      "DeviceIndex": 1,
+      "Channel": 61
+    },
+    {
+      "Name": "L2ZBrake",
+      "Key": "L2ZBrakeDO",
+      "DeviceIndex": 1,
+      "Channel": 62
+    }
+  ]
+}

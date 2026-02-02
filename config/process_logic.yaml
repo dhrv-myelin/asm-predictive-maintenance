@@ -1,0 +1,198 @@
+version: "1.0"
+description: "Process Logic"
+
+definitions:
+  # ==========================================
+  # 1. SHUTTLE STATION
+  # ==========================================
+  shuttle_station:
+    initial_state: "IDLE"
+    states:
+      IDLE:
+        transitions:
+          - event: "PALLET_ARRIVAL"
+            next_state: "SCANNING"
+            state_inference:
+              sensors.presence: true
+
+      SCANNING:
+        transitions:
+          - event: "PALLET_ROUTE"
+            next_state: "ROUTING"
+          - event: "SCANNER_RETRY"
+            next_state: "SCANNING"
+            action: "increment_retry_counter"
+          - event: "SCAN_FAIL_FINAL"
+            next_state: "ERROR"
+
+      ROUTING:
+        metrics:
+          - name: "shuttle_routing_time"
+            type: "duration_seconds"
+            description: "Time taken to align with target buffer"
+        transitions:
+          - event: "CARRIER_MOVE_COMPLETE"
+            next_state: "DISCHARGING"
+            state_inference:
+              motion.carrier_moving: false
+
+      DISCHARGING:
+        transitions:
+          - event: "TRANSFER_COMPLETE"
+            next_state: "IDLE"
+            action: "release_pallet"
+            state_inference:
+              sensors.presence: false
+              actuators.stopper_up: true
+
+  # ==========================================
+  # 2. BUFFER STANDARD
+  # ==========================================
+  buffer_standard:
+    initial_state: "EMPTY"
+    states:
+      EMPTY:
+        transitions:
+          - event: "PALLET_ARRIVAL"
+            next_state: "HOLDING"
+            state_inference:
+              sensors.presence: true
+              actuators.stopper_up: true
+
+      HOLDING:
+        metrics:
+          - name: "buffer_wait_time"
+            type: "duration_seconds"
+            description: "Starvation metric: How long pallet waited for machine"
+        transitions:
+          - event: "STOPPER_OPEN"
+            next_state: "RELEASING"
+            state_inference:
+              actuators.stopper_down: true
+              actuators.stopper_up: false
+
+      RELEASING:
+        transitions:
+          - event: "PALLET_LEFT_SENSOR"
+            next_state: "EMPTY"
+            state_inference:
+              sensors.presence: false
+              actuators.stopper_down: false
+              actuators.stopper_up: true
+
+  # ==========================================
+  # 3. DISPENSER STANDARD
+  # ==========================================
+  dispenser_standard:
+    initial_state: "IDLE"
+    states:
+      IDLE:
+        metrics:
+          - name: "machine_idle_time"
+            type: "duration_seconds"
+            description: "Efficiency metric: Time spent doing nothing"
+        transitions:
+          - event: "PALLET_ARRIVAL"
+            next_state: "CLAMPING"
+            state_inference:
+              sensors.presence: true
+
+      CLAMPING:
+        transitions:
+          - event: "CLAMP_ENGAGED"
+            next_state: "READY_TO_DISPENSE"
+            state_inference:
+              actuators.clamp_lock: true
+              actuators.clamp_unlock: false
+
+      READY_TO_DISPENSE:
+        transitions:
+          - event: "PROCESS_START"
+            next_state: "DISPENSING"
+
+      DISPENSING:
+        metrics:
+          - name: "process_cycle_time"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "PROCESS_COMPLETE"
+            next_state: "UNCLAMPING"
+
+      UNCLAMPING:
+        transitions:
+          - event: "CLAMP_RELEASED"
+            next_state: "HOLDING_DONE"
+            state_inference:
+              actuators.clamp_lock: false
+              actuators.clamp_unlock: true
+
+      HOLDING_DONE:
+        transitions:
+          - event: "STOPPER_OPEN"
+            next_state: "EXITING"
+            state_inference:
+              actuators.stopper_down: true
+              actuators.stopper_up: false
+
+      EXITING:
+        transitions:
+          - event: "PALLET_LEFT_SENSOR"
+            next_state: "IDLE"
+            state_inference:
+              sensors.presence: false
+              actuators.stopper_down: false
+              actuators.stopper_up: true
+
+  # ==========================================
+  # 4. INSPECTION STATION
+  # ==========================================
+  inspection_station:
+    initial_state: "IDLE"
+    states:
+      IDLE:
+        transitions:
+          - event: "PALLET_ARRIVAL_L1"
+            next_state: "INSPECTING_L1"
+            state_inference:
+               sensors.presence_l1: true
+          - event: "PALLET_ARRIVAL_L2"
+            next_state: "INSPECTING_L2"
+            state_inference:
+               sensors.presence_l2: true
+
+      INSPECTING_L1:
+        metrics:
+          - name: "inspection_duration_l1"
+            type: "duration_seconds"
+        transitions:
+          - event: "INSPECTION_COMPLETE"
+            next_state: "RELEASING"
+
+      INSPECTING_L2:
+        metrics:
+          - name: "inspection_duration_l2"
+            type: "duration_seconds"
+        transitions:
+          - event: "INSPECTION_COMPLETE"
+            next_state: "RELEASING"
+
+      RELEASING:
+        transitions:
+          - event: "PALLET_LEFT_SENSOR"
+            next_state: "IDLE"
+            state_inference:
+               sensors.presence_l1: false
+               sensors.presence_l2: false
+
+  # ==========================================
+  # 5. SINK
+  # ==========================================
+  exit_sink:
+    initial_state: "ACTIVE"
+    states:
+      ACTIVE:
+        transitions:
+          - event: "PALLET_ARRIVAL"
+            next_state: "ACTIVE"
+            action: "destroy_pallet"

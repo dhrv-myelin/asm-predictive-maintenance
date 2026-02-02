@@ -1,0 +1,178 @@
+version: "1.1"
+description: "Complete Event Catalog mapped 1:1 to Process Logic"
+
+patterns:
+  # ==========================================
+  # 1. SYSTEM WIDE
+  # ==========================================
+  - name: "System Initialization"
+    regex: "Machine initialized"
+    event_type: "SYSTEM_RESET"
+    target_id: "system"
+
+  # ==========================================
+  # 2. SHUTTLE STATION
+  # Logic States: IDLE -> SCANNING -> ROUTING -> DISCHARGING
+  # ==========================================
+  
+  # Transition: IDLE -> SCANNING
+  - name: "Shuttle Pallet Arrival"
+    regex: null # usually sensor driven "ShuttlePalletPresenceSensorDI"
+    event_type: "PALLET_ARRIVAL"
+    target_id: "shuttle_station"
+    description: "Start of cycle"
+
+  # Transition: SCANNING -> ROUTING
+  - name: "Shuttle Routing Success"
+    # Matches: "Pallet P_123 sent to L1ConveyorBufferA successfully"
+    regex: "Pallet (?P<pallet_id>[\\w\\d]+) sent to (?P<destination>\\w+) successfully"
+    event_type: "PALLET_ROUTE"
+    default_source_id: "shuttle_station"
+    value_mapping:
+      destination:
+        "L1ConveyorBufferA": "l1_buffer_a"
+        "L2ConveyorBufferA": "l2_buffer_a"
+        "L1BufferA": "l1_buffer_a"
+        "L2BufferA": "l2_buffer_a"
+
+  # Transition: SCANNING -> SCANNING (Loop)
+  - name: "Scanner Retry"
+    regex: "Barcode read fail count (?P<count>\\d+)"
+    event_type: "SCANNER_RETRY"
+    target_id: "shuttle_station"
+
+  # Transition: SCANNING -> ERROR
+  - name: "Scan Final Failure"
+    regex: "Barcode read failed final" # Placeholder
+    event_type: "SCAN_FAIL_FINAL"
+    target_id: "shuttle_station"
+
+  # Transition: ROUTING -> DISCHARGING
+  - name: "Carrier Move Complete"
+    regex: "Shuttle Axis Arrived" # Placeholder
+    event_type: "CARRIER_MOVE_COMPLETE"
+    target_id: "shuttle_station"
+
+  # Transition: DISCHARGING -> IDLE
+  - name: "Shuttle Transfer Complete"
+    regex: "Transfer to (?P<target>\\w+) complete" # Placeholder
+    event_type: "TRANSFER_COMPLETE"
+    target_id: "shuttle_station"
+
+  # ==========================================
+  # 3. BUFFER STATIONS
+  # Logic States: EMPTY -> HOLDING -> RELEASING
+  # ==========================================
+
+  # Transition: EMPTY -> HOLDING
+  - name: "Buffer Pallet Arrival"
+    regex: null # Sensor driven "L1BufferAPalletPresenceSensorDI"
+    event_type: "PALLET_ARRIVAL"
+    # Note: Value mapping happens in code if this is generic, or specific regex per buffer
+
+  # Transition: HOLDING -> RELEASING
+  - name: "Buffer Stopper Open"
+    # Matches: "L1 Buffer A Release"
+    regex: "(?P<station_name>[\\w\\s]+) Release" 
+    event_type: "STOPPER_OPEN"
+    value_mapping:
+      station_name:
+        "L1 Buffer A": "l1_buffer_a"
+        "L1 Buffer B": "l1_buffer_b"
+        "L2 Buffer A": "l2_buffer_a"
+        "L2 Buffer B": "l2_buffer_b"
+
+  # Transition: RELEASING -> EMPTY
+  - name: "Buffer Pallet Departure"
+    regex: null # Sensor driven (Falling Edge of Presence)
+    event_type: "PALLET_LEFT_SENSOR"
+
+  # ==========================================
+  # 4. DISPENSER STATIONS
+  # States: IDLE -> CLAMPING -> READY -> DISPENSING -> UNCLAMPING -> HOLDING_DONE -> EXITING
+  # ==========================================
+
+  # Transition: IDLE -> CLAMPING
+  - name: "Dispenser Pallet Arrival"
+    regex: null # Sensor driven
+    event_type: "PALLET_ARRIVAL"
+
+  # Transition: CLAMPING -> READY_TO_DISPENSE
+  - name: "Dispenser Clamp Lock"
+    regex: "Clamp Locked at (?P<station>\\w+)" # Placeholder
+    event_type: "CLAMP_ENGAGED"
+    value_mapping:
+      station:
+        "L1": "l1_dispenser"
+        "L2": "l2_dispenser"
+
+  # Transition: READY_TO_DISPENSE -> DISPENSING
+  - name: "Dispensing Start"
+    regex: "Dispensing Started at (?P<station>\\w+)"
+    event_type: "PROCESS_START"
+    value_mapping:
+      station:
+        "L1": "l1_dispenser"
+        "L2": "l2_dispenser"
+
+  # Transition: DISPENSING -> UNCLAMPING
+  - name: "Dispensing Complete"
+    regex: "Process finished at (?P<station>\\w+)"
+    event_type: "PROCESS_COMPLETE"
+    value_mapping:
+      station:
+        "L1": "l1_dispenser"
+        "L2": "l2_dispenser"
+
+  # Transition: UNCLAMPING -> HOLDING_DONE
+  - name: "Dispenser Clamp Unlock"
+    regex: "Clamp Unlocked at (?P<station>\\w+)" # Placeholder
+    event_type: "CLAMP_RELEASED"
+    value_mapping:
+      station:
+        "L1": "l1_dispenser"
+        "L2": "l2_dispenser"
+
+  # Transition: HOLDING_DONE -> EXITING
+  - name: "Dispenser Exit Open"
+    regex: "Dispenser (?P<station>\\w+) Release" # Placeholder
+    event_type: "STOPPER_OPEN"
+    value_mapping:
+      station:
+        "L1": "l1_dispenser"
+        "L2": "l2_dispenser"
+
+  # Transition: EXITING -> IDLE
+  - name: "Dispenser Departure"
+    regex: null # Sensor driven
+    event_type: "PALLET_LEFT_SENSOR"
+
+  # ==========================================
+  # 5. INSPECTION STATION
+  # States: IDLE -> INSPECTING -> RELEASING
+  # ==========================================
+
+  # Transition: IDLE -> INSPECTING_L1
+  - name: "Inspection Arrival L1"
+    regex: "Inspection Start L1" # Placeholder
+    event_type: "PALLET_ARRIVAL_L1"
+    target_id: "inspection_station"
+
+  # Transition: IDLE -> INSPECTING_L2
+  - name: "Inspection Arrival L2"
+    regex: "Inspection Start L2" # Placeholder
+    event_type: "PALLET_ARRIVAL_L2"
+    target_id: "inspection_station"
+
+  # Transition: INSPECTING -> RELEASING
+  - name: "Inspection Complete"
+    regex: "Inspection Result: (?P<result>\\w+)" # Placeholder
+    event_type: "INSPECTION_COMPLETE"
+    target_id: "inspection_station"
+
+  # Transition: RELEASING -> IDLE
+  - name: "Inspection Departure"
+    regex: null
+    event_type: "PALLET_LEFT_SENSOR"
+    target_id: "inspection_station"
+    

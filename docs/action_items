@@ -1,0 +1,17 @@
+1. Pallet detected. Count = <NUM> - universal global identity sync
+
+2. Shuttle station: Arrival: Pallet entered from the Trigger Sensor + Pallet state rising edge detected for ShuttlePalletPresenceSensorDI.
+Solution (M:1): Use the "Trigger Sensor" as the PALLET_ARRIVAL event. Use the "PresenceSensorDI" as a hardware_check in the state machine.
+
+3. Identification: Barcode <ID> detected from pallet (Primary) vs SN <ID> read from pallet (Secondary).
+
+4. Route Decision: Pallet <ID> sent to <DEST> successfully.
+
+5. Departure: L[12] Buffer [AB] stopper keeping up/down.
+Solution (0:1): The logs don't say "Pallet Left." They say "Stopper is Down." We must infer PALLET_LEFT_SENSOR when stopper keeping down occurs and presence_sensor becomes False.
+
+6. Process: Dispenser Pallet Clamp clamped → L[12]DispensingAWorker started → Dispenser Pallet Clamp unclamped.
+Solution (1:M): stopperout OUT and stopperout IN are highly frequent. We only treat them as HANDOVER if the DispensingAWorker has reached the COMPLETE state.
+
+7. Processing: InspectionGantryWorker started → InspectionGantryWorker completed.
+Solution: These are the perfect PROCESS_START and PROCESS_COMPLETE markers.

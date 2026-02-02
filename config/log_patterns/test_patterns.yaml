@@ -1,0 +1,197 @@
+version: "2.0"
+description: "Stage 1 Logic: Robust, Mutually Exclusive Patterns"
+
+patterns:
+  # ==========================================
+  # 1. SYSTEM WIDE
+  # ==========================================
+  - name: "System Initialization"
+    regex: "Machine initialized"
+    event_type: "SYSTEM_RESET"
+    target_id: "system"
+
+  - name: "Universal Sensor Trigger"
+    # Logic: 
+    # 1. Matches "IO: Sensor "
+    # 2. Uses negative lookahead (?!.*Inspection) to ignore inspection tags
+    # 3. Captures exactly what is between 'Sensor ' and ' triggered'
+    regex: "IO:\\s+Sensor\\s+(?!.*Inspection)(?P<tag_id>[\\w\\d_]+)\\s+triggered"
+    event_type: "PALLET_ARRIVAL"
+    category: "arrival"
+
+  # ==========================================
+  # 2. SHUTTLE STATION
+  # ==========================================
+  - name: "Shuttle Pallet Arrival"
+    # Matches the sensor trigger to get into SCANNING
+    regex: "IO: Sensor ShuttlePalletPresenceSensorDI triggered"
+    event_type: "PALLET_ARRIVAL"
+    target_id: "shuttle_station"
+    category: "arrival"
+
+  - name: "Scanner Retry"
+    regex: "Barcode read fail count (?P<count>\\d+)"
+    event_type: "SCANNER_RETRY"
+    target_id: "shuttle_station"
+
+  - name: "Scan Final Failure"
+    regex: "Barcode read failed final"
+    event_type: "SCAN_FAIL_FINAL"
+    target_id: "shuttle_station"
+
+  - name: "Pallet ID Discovery"
+    regex: 'Pallet\s+(?P<pallet_id>[\w\d]+)\s+detected\s+at\s+Shuttle'
+    event_type: "PALLET_IDENTIFIED"
+    target_id: "shuttle_station"
+
+  - name: "Shuttle Routing Success"
+    regex: "Pallet (?P<pallet_id>[\\w\\d]+) sent to (?P<destination>L[12]_Buffer_[AB]) successfully"
+    event_type: "PALLET_ROUTE"
+    target_id: "shuttle_station"
+    value_mapping:
+      destination:
+        "L1_Buffer_A": "l1_buffer_a"
+        "L1_Buffer_B": "l1_buffer_b"
+        "L2_Buffer_A": "l2_buffer_a"
+        "L2_Buffer_B": "l2_buffer_b"
+    category: "handover_prep"
+
+  - name: "Carrier Move Complete"
+    regex: "Shuttle Axis Arrived"
+    event_type: "CARRIER_MOVE_COMPLETE"
+    target_id: "shuttle_station"
+
+  - name: "Shuttle Transfer Complete"
+    regex: "Transfer to (?P<target>L[12]_Buffer_[AB]) complete"
+    event_type: "TRANSFER_COMPLETE"
+    target_id: "shuttle_station"
+    category: "handover"
+
+  # ==========================================
+  # 3. BUFFER STATIONS
+  # ==========================================
+  - name: "Buffer Pallet Arrival"
+    # Strict: Matches 'L1_Buffer_A' but REJECTS 'L1_Dispenser'
+    regex: "Pallet detected at (?P<target>L[12]_Buffer_[AB])"
+    event_type: "PALLET_ARRIVAL"
+    value_mapping:
+      target:
+        "L1_Buffer_A": "l1_buffer_a"
+        "L1_Buffer_B": "l1_buffer_b"
+        "L2_Buffer_A": "l2_buffer_a"
+        "L2_Buffer_B": "l2_buffer_b"
+    category: "arrival"
+
+  - name: "Buffer Stopper Open"
+    regex: "(?P<target>L[12]_Buffer_[AB]) Release" 
+    event_type: "STOPPER_OPEN"
+    value_mapping:
+      target:
+        "L1_Buffer_A": "l1_buffer_a"
+        "L1_Buffer_B": "l1_buffer_b"
+        "L2_Buffer_A": "l2_buffer_a"
+        "L2_Buffer_B": "l2_buffer_b"
+    category: "handover_prep"
+
+  - name: "Buffer Pallet Departure"
+    regex: "Pallet left (?P<target>L[12]_Buffer_[AB])"
+    event_type: "PALLET_LEFT_SENSOR"
+    value_mapping:
+      target:
+        "L1_Buffer_A": "l1_buffer_a"
+        "L1_Buffer_B": "l1_buffer_b"
+        "L2_Buffer_A": "l2_buffer_a"
+        "L2_Buffer_B": "l2_buffer_b"
+    category: "handover"
+
+  # ==========================================
+  # 4. DISPENSER STATIONS
+  # ==========================================
+  - name: "Dispenser Pallet Arrival"
+    # Strict: Only matches L1_Dispenser or L2_Dispenser
+    regex: "Pallet detected at (?P<target>L[12]_Dispenser)"
+    event_type: "PALLET_ARRIVAL"
+    value_mapping:
+      target:
+        "L1_Dispenser": "l1_dispenser"
+        "L2_Dispenser": "l2_dispenser"
+    category: "arrival"
+
+  - name: "Dispenser Clamp Lock"
+    regex: "Clamp Locked at (?P<target>L[12]_Dispenser)"
+    event_type: "CLAMP_ENGAGED"
+    value_mapping:
+      target:
+        "L1_Dispenser": "l1_dispenser"
+        "L2_Dispenser": "l2_dispenser"
+
+  - name: "Dispensing Start"
+    regex: "Dispensing Started at (?P<target>L[12]_Dispenser)"
+    event_type: "PROCESS_START"
+    value_mapping:
+      target:
+        "L1_Dispenser": "l1_dispenser"
+        "L2_Dispenser": "l2_dispenser"
+
+  - name: "Dispensing Complete"
+    regex: "Process finished at (?P<target>L[12]_Dispenser)"
+    event_type: "PROCESS_COMPLETE"
+    value_mapping:
+      target:
+        "L1_Dispenser": "l1_dispenser"
+        "L2_Dispenser": "l2_dispenser"
+
+  - name: "Dispenser Clamp Unlock"
+    regex: "Clamp Unlocked at (?P<target>L[12]_Dispenser)"
+    event_type: "CLAMP_RELEASED"
+    value_mapping:
+      target:
+        "L1_Dispenser": "l1_dispenser"
+        "L2_Dispenser": "l2_dispenser"
+
+  - name: "Dispenser Exit Open"
+    regex: "Dispenser (?P<target>L[12]_Dispenser) Release"
+    event_type: "STOPPER_OPEN"
+    value_mapping:
+      target:
+        "L1_Dispenser": "l1_dispenser"
+        "L2_Dispenser": "l2_dispenser"
+    category: "handover_prep"
+
+  - name: "Dispenser Departure"
+    regex: "Pallet left (?P<target>L[12]_Dispenser)"
+    event_type: "PALLET_LEFT_SENSOR"
+    value_mapping:
+      target:
+        "L1_Dispenser": "l1_dispenser"
+        "L2_Dispenser": "l2_dispenser"
+    category: "handover"
+
+  # ==========================================
+  # 5. INSPECTION STATION
+  # ==========================================
+
+  - name: "Inspection Arrival L1"
+    regex: "IO: Sensor (?P<tag_id>L1Inspection[\\w\\d]+) triggered"
+    event_type: "PALLET_ARRIVAL_L1"
+    target_id: "inspection_station"
+    category: "arrival"
+
+  - name: "Inspection Arrival L2"
+    regex: "IO: Sensor (?P<tag_id>L2Inspection[\\w\\d]+) triggered"
+    event_type: "PALLET_ARRIVAL_L2"
+    target_id: "inspection_station"
+    category: "arrival"
+
+  - name: "Inspection Complete"
+    regex: "Inspection Result: (?P<result>\\w+)"
+    event_type: "INSPECTION_COMPLETE"
+    target_id: "inspection_station"
+
+  - name: "Inspection Departure"
+    regex: "Pallet left Inspection Station"
+    event_type: "PALLET_LEFT_SENSOR"
+    target_id: "inspection_station"
+    category: "handover" # last station before exit doesn't need handover prep
+
+

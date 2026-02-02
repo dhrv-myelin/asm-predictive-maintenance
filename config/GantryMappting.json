@@ -1,0 +1,74 @@
+{
+  "Conveyors": {
+    "nozzleCleaningStepper": {
+      "A": 16
+    },
+    "shuttleConveyor": {
+      "A": 17
+    },
+    "l1InspectionStationConveyor": {
+      "A": 18
+    },
+    "l1BufferBConveyor": {
+      "A": 19
+    },
+    "l1DispensingStationConveyor": {
+      "A": 20
+    },
+    "l1BufferAConveyor": {
+      "A": 21
+    },
+    "l2InspectionStationConveyor": {
+      "A": 22
+    },
+    "l2BufferBConveyor": {
+      "A": 23
+    },
+    "l2DispensingStationConveyor": {
+      "A": 24
+    },
+    "l2BufferAConveyor": {
+      "A": 25
+    }
+  },
+
+    "Motion": {
+      "L1DispenserGantry": {
+        "DeviceIndex": 0,
+        "X": 0,
+        "Y": 2,
+        "Z": 4
+      },
+      "L2DispenserGantry": {
+        "DeviceIndex": 0,
+        "X": 1,
+        "Y": 3,
+        "Z": 5
+      },
+      "ShuttleCarrier": {
+        "DeviceIndex": 0,
+        "Y": 8
+      },
+      "Inspectiongantry": {
+        "DeviceIndex": 0,
+        "X": 6,
+        "Y": 7
+      },
+      "L1PalletLifter": {
+        "DeviceIndex": 1,
+        "Z": 10,
+        "Y": 15,
+        "X": 14
+      },
+      "L2PalletLifter": {
+        "DeviceIndex": 1,
+        "Z": 9,
+        "Y": 13,
+        "X": 12
+      },
+      "CalibrationLifter": {
+        "DeviceIndex": 1,
+        "Z": 11
+      }
+    }
+  }

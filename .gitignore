@@ -6,12 +6,15 @@ dist/
 wheels/
 *.egg-info
  
-# Log, system state snapshots, captured time series data
-data/*
  
 # Ignore system files and environment files
 .DS_Store
 __pycache__/
 .venv/
 .env
- 
+.vscode
+config_backup/
+
+# Log, system state snapshots, captured time series data
+data/*
+

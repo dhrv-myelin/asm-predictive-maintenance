@@ -55,9 +55,13 @@ patterns:
     target_id: "shuttle_station"
 
   - name: "Carrier Motion Start"
-    regex: "Axis 8: MoveAbs started → -?\\d+"
+    regex: "Axis 8: MoveAbs started → (?P<destination>-?\\d+)"
     event_type: "CARRIER_STARTED"
     target_id: "shuttle_station"
+    value_mapping:
+      destination:
+        "-523064": "l1_buffer_a"
+        "15936": "l2_buffer_a"
     category: "handover_prep"
 
   - name: "Stopper Lowering Trigger"
@@ -86,26 +90,86 @@ patterns:
   # Logic States: EMPTY -> HOLDING -> RELEASING
   # ==========================================
 
-  # Transition: EMPTY -> HOLDING
+  # Transition: IDLE -> HOLDING
   - name: "Buffer Pallet Arrival"
-    regex: null # Sensor driven "L1BufferAPalletPresenceSensorDI"
+    # Matches: "Pallet T{E04}O{250711P01-511P-25070004-0010}P{HE00EJ6DH000}Q{1}S{C9145}G{46abf091-cb08-475e-8422-60c9078d555f}L{} sent to L1ConveyorBufferA successfully."
+    regex: "Pallet (?P<pallet_id>\\S+) sent to (?P<target>\\S+) successfully\\."
     event_type: "PALLET_ARRIVAL"
-    # Note: Value mapping happens in code if this is generic, or specific regex per buffer
-
-  # Transition: HOLDING -> RELEASING
-  - name: "Buffer Stopper Open"
-    # Matches: "L1 Buffer A Release"
-    regex: "(?P<station_name>[\\w\\s]+) Release" 
-    event_type: "STOPPER_OPEN"
     value_mapping:
-      station_name:
+      target:
+        "L1ConveyorBufferA": "l1_buffer_a"
+        "L1ConveyorBufferB": "l1_buffer_b"
+        "L2ConveyorBufferA": "l2_buffer_a"
+        "L2ConveyorBufferB": "l2_buffer_b"
+
+  # Transition: HOLDING -> PALLET_RELEASING (via STOPPER_KEEPING_DOWN)
+  - name: "Buffer Stopper Keeping Down"
+    # Matches: "L2 Buffer A stopper keeping down"
+    regex: "(?P<target>L[12] Buffer [AB]) stopper keeping down"
+    event_type: "STOPPER_KEEPING_DOWN"
+    value_mapping:
+      target:
         "L1 Buffer A": "l1_buffer_a"
         "L1 Buffer B": "l1_buffer_b"
         "L2 Buffer A": "l2_buffer_a"
         "L2 Buffer B": "l2_buffer_b"
 
-  # Transition: RELEASING -> EMPTY
-  - name: "Buffer Pallet Departure"
-    regex: null # Sensor driven (Falling Edge of Presence)
-    event_type: "PALLET_LEFT_SENSOR"
+  # Transition: HOLDING -> STOPPER_LOWERING
+  - name: "Buffer Stopper Down Start"
+    # Matches: "L1 Buffer A stopper Down: DOWN command issued"
+    regex: "(?P<target>L[12] Buffer [AB]) stopper Down: DOWN command issued"
+    event_type: "STOPPER_DOWN_START"
+    value_mapping:
+      target:
+        "L1 Buffer A": "l1_buffer_a"
+        "L1 Buffer B": "l1_buffer_b"
+        "L2 Buffer A": "l2_buffer_a"
+        "L2 Buffer B": "l2_buffer_b"
 
+  # Transition: STOPPER_LOWERING -> PALLET_RELEASING
+  - name: "Buffer Stopper Down Done"
+    # Matches: "L1 Buffer A stopper Down: DOWN confirmed"
+    regex: "(?P<target>L[12] Buffer [AB]) stopper Down: DOWN confirmed"
+    event_type: "STOPPER_DOWN_DONE"
+    value_mapping:
+      target:
+        "L1 Buffer A": "l1_buffer_a"
+        "L1 Buffer B": "l1_buffer_b"
+        "L2 Buffer A": "l2_buffer_a"
+        "L2 Buffer B": "l2_buffer_b"
+
+  # Transition: PALLET_RELEASING -> IDLE (via STOPPER_KEEPING_UP)
+  - name: "Buffer Stopper Keeping Up"
+    # Matches: "L2 Buffer A stopper keeping up"
+    regex: "(?P<target>L[12] Buffer [AB]) stopper keeping up"
+    event_type: "STOPPER_KEEPING_UP"
+    value_mapping:
+      target:
+        "L1 Buffer A": "l1_buffer_a"
+        "L1 Buffer B": "l1_buffer_b"
+        "L2 Buffer A": "l2_buffer_a"
+        "L2 Buffer B": "l2_buffer_b"
+
+  # Transition: PALLET_RELEASING -> STOPPER_RAISING
+  - name: "Buffer Stopper Up Start"
+    # Matches: "L1 Buffer A stopper Up: UP command issued"
+    regex: "(?P<target>L[12] Buffer [AB]) stopper Up: UP command issued"
+    event_type: "STOPPER_UP_START"
+    value_mapping:
+      target:
+        "L1 Buffer A": "l1_buffer_a"
+        "L1 Buffer B": "l1_buffer_b"
+        "L2 Buffer A": "l2_buffer_a"
+        "L2 Buffer B": "l2_buffer_b"
+
+  # Transition: STOPPER_RAISING -> IDLE
+  - name: "Buffer Stopper Up Done"
+    # Matches: "L1 Buffer A stopper Up: UP confirmed"
+    regex: "(?P<target>L[12] Buffer [AB]) stopper Up: UP confirmed"
+    event_type: "STOPPER_UP_DONE"
+    value_mapping:
+      target:
+        "L1 Buffer A": "l1_buffer_a"
+        "L1 Buffer B": "l1_buffer_b"
+        "L2 Buffer A": "l2_buffer_a"
+        "L2 Buffer B": "l2_buffer_b"

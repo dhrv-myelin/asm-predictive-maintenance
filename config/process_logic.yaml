@@ -9,6 +9,11 @@ definitions:
     initial_state: "IDLE"
     states:
       IDLE:
+        metrics:
+          - name: "shuttle_idle_time"
+            type: "duration_seconds"
+            description: "Time spent in IDLE state"
+            
         transitions:
           - event: "PALLET_ARRIVAL"
             next_state: "PRE_SCANNING"
@@ -99,6 +104,10 @@ definitions:
     initial_state: "IDLE"
     states:
       IDLE:
+        metrics:
+          - name: "buffer_idle_time"
+            type: "duration_seconds"
+            description: "Time buffer is empty"
         transitions:
           - event: "PALLET_ARRIVAL"
             next_state: "HOLDING"
@@ -108,9 +117,9 @@ definitions:
 
       HOLDING:
         metrics:
-          - name: "buffer_wait_time"
+          - name: "buffer_holding_time"
             type: "duration_seconds"
-            description: "Starvation metric: How long pallet waited for machine"
+            description: "Time pallet spends holding in buffer"
         transitions:
           - event: "STOPPER_DOWN_START"
             next_state: "STOPPER_LOWERING"
@@ -124,6 +133,10 @@ definitions:
               actuators.stopper_up: false
       
       STOPPER_LOWERING:
+        metrics:
+          - name: "buffer_stopper_lowering_time"
+            type: "duration_seconds"
+            description: "Time taken for stopper to lower"
         transitions:
           - event: "STOPPER_DOWN_DONE"
             next_state: "PALLET_RELEASING"
@@ -132,6 +145,10 @@ definitions:
               actuators.stopper_up: false
 
       PALLET_RELEASING:
+        metrics:
+          - name: "buffer_pallet_release_time"
+            type: "duration_seconds"
+            description: "Time taken to release pallet"
         transitions:
           - event: "STOPPER_UP_START"
             next_state: "STOPPER_RAISING"
@@ -147,6 +164,10 @@ definitions:
               actuators.stopper_up: true
 
       STOPPER_RAISING:
+        metrics:
+          - name: "buffer_stopper_rising_time"
+            type: "duration_seconds"
+            description: "Time taken for stopper to rise back up"
         transitions:
           - event: "STOPPER_UP_DONE"
             next_state: "IDLE"

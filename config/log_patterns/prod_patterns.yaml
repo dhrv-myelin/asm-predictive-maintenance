@@ -190,7 +190,7 @@ patterns:
       target:
         "L1 Dispensing": "l1_dispenser"
         "L2 Dispensing": "l2_dispenser"
-    category: "arival"
+    category: "arrival"
 
   - name: "Dispenser Entry Unclamp Done"
     # Matches: "L1 Dispensing Unclamp: DOWN confirmed"
@@ -205,7 +205,7 @@ patterns:
   - name: "Dispenser Pallet Lifting Start"
     # Matches: "Axis 9: MoveAbs started → 19000" or "Axis 10: MoveAbs started → 68687"
     regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>68687|76737)"
-    event_type: "PALLET_LIFTING_1_START"
+    event_type: "PALLET_ZPOS_1_START"
     value_mapping:
       target:
         "9": "l2_dispenser"
@@ -253,7 +253,7 @@ patterns:
   - name: "Dispenser Positioning Start"
     # Matches: "Axis 10: MoveAbs started → 556737"
     regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>561687|556737)"
-    event_type: "POSITIONING_START"
+    event_type: "COMBINED_POSITIONING_START"
     value_mapping:
       target:
         "9": "l2_dispenser"
@@ -262,7 +262,7 @@ patterns:
   - name: "Dispenser Positioning End"
     # Matches: "MovePathWaitAsync('l2Gantry') completed successfully."
     regex: "MovePathWaitAsync\\('(?P<target>[lL][12]Gantry)'\\) completed successfully\\."
-    event_type: "POSITIONING_END"
+    event_type: "COMBINED_POSITIONING_END"
     value_mapping:
       target:
         "l1Gantry": "l1_dispenser"
@@ -273,8 +273,8 @@ patterns:
   # Transition: Unpositioning (return from dispense position)
   - name: "Dispenser Pallet Unpositioning Start"
     # Matches: "Axis 9: MoveAbs started → 68687"
-    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>19000|17000)"
-    event_type: "PALLET_UNPOSITIONING_START"
+    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>68687|76737)"
+    event_type: "PALLET_ZPOS_1_START"
     value_mapping:
       target:
         "9": "l2_dispenser"
@@ -321,8 +321,8 @@ patterns:
   # Transition: Pallet lowering (exit)
   - name: "Dispenser Pallet Lowering Start"
     # Matches: "Axis 9: MoveAbs started → 19000"
-    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>68687|76737)"
-    event_type: "PALLET_LOWERING_1_START"
+    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>19000|17000)"
+    event_type: "PALLET_ZPOS_0_START"
     value_mapping:
       target:
         "9": "l2_dispenser"

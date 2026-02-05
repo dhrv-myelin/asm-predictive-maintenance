@@ -89,6 +89,7 @@ class LogParser:
             pmatch = pattern['regex'].search(content_to_match)
             if pmatch:
                 # We yield so the loop continues
+                print(f"[DEBUG]: Matching for Log Line: {content_to_match}")
                 yield epoch, self._build_event(pattern, pmatch, service_name)
                 break
 

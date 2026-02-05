@@ -70,7 +70,7 @@ topology:
   - id: "l1_buffer_b"
     class: "BufferStation"
     logic_template: "buffer_standard"
-    next_nodes: ["exit_sink"] # ["inspection_station"]
+    next_nodes: ["inspection_station"]
     hardware_link:
       motion:
         conveyor: "l1BufferBConveyor"
@@ -128,7 +128,7 @@ topology:
   - id: "l2_buffer_b"
     class: "BufferStation"
     logic_template: "buffer_standard"
-    next_nodes: ["exit_sink"] # ["inspection_station"]
+    next_nodes: ["inspection_station"]
     hardware_link:
       motion:
         conveyor: "l2BufferBConveyor"
@@ -137,6 +137,31 @@ topology:
       actuators:
         stopper_up: "L2BufferBCylinderUpDO"
         stopper_down: "L2BufferBCylinderDownDO"
+
+  # ==========================================
+  # SHARED INSPECTION
+  # ==========================================
+  - id: "inspection_station"
+    class: "SharedStation"
+    logic_template: "inspection_station"
+    next_nodes: ["exit_sink"]
+    hardware_link:
+      motion:
+        gantry: "Inspectiongantry"
+        conveyor_l1: "l1InspectionStationConveyor"
+        conveyor_l2: "l2InspectionStationConveyor"
+      sensors:
+        presence_l1: "L1InspectionStationPalletPresenceSensorDI"
+        presence_l2: "L2InspectionStationPalletPresenceSensorDI"
+      actuators:
+        stopper_up_l1: "L1InspectionCylinderUpDO"
+        stopper_down_l1: "L1InspectionCylinderDownDO"
+        stopper_up_l2: "L2InspectionCylinderUpDO"
+        stopper_down_l2: "L2InspectionCylinderDownDO"
+        lifter_up_l1: "L1InspectionLifterUpDO"
+        lifter_down_l1: "L1InspectionLifterDownDO"
+        lifter_up_l2: "L2InspectionLifterUpDO"
+        lifter_down_l2: "L2InspectionLifterDownDO"
 
   # ==========================================
   # EXIT SINK

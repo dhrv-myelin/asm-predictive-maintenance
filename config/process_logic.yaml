@@ -210,7 +210,7 @@ definitions:
             type: "duration_seconds"
             export: true
         transitions:
-          - event: "PALLET_LIFTING_1_START"
+          - event: "PALLET_ZPOS_1_START"
             next_state: "PALLET_LIFTING_1"
       
       PALLET_LIFTING_1:
@@ -255,16 +255,16 @@ definitions:
             type: "duration_seconds"
             export: true
         transitions:
-          - event: "POSITIONING_START"
-            next_state: "POSITIONING"    
+          - event: "COMBINED_POSITIONING_START"
+            next_state: "COMBINED_POSITIONING"    
 
-      POSITIONING:
+      COMBINED_POSITIONING:
         metrics:
           - name: "dispenser_gantry_positioning_time"
             type: "duration_seconds"
             export: true
         transitions:
-          - event: "POSITIONING_END"
+          - event: "COMBINED_POSITIONING_END"
             next_state: "DISPENSING"
 
       DISPENSING:
@@ -273,10 +273,10 @@ definitions:
             type: "duration_seconds"
             export: true
         transitions:
-          - event: "PALLET_UNPOSITIONING_START"
-            next_state: "PALLET_UNPOSITIONING"
+          - event: "PALLET_ZPOS_1_START"
+            next_state: "PALLET_LOWERING_1"
 
-      PALLET_UNPOSITIONING:
+      PALLET_LOWERING_1:
         metrics:
           - name: "dispenser_pallet_unpositioning_time"
             type: "duration_seconds"
@@ -324,14 +324,14 @@ definitions:
             type: "duration_seconds"
             export: true
         transitions:
-          - event: "PALLET_LOWERING_1_START"
-            next_state: "PALLET_LOWERING_1"
+          - event: "PALLET_ZPOS_0_START"
+            next_state: "PALLET_LOWERING_0"
             state_inference:
               sensors.presence: false
               actuators.stopper_down: false
               actuators.stopper_up: true
 
-      PALLET_LOWERING_1:
+      PALLET_LOWERING_0:
         metrics:
           - name: "dispenser_pallet_lowering_1"
             type: "duration_seconds"

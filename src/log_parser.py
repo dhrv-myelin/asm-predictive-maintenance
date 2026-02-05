@@ -29,6 +29,7 @@ class LogParser:
                     'regex': re.compile(p['regex']),
                     'event_type': p['event_type'],
                     'target_id': p.get('target_id'),
+                    'state_resolver': p.get('state_resolver', {}),
                     'category': p.get('category', ''),
                     'mapping': p.get('value_mapping', {})
                 })
@@ -118,6 +119,7 @@ class LogParser:
             "type": pattern['event_type'],
             "target": target,      # Who reported the log
             "destination": destination, # Where the pallet is going (if known)
+            "state_resolver" : pattern.get('state_resolver', {}), # Optional instructions for state inference
             "category": pattern.get('category', ''),
             "payload": mapped_payload
         }

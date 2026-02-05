@@ -70,7 +70,7 @@ topology:
   - id: "l1_buffer_b"
     class: "BufferStation"
     logic_template: "buffer_standard"
-    next_nodes: ["inspection_station"]
+    next_nodes: ["l1_inspection"]
     hardware_link:
       motion:
         conveyor: "l1BufferBConveyor"
@@ -80,6 +80,25 @@ topology:
       actuators:
         stopper_up: "L1BufferBCylinderUpDO"
         stopper_down: "L1BufferBCylinderDownDO"
+
+  # ==========================================
+  # LINE 1: INSPECTION
+  # ==========================================
+  - id: "l1_inspection"
+    class: "InspectionStation"
+    logic_template: "inspection_standard"
+    next_nodes: ["exit_sink"]
+    hardware_link:
+      motion:
+        gantry: "InspectionGantry"
+        conveyor_l1: "l1InspectionStationConveyor"
+      sensors:
+        presence_l1: "L1InspectionStationPalletPresenceSensorDI"
+      actuators:
+        stopper_up_l1: "L1InspectionCylinderUpDO"
+        stopper_down_l1: "L1InspectionCylinderDownDO"
+        lifter_up_l1: "L1InspectionLifterUpDO"
+        lifter_down_l1: "L1InspectionLifterDownDO"
 
   # ==========================================
   # LINE 2: BUFFER A
@@ -128,7 +147,7 @@ topology:
   - id: "l2_buffer_b"
     class: "BufferStation"
     logic_template: "buffer_standard"
-    next_nodes: ["inspection_station"]
+    next_nodes: ["l2_inspection"]
     hardware_link:
       motion:
         conveyor: "l2BufferBConveyor"
@@ -139,27 +158,21 @@ topology:
         stopper_down: "L2BufferBCylinderDownDO"
 
   # ==========================================
-  # SHARED INSPECTION
+  # LINE 2: INSPECTION
   # ==========================================
-  - id: "inspection_station"
-    class: "SharedStation"
-    logic_template: "inspection_station"
+  - id: "l2_inspection"
+    class: "InspectionStation"
+    logic_template: "inspection_standard"
     next_nodes: ["exit_sink"]
     hardware_link:
       motion:
-        gantry: "Inspectiongantry"
-        conveyor_l1: "l1InspectionStationConveyor"
+        gantry: "InspectionGantry"
         conveyor_l2: "l2InspectionStationConveyor"
       sensors:
-        presence_l1: "L1InspectionStationPalletPresenceSensorDI"
         presence_l2: "L2InspectionStationPalletPresenceSensorDI"
       actuators:
-        stopper_up_l1: "L1InspectionCylinderUpDO"
-        stopper_down_l1: "L1InspectionCylinderDownDO"
         stopper_up_l2: "L2InspectionCylinderUpDO"
         stopper_down_l2: "L2InspectionCylinderDownDO"
-        lifter_up_l1: "L1InspectionLifterUpDO"
-        lifter_down_l1: "L1InspectionLifterDownDO"
         lifter_up_l2: "L2InspectionLifterUpDO"
         lifter_down_l2: "L2InspectionLifterDownDO"
 

@@ -36,7 +36,7 @@ class LogicEngine:
                 writer.writerow(["timestamp", "component_id", "metric_name", "value", "unit", "state_context"])
         except FileExistsError:
             pass # Append mode is fine
-
+    
     def process_event(self, timestamp, event):
         payload = event.get('payload', {})
         category = event.get('category', '')
@@ -55,6 +55,12 @@ class LogicEngine:
             target_id = self.tag_resolver.resolve(payload['tag_id'])
             event['target'] = target_id
             print(f"[DEBUG]: Resolved Tag '{payload['tag_id']}' to Target ID: {target_id}")
+        
+        if not target_id and 'state_resolver' in event:
+            state_resolver = event.get('state_resolver', {})
+            # print(f"[DEBUG]: state_resolver: {state_resolver}")
+            target_id = self._state_based_target_resolver(state_resolver)
+            print(f"[DEBUG]: State Resolved target from {state_resolver} to Target ID: {target_id}" )
 
         if not target_id or target_id not in self.inventory:
             print(f"[DEBUG]: ❌ Event skipped: Unknown target ID '{target_id}'")
@@ -173,7 +179,6 @@ class LogicEngine:
         """
         current_state_def = station.logic_template['states'].get(station.current_state)
         if not current_state_def: return False
-
         # 1. Check strict transitions
         for trans in current_state_def.get('transitions', []):
             if trans['event'] == event['type']:
@@ -328,6 +333,32 @@ class LogicEngine:
         
         if self.buf_idx >= self.buffer_size:
             self.flush_buffer()
+
+    def _state_based_target_resolver(self, state_resolver):
+        """
+        Assign's ambiguous events to stations based on their current state and type of station.
+        Assumes FIFO logic for matching, if multiple stations match criteria, the oldest is chosen.
+        
+        :param self: Description
+        :param state_resolver: Description
+        :param timestamp: Description
+        """
+        # Look for stations of state_resolver['target_type']
+        target_type = state_resolver.get('target_type')
+        current_state = state_resolver.get('current_state')
+
+        ### WARNING : Assumes and matches station based on FIFO logic of Log line entry
+
+        oldest_matched = {}
+        for station_id, station in self.inventory.items():                
+            if station.config.get('logic_template') == target_type and station.current_state == current_state:
+                if not oldest_matched:                
+                    oldest_matched['id'], oldest_matched['timestamp'] = station_id, station.state_entry_time
+                else:
+                    if station.state_entry_time < oldest_matched['timestamp']:                    
+                        oldest_matched['id'], oldest_matched['timestamp'] = station_id, station.state_entry_time
+        
+        return oldest_matched.get('id')
 
     def flush_buffer(self):
         """Batch write to disk."""

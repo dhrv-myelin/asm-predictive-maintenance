@@ -114,6 +114,7 @@ patterns:
         "L1 Buffer B": "l1_buffer_b"
         "L2 Buffer A": "l2_buffer_a"
         "L2 Buffer B": "l2_buffer_b"
+    category: "handover_prep"
 
   # Transition: HOLDING -> STOPPER_LOWERING
   - name: "Buffer Stopper Down Start"
@@ -138,6 +139,7 @@ patterns:
         "L1 Buffer B": "l1_buffer_b"
         "L2 Buffer A": "l2_buffer_a"
         "L2 Buffer B": "l2_buffer_b"
+    category: "handover_prep"
 
   # Transition: PALLET_RELEASING -> IDLE (via STOPPER_KEEPING_UP)
   - name: "Buffer Stopper Keeping Up"
@@ -162,7 +164,6 @@ patterns:
         "L1 Buffer B": "l1_buffer_b"
         "L2 Buffer A": "l2_buffer_a"
         "L2 Buffer B": "l2_buffer_b"
-    category: "handover_prep"
 
   # Transition: STOPPER_RAISING -> IDLE
   - name: "Buffer Stopper Up Done"
@@ -298,26 +299,7 @@ patterns:
       target:
         "L1Dispenser": "l1_dispenser"
         "L2Dispenser": "l2_dispenser"
-
-  # Transition: Exit unclamp
-  - name: "Dispenser Exit Unclamp Start"
-    # Matches: "L2 Dispensing Unclamp: DOWN command issued"
-    regex: "(?P<target>L[12] Dispensing) Unclamp: DOWN command issued"
-    event_type: "EXIT_UNCLAMP_START"
-    value_mapping:
-      target:
-        "L1 Dispensing": "l1_dispenser"
-        "L2 Dispensing": "l2_dispenser"
-
-  - name: "Dispenser Exit Unclamp Done"
-    # Matches: "L2 Dispensing Unclamp: DOWN confirmed"
-    regex: "(?P<target>L[12] Dispensing) Unclamp: DOWN confirmed"
-    event_type: "EXIT_UNCLAMP_DONE"
-    value_mapping:
-      target:
-        "L1 Dispensing": "l1_dispenser"
-        "L2 Dispensing": "l2_dispenser"
-
+        
   # Transition: Pallet lowering (exit)
   - name: "Dispenser Pallet Lowering Start"
     # Matches: "Axis 9: MoveAbs started → 19000"
@@ -366,3 +348,70 @@ patterns:
         "L1 Dispensing": "l1_dispenser"
         "L2 Dispensing": "l2_dispenser"
     category: "handover"
+
+# ==========================================
+# 5. INSPECTION STATION
+# ==========================================
+
+  - name: "Inspection Pallet Arrival"
+    # Matches: "L1 Inspection Lifter keeping up" or "L2 Inspection Lifter keeping up"
+    regex: "(?P<target>L[12] Inspection) Lifter keeping up"
+    event_type: "LIFTER_KEEPING_UP"
+    value_mapping:
+      target:
+        "L1 Inspection": "l1_inspection"
+        "L2 Inspection": "l2_inspection"
+    category: "arrival"
+
+  - name: "Inspection Gantry Positioning Start"
+    # Matches: "InspectionGantryWorker started for l1" or "InspectionGantryWorker started for l2"
+    regex: "InspectionGantryWorker started for (?P<target>l[12])"
+    event_type: "GANTRY_POSITIONING_START"
+    value_mapping:
+      target:
+        "l1": "l1_inspection"
+        "l2": "l2_inspection"
+
+  - name: "Inspection Gantry Positioning Done"
+    # Matches: "MovePathWaitAsync('InspectionGantry') completed successfully."
+    regex: "MovePathWaitAsync\\('InspectionGantry'\\) completed successfully\\."
+    event_type: "GANTRY_POSITIONING_DONE"
+    state_resolver:
+      target_type: "inspection_standard"  
+      current_state: "GANTRY_POSITIONING"
+
+  - name: "Inspection Done"
+    # Matches: "InspectionGantryWorker completed for l1" or "InspectionGantryWorker completed for l2"
+    regex: "InspectionGantryWorker completed for (?P<target>l[12])"
+    event_type: "INSPECTION_DONE"
+    value_mapping:
+      target:
+        "l1": "l1_inspection"
+        "l2": "l2_inspection"
+
+  - name: "Inspection Lifter Keeping Down"
+    # Matches: "L2 Inspection Lifter keeping down"
+    regex: "(?P<target>L[12] Inspection) Lifter keeping down"
+    event_type: "LIFTER_KEEPING_DOWN"
+    value_mapping:
+      target:
+        "L1 Inspection": "l1_inspection"
+        "L2 Inspection": "l2_inspection"
+
+  - name: "Inspection Stopper Keeping Down"
+    # Matches: "L2 Inspection Stopper keeping down" (note: regex shows "keeping down" in log)
+    regex: "(?P<target>L[12] Inspection) Stopper keeping down"
+    event_type: "STOPPER_KEEPING_DOWN"
+    value_mapping:
+      target:
+        "L1 Inspection": "l1_inspection"
+        "L2 Inspection": "l2_inspection"
+
+  - name: "Inspection Stopper Keeping Up"
+    # Matches: "L2 Inspection Stopper keeping up" (note: regex shows "keeping up" in log)
+    regex: "(?P<target>L[12] Inspection) Stopper keeping up"
+    event_type: "STOPPER_KEEPING_UP"
+    value_mapping:
+      target:
+        "L1 Inspection": "l1_inspection"
+        "L2 Inspection": "l2_inspection"    

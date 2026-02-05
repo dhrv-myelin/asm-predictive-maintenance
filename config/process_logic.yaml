@@ -366,6 +366,80 @@ definitions:
         transitions:
           - event: "STOPPER_UP_DONE"
             next_state: "IDLE"  
+            
+  # ==========================================
+  # 4. INSPECTION STANDARD
+  # ==========================================
+  inspection_standard:
+    initial_state: "IDLE"
+    states:
+      IDLE:
+        metrics:
+          - name: "inspection_idle_time"
+            type: "duration_seconds"
+        transitions:
+          - event: "LIFTER_KEEPING_UP"
+            next_state: "GANTRY_PREP"
+            state_inference:
+               sensors.presence_l1: true
+
+      GANTRY_PREP:
+        metrics:
+          - name: "inspection_lifter_rising_time"
+            type: "duration_seconds"
+        transitions:
+          - event: "GANTRY_POSITIONING_START"
+            next_state: "GANTRY_POSITIONING"
+
+      GANTRY_POSITIONING:
+        metrics:
+          - name: "inspection_gantry_positioning_time"
+            type: "duration_seconds"
+        transitions:
+          - event: "GANTRY_POSITIONING_DONE"
+            next_state: "INSPECTION"
+
+      INSPECTION:
+        metrics:
+          - name: "inspection_core_vision_system_time"
+            type: "duration_seconds"
+        transitions:
+          - event: "INSPECTION_DONE"
+            next_state: "POST_INSPECTION"
+            state_inference:
+               sensors.presence_l1: false
+               sensors.presence_l2: false
+
+      POST_INSPECTION:
+        metrics:
+          - name: "inspection_post_vision_check_delay"
+            type: "duration_seconds"
+        transitions:
+          - event: "LIFTER_KEEPING_DOWN"
+            next_state: "POST_LIFTER_DOWN"
+
+      POST_LIFTER_DOWN:
+        metrics:
+          - name: "inspection_lifter_lowering_time"
+            type: "duration_seconds"
+        transitions:
+          - event: "STOPPER_KEEPING_DOWN"
+            next_state: "PALLET_RELEASING"
+            state_inference:
+               sensors.presence_l1: false
+               sensors.presence_l2: false
+      
+      PALLET_RELEASING:
+        metrics:
+          - name: "inspection_pallet_releasing_time"
+            type: "duration_seconds"
+        transitions:
+          - event: "STOPPER_KEEPING_UP"
+            next_state: "IDLE"
+            state_inference:
+               sensors.presence_l1: false
+               sensors.presence_l2: false
+
 
   # ==========================================
   # 5. SINK

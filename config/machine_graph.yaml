@@ -29,7 +29,7 @@ topology:
   - id: "l1_buffer_a"
     class: "BufferStation"
     logic_template: "buffer_standard"
-    next_nodes: ["exit_sink"] # ["l1_dispenser"]
+    next_nodes: ["l1_dispenser"]
     hardware_link:
       motion:
         conveyor: "l1BufferAConveyor"
@@ -38,6 +38,48 @@ topology:
       actuators:
         stopper_up: "L1BufferACylinderUpDO"
         stopper_down: "L1BufferACylinderDownDO"
+  
+  # ==========================================
+  # LINE 1: DISPENSER
+  # ==========================================
+  - id: "l1_dispenser"
+    class: "DispenserStation"
+    logic_template: "dispenser_standard"
+    next_nodes: ["l1_buffer_b"]
+    hardware_link:
+      motion:
+        conveyor: "l1DispensingStationConveyor"
+        gantry: "L1DispenserGantry"
+        lifter: "L1PalletLifter"
+      sensors:
+        presence: "L1DispensingStationPalletPresenceSensorDI"
+        clamp_locked: "L1DispensingClampCylinderInDI"
+        clamp_unlocked: "L1DispensingClampCylinderOutDI"
+      actuators:
+        stopper_up: "L1DispensingCylinderUpDO"
+        stopper_down: "L1DispensingCylinderDownDO"
+        lifter_in: "L1DispensingCylinderInDO"
+        lifter_out: "L1DispensingCylinderOutDO"
+        clamp_lock_cmd: "L1DispensingCylinderclampDO"
+        clamp_unlock_cmd: "L1DispensingCylinderunclampDO"
+        brake_z: "L1ZBrakeDO"
+
+  # ==========================================
+  # LINE 1: BUFFER B
+  # ==========================================
+  - id: "l1_buffer_b"
+    class: "BufferStation"
+    logic_template: "buffer_standard"
+    next_nodes: ["exit_sink"] # ["inspection_station"]
+    hardware_link:
+      motion:
+        conveyor: "l1BufferBConveyor"
+      sensors:
+        presence: "L1BufferBPalletPresenceSensorDI"
+        buffer_ready: "L1BufferBBufferCylinderUpDI"
+      actuators:
+        stopper_up: "L1BufferBCylinderUpDO"
+        stopper_down: "L1BufferBCylinderDownDO"
 
   # ==========================================
   # LINE 2: BUFFER A
@@ -45,7 +87,7 @@ topology:
   - id: "l2_buffer_a"
     class: "BufferStation"
     logic_template: "buffer_standard"
-    next_nodes: ["exit_sink"] # ["l2_dispenser"]
+    next_nodes: ["l2_dispenser"]
     hardware_link:
       motion:
         conveyor: "l2BufferAConveyor"
@@ -54,6 +96,47 @@ topology:
       actuators:
         stopper_up: "L2BufferACylinderUpDO"
         stopper_down: "L2BufferACylinderDownDO"
+
+  # ==========================================
+  # LINE 2: DISPENSER
+  # ==========================================
+  - id: "l2_dispenser"
+    class: "DispenserStation"
+    logic_template: "dispenser_standard"
+    next_nodes: ["l2_buffer_b"]
+    hardware_link:
+      motion:
+        conveyor: "l2DispensingStationConveyor"
+        gantry: "L2DispenserGantry"
+        lifter: "L2PalletLifter"
+      sensors:
+        presence: "L2DispensingStationPalletPresenceSensorDI"
+        clamp_locked: "L2DispensingCylinderClampInDI"
+        clamp_unlocked: "L2DispensingCylinderClampOutDI"
+      actuators:
+        stopper_up: "L2DispensingCylinderUpDO"
+        stopper_down: "L2DispensingCylinderDownDO"
+        lifter_in: "L2DispensingCylinderInDO"
+        lifter_out: "L2DispensingCylinderOutDO"
+        clamp_lock_cmd: "L2DispensingCylinderClampInDO"
+        clamp_unlock_cmd: "L2DispensingCylinderClampOutDO"
+        brake_z: "L2ZBrakeDO"
+
+  # ==========================================
+  # LINE 2: BUFFER B
+  # ==========================================
+  - id: "l2_buffer_b"
+    class: "BufferStation"
+    logic_template: "buffer_standard"
+    next_nodes: ["exit_sink"] # ["inspection_station"]
+    hardware_link:
+      motion:
+        conveyor: "l2BufferBConveyor"
+      sensors:
+        presence: "L2BufferBPalletPresenceSensorDI"
+      actuators:
+        stopper_up: "L2BufferBCylinderUpDO"
+        stopper_down: "L2BufferBCylinderDownDO"
 
   # ==========================================
   # EXIT SINK

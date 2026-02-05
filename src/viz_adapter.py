@@ -114,6 +114,6 @@ class VizAdapter:
                     half_sizes=[s/2 for s in self.pallet_size],
                     centers=[pallet_pos],
                     colors=self.pallet_color,
-                    labels=current_pallet
+                    labels=current_pallet[-10:-4]
                 )
             )

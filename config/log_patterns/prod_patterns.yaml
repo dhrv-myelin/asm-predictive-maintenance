@@ -101,6 +101,7 @@ patterns:
         "L1ConveyorBufferB": "l1_buffer_b"
         "L2ConveyorBufferA": "l2_buffer_a"
         "L2ConveyorBufferB": "l2_buffer_b"
+    category: "arrival"
 
   # Transition: HOLDING -> PALLET_RELEASING (via STOPPER_KEEPING_DOWN)
   - name: "Buffer Stopper Keeping Down"
@@ -161,6 +162,7 @@ patterns:
         "L1 Buffer B": "l1_buffer_b"
         "L2 Buffer A": "l2_buffer_a"
         "L2 Buffer B": "l2_buffer_b"
+    category: "handover_prep"
 
   # Transition: STOPPER_RAISING -> IDLE
   - name: "Buffer Stopper Up Done"
@@ -173,3 +175,194 @@ patterns:
         "L1 Buffer B": "l1_buffer_b"
         "L2 Buffer A": "l2_buffer_a"
         "L2 Buffer B": "l2_buffer_b"
+    category: "handover"
+
+  # ==========================================
+  # 4. DISPENSER STATIONS
+  # ==========================================
+
+  # Transition: Entry clamp operations
+  - name: "Dispenser Entry Unclamp Start"
+    # Matches: "L1 Dispensing Unclamp: DOWN command issued"
+    regex: "(?P<target>L[12] Dispensing) Unclamp: DOWN command issued"
+    event_type: "UNCLAMP_START"
+    value_mapping:
+      target:
+        "L1 Dispensing": "l1_dispenser"
+        "L2 Dispensing": "l2_dispenser"
+    category: "arival"
+
+  - name: "Dispenser Entry Unclamp Done"
+    # Matches: "L1 Dispensing Unclamp: DOWN confirmed"
+    regex: "(?P<target>L[12] Dispensing) Unclamp: DOWN confirmed"
+    event_type: "UNCLAMP_DONE"
+    value_mapping:
+      target:
+        "L1 Dispensing": "l1_dispenser"
+        "L2 Dispensing": "l2_dispenser"
+
+  # Transition: Pallet lifting (entry)
+  - name: "Dispenser Pallet Lifting Start"
+    # Matches: "Axis 9: MoveAbs started → 19000" or "Axis 10: MoveAbs started → 68687"
+    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>68687|76737)"
+    event_type: "PALLET_LIFTING_1_START"
+    value_mapping:
+      target:
+        "9": "l2_dispenser"
+        "10": "l1_dispenser"
+
+  # Transition: Entry clamp engagement
+  - name: "Dispenser Entry Clamp Start"
+    # Matches: "L1 Dispensing clamp: UP command issued"
+    regex: "(?P<target>L[12] Dispensing) clamp: UP command issued"
+    event_type: "CLAMP_START"
+    value_mapping:
+      target:
+        "L1 Dispensing": "l1_dispenser"
+        "L2 Dispensing": "l2_dispenser"
+
+  - name: "Dispenser Entry Clamp Done"
+    # Matches: "L2 Dispensing clamp: UP confirmed"
+    regex: "(?P<target>L[12] Dispensing) clamp: UP confirmed"
+    event_type: "CLAMP_DONE"
+    value_mapping:
+      target:
+        "L1 Dispensing": "l1_dispenser"
+        "L2 Dispensing": "l2_dispenser"
+
+  # Transition: Pallet stopper out
+  - name: "Dispenser Pallet Stopper Out Start"
+    # Matches: "L2Dispenser Pallet stopper Out: DOWN command issued"
+    regex: "(?P<target>L[12]Dispenser) Pallet stopper Out: DOWN command issued"
+    event_type: "PALLET_STOPPER_OUT_START"
+    value_mapping:
+      target:
+        "L1Dispenser": "l1_dispenser"
+        "L2Dispenser": "l2_dispenser"
+
+  - name: "Dispenser Pallet Stopper Out Done"
+    # Matches: "L1Dispenser Pallet stopper Out: DOWN confirmed"
+    regex: "(?P<target>L[12]Dispenser) Pallet stopper Out: DOWN confirmed"
+    event_type: "PALLET_STOPPER_OUT_DONE"
+    value_mapping:
+      target:
+        "L1Dispenser": "l1_dispenser"
+        "L2Dispenser": "l2_dispenser"
+
+  # Transition: Positioning (gantry movement to dispense position)
+  - name: "Dispenser Positioning Start"
+    # Matches: "Axis 10: MoveAbs started → 556737"
+    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>561687|556737)"
+    event_type: "POSITIONING_START"
+    value_mapping:
+      target:
+        "9": "l2_dispenser"
+        "10": "l1_dispenser"
+
+  - name: "Dispenser Positioning End"
+    # Matches: "MovePathWaitAsync('l2Gantry') completed successfully."
+    regex: "MovePathWaitAsync\\('(?P<target>[lL][12]Gantry)'\\) completed successfully\\."
+    event_type: "POSITIONING_END"
+    value_mapping:
+      target:
+        "l1Gantry": "l1_dispenser"
+        "L1Gantry": "l1_dispenser"
+        "l2Gantry": "l2_dispenser"
+        "L2Gantry": "l2_dispenser"
+
+  # Transition: Unpositioning (return from dispense position)
+  - name: "Dispenser Pallet Unpositioning Start"
+    # Matches: "Axis 9: MoveAbs started → 68687"
+    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>19000|17000)"
+    event_type: "PALLET_UNPOSITIONING_START"
+    value_mapping:
+      target:
+        "9": "l2_dispenser"
+        "10": "l1_dispenser"
+
+  # Transition: Pallet stopper in
+  - name: "Dispenser Pallet Stopper In Start"
+    # Matches: "L2Dispenser Pallet stopper In: UP command issued"
+    regex: "(?P<target>L[12]Dispenser) Pallet stopper In: UP command issued"
+    event_type: "PALLET_STOPPER_IN_START"
+    value_mapping:
+      target:
+        "L1Dispenser": "l1_dispenser"
+        "L2Dispenser": "l2_dispenser"
+
+  - name: "Dispenser Pallet Stopper In Done"
+    # Matches: "L2Dispenser Pallet stopper In: UP confirmed"
+    regex: "(?P<target>L[12]Dispenser) Pallet stopper In: UP confirmed"
+    event_type: "PALLET_STOPPER_IN_DONE"
+    value_mapping:
+      target:
+        "L1Dispenser": "l1_dispenser"
+        "L2Dispenser": "l2_dispenser"
+
+  # Transition: Exit unclamp
+  - name: "Dispenser Exit Unclamp Start"
+    # Matches: "L2 Dispensing Unclamp: DOWN command issued"
+    regex: "(?P<target>L[12] Dispensing) Unclamp: DOWN command issued"
+    event_type: "EXIT_UNCLAMP_START"
+    value_mapping:
+      target:
+        "L1 Dispensing": "l1_dispenser"
+        "L2 Dispensing": "l2_dispenser"
+
+  - name: "Dispenser Exit Unclamp Done"
+    # Matches: "L2 Dispensing Unclamp: DOWN confirmed"
+    regex: "(?P<target>L[12] Dispensing) Unclamp: DOWN confirmed"
+    event_type: "EXIT_UNCLAMP_DONE"
+    value_mapping:
+      target:
+        "L1 Dispensing": "l1_dispenser"
+        "L2 Dispensing": "l2_dispenser"
+
+  # Transition: Pallet lowering (exit)
+  - name: "Dispenser Pallet Lowering Start"
+    # Matches: "Axis 9: MoveAbs started → 19000"
+    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>68687|76737)"
+    event_type: "PALLET_LOWERING_1_START"
+    value_mapping:
+      target:
+        "9": "l2_dispenser"
+        "10": "l1_dispenser"
+    category: "handover_prep"
+
+  # Transition: Exit stopper operations
+  - name: "Dispenser Stopper Down Start"
+    # Matches: "L1 Dispensing stopper Down: DOWN command issued"
+    regex: "(?P<target>L[12] Dispensing) stopper Down: DOWN command issued"
+    event_type: "STOPPER_DOWN_START"
+    value_mapping:
+      target:
+        "L1 Dispensing": "l1_dispenser"
+        "L2 Dispensing": "l2_dispenser"
+
+  - name: "Dispenser Stopper Down Done"
+    # Matches: "L1 Dispensing stopper Down: DOWN confirmed"
+    regex: "(?P<target>L[12] Dispensing) stopper Down: DOWN confirmed"
+    event_type: "STOPPER_DOWN_DONE"
+    value_mapping:
+      target:
+        "L1 Dispensing": "l1_dispenser"
+        "L2 Dispensing": "l2_dispenser"
+
+  - name: "Dispenser Stopper Up Start"
+    # Matches: "L1 Dispensing stopper Up: UP command issued"
+    regex: "(?P<target>L[12] Dispensing) stopper Up: UP command issued"
+    event_type: "STOPPER_UP_START"
+    value_mapping:
+      target:
+        "L1 Dispensing": "l1_dispenser"
+        "L2 Dispensing": "l2_dispenser"
+
+  - name: "Dispenser Stopper Up Done"
+    # Matches: "L1 Dispensing stopper Up: UP confirmed"
+    regex: "(?P<target>L[12] Dispensing) stopper Up: UP confirmed"
+    event_type: "STOPPER_UP_DONE"
+    value_mapping:
+      target:
+        "L1 Dispensing": "l1_dispenser"
+        "L2 Dispensing": "l2_dispenser"
+    category: "handover"

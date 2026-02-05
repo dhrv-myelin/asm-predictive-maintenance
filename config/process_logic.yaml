@@ -175,6 +175,201 @@ definitions:
               sensors.presence: false
               actuators.stopper_down: false
               actuators.stopper_up: true              
+  # ==========================================
+  # 3. DISPENSER STANDARD
+  # ==========================================
+  dispenser_standard:
+    initial_state: "IDLE"
+    states:
+      IDLE:
+        metrics:
+          - name: "machine_idle_time"
+            type: "duration_seconds"
+            description: "Efficiency metric: Time spent doing nothing"
+        transitions:
+          - event: "UNCLAMP_START"
+            next_state: "ENTRY_UNCLAMPING"
+            state_inference:
+              sensors.presence: true
+
+      ENTRY_UNCLAMPING:
+        metrics:
+          - name: "dispenser_entry_unclamp_time"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "UNCLAMP_DONE"
+            next_state: "POST_ENTRY_UNCLAMP"
+            state_inference:
+              actuators.clamp_lock: true
+              actuators.clamp_unlock: false
+
+      POST_ENTRY_UNCLAMP:
+        metrics:
+          - name: "dispenser_delay_post_entry_unclamp"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "PALLET_LIFTING_1_START"
+            next_state: "PALLET_LIFTING_1"
+      
+      PALLET_LIFTING_1:
+        metrics:
+          - name: "dispenser_pallet_lifting_1_time"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "CLAMP_START"
+            next_state: "ENTRY_CLAMPING"
+
+      ENTRY_CLAMPING:
+        metrics:
+          - name: "dispenser_entry_clamping_time"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "CLAMP_DONE"
+            next_state: "PALLET_STOPPER_PREP"
+
+      PALLET_STOPPER_PREP:
+        metrics:
+          - name: "dispenser_delay_post_clamping"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "PALLET_STOPPER_OUT_START"
+            next_state: "PALLET_STOPPER_RELEASING"
+
+      PALLET_STOPPER_RELEASING:
+        metrics:
+          - name: "dispenser_pallet_stopper_releasing_time"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "PALLET_STOPPER_OUT_DONE"
+            next_state: "GANTRY_PREP"
+
+      GANTRY_PREP:
+        metrics:
+          - name: "dispenser_delay_pre_gantry_positioning"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "POSITIONING_START"
+            next_state: "POSITIONING"    
+
+      POSITIONING:
+        metrics:
+          - name: "dispenser_gantry_positioning_time"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "POSITIONING_END"
+            next_state: "DISPENSING"
+
+      DISPENSING:
+        metrics:
+          - name: "dispenser_dispensing_time"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "PALLET_UNPOSITIONING_START"
+            next_state: "PALLET_UNPOSITIONING"
+
+      PALLET_UNPOSITIONING:
+        metrics:
+          - name: "dispenser_pallet_unpositioning_time"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "PALLET_STOPPER_IN_START"
+            next_state: "PALLET_STOPPER_LOCKING"
+
+      PALLET_STOPPER_LOCKING:
+        metrics:
+          - name: "dispenser_pallet_stopper_locking_time"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "PALLET_STOPPER_IN_DONE"
+            next_state: "PRE_EXIT_UNCLAMPING"  
+
+      PRE_EXIT_UNCLAMPING:
+        metrics:
+          - name: "dispenser_pre_exit_unclamping"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "UNCLAMP_START"
+            next_state: "EXIT_UNCLAMPING"
+            state_inference:
+              actuators.clamp_lock: false
+              actuators.clamp_unlock: true
+
+      EXIT_UNCLAMPING:
+        metrics:
+          - name: "dispenser_exit_unclamping"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "UNCLAMP_DONE"
+            next_state: "POST_EXIT_UNCLAMP"
+            state_inference:
+              actuators.stopper_down: true
+              actuators.stopper_up: false
+
+      POST_EXIT_UNCLAMP:
+        metrics:
+          - name: "dispenser_post_exit_unclamp"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "PALLET_LOWERING_1_START"
+            next_state: "PALLET_LOWERING_1"
+            state_inference:
+              sensors.presence: false
+              actuators.stopper_down: false
+              actuators.stopper_up: true
+
+      PALLET_LOWERING_1:
+        metrics:
+          - name: "dispenser_pallet_lowering_1"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "STOPPER_DOWN_START"
+            next_state: "STOPPER_LOWERING" 
+
+      STOPPER_LOWERING:
+        metrics:
+          - name: "dispenser_stopper_lowering"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "STOPPER_DOWN_DONE"
+            next_state: "PALLET_RELEASING"   
+
+      PALLET_RELEASING:
+        metrics:
+          - name: "dispenser_pallet_releasing"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "STOPPER_UP_START"
+            next_state: "STOPPER_RAISING"
+
+      STOPPER_RAISING:
+        metrics:
+          - name: "dispenser_stopper_rasing"
+            type: "duration_seconds"
+            export: true
+        transitions:
+          - event: "STOPPER_UP_DONE"
+            next_state: "IDLE"  
+
+  # ==========================================
+  # 5. SINK
+  # ==========================================
 
   exit_sink:
     initial_state: "ACTIVE"

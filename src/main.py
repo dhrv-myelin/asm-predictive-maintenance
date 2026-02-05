@@ -213,18 +213,57 @@ def main():
     if args.live:
         print(">> LIVE MODE ACTIVE (Press Ctrl+C to stop)")
 
+    error_log_path = "data/error_dump.csv"
     line_count = 0
     start_time = time.time()
-
+    
+    # Initialize error CSV with headers
+    if not os.path.exists(error_log_path):
+        with open(error_log_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Timestamp", "Station Name", "Severity", "Service Name", "Log Message", "Extra"])
+    
     try:
-        # The parser generator handles the "Live vs Static" logic internally now
-        # We just pass the flag
-
         for timestamp, event in log_parser.parse_file(args.input, live_mode=args.live):
+            # Normal engine processing
             engine.process_event(timestamp, event)
-            line_count += 1
             
-            # Progress Heartbeat (every 5000 lines)
+            # --- ERROR AND WARN DUMPING LOGIC ---
+            if event.get("level") in ["ERROR", "WARN"]:
+                raw_line = event.get("raw_line", "")
+                
+                # Parse the original log line
+                # Format: 2025-12-12 00:14:02,128 [13] ERROR Services... - Message
+                parts = raw_line.split(' ', 4)  # Split into max 5 parts
+                
+                if len(parts) >= 5:
+                    log_timestamp = parts[0] + " " + parts[1]
+                    # parts[2] is thread_id [13] - skip it
+                    severity = parts[3]  # ERROR or WARN
+                    
+                    # Split the rest to get service and message
+                    rest = parts[4].split(' - ', 1)
+                    service_name = rest[0].strip() if len(rest) > 0 else ""
+                    log_message = rest[1].strip() if len(rest) > 1 else ""
+                    
+                    # Extract station name from target (if available)
+                    station_name = event.get("target", "")
+                    
+                    # Extra field - can be used for thread_id or other metadata
+                    thread_id = parts[2].strip('[]') if len(parts) > 2 else ""
+                    extra = f"thread_id={thread_id}"
+                    
+                    with open(error_log_path, 'a', newline='') as f:
+                        writer = csv.writer(f)
+                        writer.writerow([log_timestamp, station_name, severity, service_name, log_message, extra])
+                else:
+                    # Fallback: save raw line if parsing fails
+                    with open(error_log_path, 'a', newline='') as f:
+                        writer = csv.writer(f)
+                        writer.writerow([raw_line, "", "", "", "", "parsing_failed"])
+            # ---------------------------
+            
+            line_count += 1
             if line_count % 5000 == 0:
                 elapsed = time.time() - start_time
                 rate = line_count / elapsed

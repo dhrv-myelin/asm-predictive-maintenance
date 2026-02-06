@@ -87,17 +87,17 @@ patterns:
   # Logic States: EMPTY -> HOLDING -> RELEASING
   # ==========================================
 
-  # Transition: IDLE -> HOLDING
-  - name: "Buffer Pallet Arrival"
-    # Matches: "Pallet T{E04}O{250711P01-511P-25070004-0010}P{HE00EJ6DH000}Q{1}S{C9145}G{46abf091-cb08-475e-8422-60c9078d555f}L{} sent to L1ConveyorBufferA successfully."
-    regex: "Pallet (?P<pallet_id>\\S+) sent to (?P<target>\\S+) successfully\\."
-    event_type: "PALLET_ARRIVAL"
-    value_mapping:
-      target:
-        "L1ConveyorBufferA": "l1_buffer_a"
-        "L1ConveyorBufferB": "l1_buffer_b"
-        "L2ConveyorBufferA": "l2_buffer_a"
-        "L2ConveyorBufferB": "l2_buffer_b"
+  # # Transition: IDLE -> HOLDING
+  # - name: "Buffer Pallet Arrival"
+  #   # Matches: "Pallet T{E04}O{250711P01-511P-25070004-0010}P{HE00EJ6DH000}Q{1}S{C9145}G{46abf091-cb08-475e-8422-60c9078d555f}L{} sent to L1ConveyorBufferA successfully."
+  #   regex: "Pallet (?P<pallet_id>\\S+) sent to (?P<target>\\S+) successfully\\."
+  #   event_type: "PALLET_ARRIVAL"
+  #   value_mapping:
+  #     target:
+  #       "L1ConveyorBufferA": "l1_buffer_a"
+  #       "L1ConveyorBufferB": "l1_buffer_b"
+  #       "L2ConveyorBufferA": "l2_buffer_a"
+  #       "L2ConveyorBufferB": "l2_buffer_b"
 
   # Transition: HOLDING -> PALLET_RELEASING (via STOPPER_KEEPING_DOWN)
   - name: "Buffer Stopper Keeping Down"
@@ -366,6 +366,7 @@ patterns:
     regex: "MovePathWaitAsync\\('InspectionGantry'\\) completed successfully\\."
     event_type: "GANTRY_POSITIONING_DONE"
     state_resolver:
+      logic_type: "filter_station_type_state_oldest"
       target_type: "inspection_standard"  
       current_state: "GANTRY_POSITIONING"
 
@@ -409,12 +410,11 @@ patterns:
 # 6. INSPECTION STATION
 # ========================================== 
 
-  # # Transition: IDLE -> Pallet Arrival
-  # - name: " Pallet Arrival"
-  #   # Matches: "Pallet T{E04}O{250711P01-511P-25070004-0010}P{HE00EJ6DH000}Q{1}S{C9145}G{46abf091-cb08-475e-8422-60c9078d555f}L{} sent to L1ConveyorBufferA successfully."
-  #   regex: "Pallet (?P<pallet_id>\\S+) sent to (?P<target>L[12])\\S* successfully\\."
-  #   event_type: "PALLET_ARRIVAL"
-  #   state_resolver:
-  #     target_type: "inspection_standard"  
-  #     current_state: "GANTRY_POSITIONING"
-  #   value_mapping:
+  # Transition: IDLE -> Pallet Arrival
+  - name: " Pallet Arrival"
+    # Matches: "Pallet T{E04}O{250711P01-511P-25070004-0010}P{HE00EJ6DH000}Q{1}S{C9145}G{46abf091-cb08-475e-8422-60c9078d555f}L{} sent to L1ConveyorBufferA successfully."
+    regex: "Pallet (?P<pallet_id>\\S+) sent to \\S* successfully\\."
+    event_type: "PALLET_ARRIVAL"
+    state_resolver:
+      logic_type: "filter_expected_pallet_id_state"
+      current_state: "IDLE"

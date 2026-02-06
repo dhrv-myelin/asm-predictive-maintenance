@@ -57,11 +57,11 @@ class LogicEngine:
         if not target_id and 'state_resolver' in event:
             state_resolver = event.get('state_resolver', {})
             # print(f"[DEBUG]: state_resolver: {state_resolver}")
-            target_id = self._state_based_target_resolver(state_resolver)
+            target_id = self._state_based_target_resolver(state_resolver, payload)
             print(f"[DEBUG]: State Resolved target from {state_resolver} to Target ID: {target_id}" )
 
         if not target_id or target_id not in self.inventory:
-            print(f"[DEBUG]: ❌ Event skipped: Unknown target ID '{target_id}'")
+            print(f"[DEBUG]: ❌ Event ski pped: Unknown target ID '{target_id}'")
             return
         
         station = self.inventory[target_id]
@@ -312,7 +312,7 @@ class LogicEngine:
         if self.buf_idx >= self.buffer_size:
             self.flush_buffer()
 
-    def _state_based_target_resolver(self, state_resolver):
+    def _state_based_target_resolver(self, state_resolver, payload):
         """
         Assign's ambiguous events to stations based on their current state and type of station.
         Assumes FIFO logic for matching, if multiple stations match criteria, the oldest is chosen.
@@ -324,19 +324,27 @@ class LogicEngine:
         # Look for stations of state_resolver['target_type']
         target_type = state_resolver.get('target_type')
         current_state = state_resolver.get('current_state')
+        logic_type = state_resolver.get('logic_type')
 
         ### WARNING : Assumes and matches station based on FIFO logic of Log line entry
+        if logic_type == "filter_expected_pallet_id_state":
+            for station_id, station in self.inventory.items():
+                if station.current_state == current_state and station.expected_pallet_id == payload.get('pallet_id'):
+                    return station_id
 
-        oldest_matched = {}
-        for station_id, station in self.inventory.items():                
-            if station.config.get('logic_template') == target_type and station.current_state == current_state:
-                if not oldest_matched:                
-                    oldest_matched['id'], oldest_matched['timestamp'] = station_id, station.state_entry_time
-                else:
-                    if station.state_entry_time < oldest_matched['timestamp']:                    
+        if logic_type == "filter_station_type_state_oldest":
+            oldest_matched = {}
+            for station_id, station in self.inventory.items():                
+                if station.config.get('logic_template') == target_type and station.current_state == current_state:
+                    if not oldest_matched:                
                         oldest_matched['id'], oldest_matched['timestamp'] = station_id, station.state_entry_time
+                    else:
+                        if station.state_entry_time < oldest_matched['timestamp']:                    
+                            oldest_matched['id'], oldest_matched['timestamp'] = station_id, station.state_entry_time
+            
+            return oldest_matched.get('id')
         
-        return oldest_matched.get('id')
+        return None
 
     def flush_buffer(self):
         """Batch write to disk."""

@@ -30,7 +30,6 @@ class LogParser:
                     'event_type': p['event_type'],
                     'target_id': p.get('target_id'),
                     'state_resolver': p.get('state_resolver', {}),
-                    'category': p.get('category', ''),
                     'mapping': p.get('value_mapping', {})
                 })
             except re.error as e:
@@ -120,6 +119,5 @@ class LogParser:
             "target": target,      # Who reported the log
             "destination": destination, # Where the pallet is going (if known)
             "state_resolver" : pattern.get('state_resolver', {}), # Optional instructions for state inference
-            "category": pattern.get('category', ''),
             "payload": mapped_payload
         }

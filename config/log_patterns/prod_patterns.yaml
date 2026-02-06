@@ -32,7 +32,6 @@ patterns:
     regex: "Pallet state rising edge detected for ShuttlePalletPresenceSensorDI"
     event_type: "PALLET_ARRIVAL"
     target_id: "shuttle_station"
-    category: "arrival"
 
   - name: "Barcode Position Reach"
     regex: "Pallet is at Barcode"
@@ -62,7 +61,6 @@ patterns:
       destination:
         "-523064": "l1_buffer_a"
         "15936": "l2_buffer_a"
-    category: "handover_prep"
 
   - name: "Stopper Lowering Trigger"
     regex: "Shuttle Stopper Down: DOWN command issued"
@@ -83,7 +81,6 @@ patterns:
     regex: "Shuttle Stopper Up: UP confirmed"
     event_type: "STOPPER_UP_DONE"
     target_id: "shuttle_station"
-    category: "handover"
 
   # ==========================================
   # 3. BUFFER STATIONS
@@ -101,7 +98,6 @@ patterns:
         "L1ConveyorBufferB": "l1_buffer_b"
         "L2ConveyorBufferA": "l2_buffer_a"
         "L2ConveyorBufferB": "l2_buffer_b"
-    category: "arrival"
 
   # Transition: HOLDING -> PALLET_RELEASING (via STOPPER_KEEPING_DOWN)
   - name: "Buffer Stopper Keeping Down"
@@ -114,7 +110,6 @@ patterns:
         "L1 Buffer B": "l1_buffer_b"
         "L2 Buffer A": "l2_buffer_a"
         "L2 Buffer B": "l2_buffer_b"
-    category: "handover_prep"
 
   # Transition: HOLDING -> STOPPER_LOWERING
   - name: "Buffer Stopper Down Start"
@@ -139,7 +134,6 @@ patterns:
         "L1 Buffer B": "l1_buffer_b"
         "L2 Buffer A": "l2_buffer_a"
         "L2 Buffer B": "l2_buffer_b"
-    category: "handover_prep"
 
   # Transition: PALLET_RELEASING -> IDLE (via STOPPER_KEEPING_UP)
   - name: "Buffer Stopper Keeping Up"
@@ -176,7 +170,6 @@ patterns:
         "L1 Buffer B": "l1_buffer_b"
         "L2 Buffer A": "l2_buffer_a"
         "L2 Buffer B": "l2_buffer_b"
-    category: "handover"
 
   # ==========================================
   # 4. DISPENSER STATIONS
@@ -191,7 +184,6 @@ patterns:
       target:
         "L1 Dispensing": "l1_dispenser"
         "L2 Dispensing": "l2_dispenser"
-    category: "arrival"
 
   - name: "Dispenser Entry Unclamp Done"
     # Matches: "L1 Dispensing Unclamp: DOWN confirmed"
@@ -284,7 +276,7 @@ patterns:
   # Transition: Pallet stopper in
   - name: "Dispenser Pallet Stopper In Start"
     # Matches: "L2Dispenser Pallet stopper In: UP command issued"
-    regex: "(?P<target>L[12]Dispenser) Pallet stopper In: UP command issued"
+    regex: "(?P<target>L[12]Dispenser) Pallet stopper (In|Out): UP command issued"
     event_type: "PALLET_STOPPER_IN_START"
     value_mapping:
       target:
@@ -293,13 +285,13 @@ patterns:
 
   - name: "Dispenser Pallet Stopper In Done"
     # Matches: "L2Dispenser Pallet stopper In: UP confirmed"
-    regex: "(?P<target>L[12]Dispenser) Pallet stopper In: UP confirmed"
+    regex: "(?P<target>L[12]Dispenser) Pallet stopper (In|Out): UP confirmed"
     event_type: "PALLET_STOPPER_IN_DONE"
     value_mapping:
       target:
         "L1Dispenser": "l1_dispenser"
         "L2Dispenser": "l2_dispenser"
-        
+
   # Transition: Pallet lowering (exit)
   - name: "Dispenser Pallet Lowering Start"
     # Matches: "Axis 9: MoveAbs started → 19000"
@@ -309,7 +301,6 @@ patterns:
       target:
         "9": "l2_dispenser"
         "10": "l1_dispenser"
-    category: "handover_prep"
 
   # Transition: Exit stopper operations
   - name: "Dispenser Stopper Down Start"
@@ -347,7 +338,6 @@ patterns:
       target:
         "L1 Dispensing": "l1_dispenser"
         "L2 Dispensing": "l2_dispenser"
-    category: "handover"
 
 # ==========================================
 # 5. INSPECTION STATION
@@ -361,7 +351,6 @@ patterns:
       target:
         "L1 Inspection": "l1_inspection"
         "L2 Inspection": "l2_inspection"
-    category: "arrival"
 
   - name: "Inspection Gantry Positioning Start"
     # Matches: "InspectionGantryWorker started for l1" or "InspectionGantryWorker started for l2"
@@ -414,4 +403,18 @@ patterns:
     value_mapping:
       target:
         "L1 Inspection": "l1_inspection"
-        "L2 Inspection": "l2_inspection"    
+        "L2 Inspection": "l2_inspection"   
+
+# ==========================================
+# 6. INSPECTION STATION
+# ========================================== 
+
+  # # Transition: IDLE -> Pallet Arrival
+  # - name: " Pallet Arrival"
+  #   # Matches: "Pallet T{E04}O{250711P01-511P-25070004-0010}P{HE00EJ6DH000}Q{1}S{C9145}G{46abf091-cb08-475e-8422-60c9078d555f}L{} sent to L1ConveyorBufferA successfully."
+  #   regex: "Pallet (?P<pallet_id>\\S+) sent to (?P<target>L[12])\\S* successfully\\."
+  #   event_type: "PALLET_ARRIVAL"
+  #   state_resolver:
+  #     target_type: "inspection_standard"  
+  #     current_state: "GANTRY_POSITIONING"
+  #   value_mapping:

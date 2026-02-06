@@ -5,7 +5,6 @@ The Brain. Manages state transitions, inferences, and metric generation.
 import csv
 import time
 from datetime import datetime
-from unicodedata import category
 
 class LogicEngine:
     def __init__(self, inventory, output_file="data/process_metrics.csv", visualizer=None, buffer_size=10000, tag_resolver=None):
@@ -39,7 +38,6 @@ class LogicEngine:
     
     def process_event(self, timestamp, event):
         payload = event.get('payload', {})
-        category = event.get('category', '')
         target_id = event.get('target')
 
         if event['type'] == "SYSTEM_RESET":
@@ -48,7 +46,7 @@ class LogicEngine:
             print("[DEBUG]: System Reset Event Processed. Throughput counter reset to 0.")
             print("\n--------------------------------------------")
 
-        print(f"[DEBUG]: Payload: {payload}, Category: {category}, Target ID: {target_id}")
+        print(f"[DEBUG]: Payload: {payload}, Target ID: {target_id}")
 
         # 1. Resolve Target (Tag -> ID)
         if not target_id and 'tag_id' in payload and self.tag_resolver:
@@ -68,25 +66,32 @@ class LogicEngine:
         
         station = self.inventory[target_id]
 
+        transition_stage = ""
+        
+        for item in station.logic_template.get('states', {}).get(station.current_state, "No state found").get('transitions', []):
+            if 'transition_stage' in item and item['event'] == event['type']:
+                transition_stage = item['transition_stage']
+                print(f"[DEBUG]: Found transition stage '{transition_stage}' for event '{event['type']}' in state '{station.current_state}' of station '{station.id}'")
+
         # 2. IDENTIFY: If a pallet ID is in the log, update the station immediately
         if 'pallet_id' in payload:
             station.active_pallet_id = payload['pallet_id']
             print(f"[DEBUG]: Updated Station '{target_id}' with Pallet ID: {station.active_pallet_id}")
 
         # 3. ARRIVAL: Claim from Inbox
-        if category == "arrival":
+        if transition_stage == "arrival":
             if not getattr(station, 'is_entry', False):
                 if station.expected_pallet_id:
                     station.active_pallet_id = station.expected_pallet_id
                     station.expected_pallet_id = None
                     print(f"[DEBUG]: ✅ [{target_id}] ARRIVAL SUCCESS: Claimed Pallet ID {station.active_pallet_id} from Inbox")
                 else:
-                    # Use standard print - if this doesn't show, the 'arrival' category is missing in YAML
+                    # Use standard print - if this doesn't show, the 'arrival' transition_stage is missing in YAML
                     print(f"[DEBUG]: ❌ [{target_id}] ARRIVAL FAIL: Inbox Empty")
 
     
         # 4. HANDOVER PREP: Prepare for Handover to Next Station
-        if category == "handover_prep" and station.active_pallet_id:
+        if transition_stage == "handover_prep" and station.active_pallet_id:
             destination_id = self._get_destination_id(station, event)
             if destination_id is None:
                 print(f"[WARN] ⚠️ [HANDOVER PREP] {station.id}: Buggy handover prep as destination_id could not be determined.")
@@ -95,7 +100,7 @@ class LogicEngine:
         # 5. LOGIC: Run the actual state machine
         self._handle_station_logic(station, event, timestamp)
 
-        if category == "handover":
+        if transition_stage == "handover":
             self._execute_handover(station, event)
 
         # D. Viz Update
@@ -130,13 +135,13 @@ class LogicEngine:
         return dest_id
 
     def _prepare_handover(self, station, dest_id):
-        """Prepares for handover by setting the destination node's expected pallet id. This is essential as the current pallet id could be lost or overwritten if something else is already entering this station. In case of routing stations, essential to set the current_destination as it could be lost post this preparation, so we always set it regardless of routing/non-routing stations. TO BE CALLED ONLY IF CATEGORY == 'handover_prep'"""
+        """Prepares for handover by setting the destination node's expected pallet id. This is essential as the current pallet id could be lost or overwritten if something else is already entering this station. In case of routing stations, essential to set the current_destination as it could be lost post this preparation, so we always set it regardless of routing/non-routing stations. TO BE CALLED ONLY IF TRANSITION_STAGE == 'handover_prep'"""
         self.inventory[dest_id].expected_pallet_id = station.active_pallet_id
         station.current_destination = dest_id
         print(f"[DEBUG]: 🚚 HANDOVER PREP FOR {station.id} -> {dest_id} | Pallet: {station.active_pallet_id}")
 
     def _execute_handover(self, station, event):
-        """Completes the handover by clearing the active pallet id from the current station and incrementing pallets counter for last station exit. In case of routing stations, clears the current_destination for the station. TO BE CALLED ONLY IF CATEGORY == 'handover'"""
+        """Completes the handover by clearing the active pallet id from the current station and incrementing pallets counter for last station exit. In case of routing stations, clears the current_destination for the station. TO BE CALLED ONLY IF TRANSITION_STAGE == 'handover'"""
         destination_id = station.current_destination
         if destination_id is None:
             destination_id = "exit_sink" # That's the only valid reason to not have a destination as per graph topology
@@ -264,34 +269,7 @@ class LogicEngine:
                 return False # Constraint Failed
         
         return True
-
-    def _handle_handover(self, station, event):
-        # We only act if the pattern category is 'handover'
-        if event.get('category') != "handover":
-            return
-
-        print(f"DEBUG: Handover triggered for {station.id}. Current ID: {station.active_pallet_id}")
-
-        # 1. SHUTTLE: Use the mapping to find the destination
-        if event.get('type') == "PALLET_ROUTE":
-            dest_id = event.get('payload', {}).get('target')
-            # Mapping from 'L1_Buffer_A' to 'l1_buffer_a' happens in patterns.py, 
-            # so payload['target'] should already be the lowercase ID.
-            if dest_id and station.active_pallet_id:
-                self.inventory[dest_id].expected_pallet_id = station.active_pallet_id
-                print(f"  >>> SHUTTLE PUSH: {station.active_pallet_id} -> {dest_id}")
-
-        # 2. LINEAR (Buffer/Dispenser): Use the Graph Topology
-        elif event.get('type') == "STOPPER_OPEN":
-            nodes = getattr(station, 'downstream_nodes', [])
-            if len(nodes) == 1 and station.active_pallet_id:
-                next_id = nodes[0]
-                self.inventory[next_id].expected_pallet_id = station.active_pallet_id
-                print(f"  >>> LINEAR PUSH: {station.active_pallet_id} -> {next_id}")
-            else:
-                print(f"  >>> LINEAR PUSH FAILED: Nodes={nodes}, HasID={bool(station.active_pallet_id)}")
-
-
+    
     def _apply_inference(self, station, inference_dict):
         """Forces the virtual sensors to match the inferred reality."""
         for key, value in inference_dict.items():

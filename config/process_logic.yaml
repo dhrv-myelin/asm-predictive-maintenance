@@ -17,6 +17,7 @@ definitions:
         transitions:
           - event: "PALLET_ARRIVAL"
             next_state: "PRE_SCANNING"
+            transition_stage: "arrival"
 
       PRE_SCANNING:
         metrics:
@@ -53,6 +54,7 @@ definitions:
         transitions:
           - event: "CARRIER_STARTED"
             next_state: "CARRIER_MOTION"
+            transition_stage: "handover_prep"
 
       CARRIER_MOTION:
         metrics:
@@ -96,6 +98,7 @@ definitions:
             state_inference:
               sensors.presence: false
               actuators.stopper_up: true
+            transition_stage: "handover"
 
   # ==========================================
   # 2. BUFFER STANDARD
@@ -111,6 +114,7 @@ definitions:
         transitions:
           - event: "PALLET_ARRIVAL"
             next_state: "HOLDING"
+            transition_stage: "arrival"
             state_inference:
               sensors.presence: true
               actuators.stopper_up: true
@@ -128,6 +132,7 @@ definitions:
               actuators.stopper_up: false
           - event: "STOPPER_KEEPING_DOWN"
             next_state: "PALLET_RELEASING"
+            transition_stage: "handover_prep"
             state_inference:
               actuators.stopper_down: true
               actuators.stopper_up: false
@@ -140,6 +145,7 @@ definitions:
         transitions:
           - event: "STOPPER_DOWN_DONE"
             next_state: "PALLET_RELEASING"
+            transition_stage: "handover_prep"
             state_inference:
               actuators.stopper_down: true
               actuators.stopper_up: false
@@ -158,6 +164,7 @@ definitions:
               actuators.stopper_up: true
           - event: "STOPPER_KEEPING_UP"
             next_state: "IDLE"
+            transition_stage: "handover"
             state_inference:
               sensors.presence: false
               actuators.stopper_down: false
@@ -171,6 +178,7 @@ definitions:
         transitions:
           - event: "STOPPER_UP_DONE"
             next_state: "IDLE"
+            transition_stage: "handover"
             state_inference:
               sensors.presence: false
               actuators.stopper_down: false
@@ -189,6 +197,7 @@ definitions:
         transitions:
           - event: "UNCLAMP_START"
             next_state: "ENTRY_UNCLAMPING"
+            transition_stage: "arrival"
             state_inference:
               sensors.presence: true
 
@@ -212,6 +221,11 @@ definitions:
         transitions:
           - event: "PALLET_ZPOS_1_START"
             next_state: "PALLET_LIFTING_1"
+          - event: "UNCLAMP_START"
+            next_state: "ENTRY_UNCLAMPING"
+            state_inference:
+              actuators.clamp_lock: true
+              actuators.clamp_unlock: false
       
       PALLET_LIFTING_1:
         metrics:
@@ -326,10 +340,16 @@ definitions:
         transitions:
           - event: "PALLET_ZPOS_0_START"
             next_state: "PALLET_LOWERING_0"
+            transition_stage: "handover_prep"
             state_inference:
               sensors.presence: false
               actuators.stopper_down: false
               actuators.stopper_up: true
+          - event: "UNCLAMP_START"
+            next_state: "EXIT_UNCLAMPING"
+            state_inference:
+              actuators.clamp_lock: false
+              actuators.clamp_unlock: true
 
       PALLET_LOWERING_0:
         metrics:
@@ -366,7 +386,8 @@ definitions:
         transitions:
           - event: "STOPPER_UP_DONE"
             next_state: "IDLE"  
-            
+            transition_stage: "handover"
+
   # ==========================================
   # 4. INSPECTION STANDARD
   # ==========================================
@@ -380,6 +401,7 @@ definitions:
         transitions:
           - event: "LIFTER_KEEPING_UP"
             next_state: "GANTRY_PREP"
+            transition_stage: "arrival"
             state_inference:
                sensors.presence_l1: true
 
@@ -417,6 +439,7 @@ definitions:
         transitions:
           - event: "LIFTER_KEEPING_DOWN"
             next_state: "POST_LIFTER_DOWN"
+            transition_stage: "handover_prep"
 
       POST_LIFTER_DOWN:
         metrics:
@@ -436,6 +459,7 @@ definitions:
         transitions:
           - event: "STOPPER_KEEPING_UP"
             next_state: "IDLE"
+            transition_stage: "handover"
             state_inference:
                sensors.presence_l1: false
                sensors.presence_l2: false

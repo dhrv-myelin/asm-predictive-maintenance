@@ -8,24 +8,36 @@ from datetime import datetime
 from unicodedata import category
 
 class LogicEngine:
-    def __init__(self, inventory, output_file="data/process_metrics.csv", visualizer=None, buffer_size=10000, tag_resolver=None):
-        self.inventory = inventory  # Dict of {id: Station} from inventory.py
+    def __init__(self, inventory, output_file="data/process_metrics.csv", 
+                visualizer=None, tag_resolver=None, db_manager=None):
+        self.inventory = inventory
         self.output_file = output_file
         self.viz = visualizer
         self.tag_resolver = tag_resolver
+        self.db_manager = db_manager
         
-        # Performance: Pre-Allocated Buffer for Metrics
-        self.buffer_size = buffer_size
-        self.buffer = [None] * buffer_size 
-        self.buf_idx = 0
         self.throughput_count = 0
         
-        # Virtual Reality Map (simulating the hardware state)
-        # Structure: {'l1_dispenser': {'sensors.presence': True, ...}}
+        # Virtual state map
         self.virtual_state_map = {cid: {} for cid in self.inventory}
 
-        # Initialize Output File
-        self._init_output_file()
+        # DEBUG: Check database status
+        print("\n[ENGINE INIT DEBUG]")
+        print(f"  db_manager passed: {db_manager is not None}")
+        if db_manager:
+            print(f"  db_manager.enabled: {db_manager.enabled}")
+            print(f"  db_manager.engine: {db_manager.engine is not None}")
+        else:
+            print(f"  db_manager is None!")
+
+        # Initialize CSV as fallback (only if DB is disabled)
+        if not db_manager or not db_manager.enabled:
+            self._init_output_file()
+            print("⚠ Running in CSV fallback mode")
+        else:
+            print("✓ Running in DATABASE STREAMING mode")
+            # Load baseline metrics from process_baseline.json into database
+            self._load_baseline_metrics()
 
     def _init_output_file(self):
         """Creates the file with header if it doesn't exist."""
@@ -36,6 +48,25 @@ class LogicEngine:
                 writer.writerow(["timestamp", "component_id", "metric_name", "value", "unit", "state_context"])
         except FileExistsError:
             pass # Append mode is fine
+
+    def _load_baseline_metrics(self):
+        """
+        Load baseline metrics from process_baseline.json into the database.
+        This is called during engine initialization if database is enabled.
+        """
+        if not self.db_manager or not self.db_manager.enabled:
+            print("[ENGINE] ⚠ Skipping baseline load - database not enabled")
+            return
+        
+        baseline_file = "data/process_baseline.json"
+        print(f"\n[ENGINE] Loading baseline metrics from {baseline_file}...")
+        
+        success = self.db_manager.load_baseline_from_json(baseline_file)
+        
+        if success:
+            print(f"[ENGINE] ✓ Baseline metrics loaded successfully")
+        else:
+            print(f"[ENGINE] ⚠ Failed to load baseline metrics (file may not exist yet)")
 
     def process_event(self, timestamp, event):
         payload = event.get('payload', {})
@@ -130,27 +161,23 @@ class LogicEngine:
         print(f"[DEBUG]: 🚚 HANDOVER PREP FOR {station.id} -> {dest_id} | Pallet: {station.active_pallet_id}")
 
     def _execute_handover(self, station, event):
-        """Completes the handover by clearing the active pallet id from the current station and incrementing pallets counter for last station exit. In case of routing stations, clears the current_destination for the station. TO BE CALLED ONLY IF CATEGORY == 'handover'"""
+        """Completes the handover by clearing the active pallet id from the current station."""
         destination_id = station.current_destination
         if destination_id is None:
-            destination_id = "exit_sink" # That's the only valid reason to not have a destination as per graph topology
+            destination_id = "exit_sink"
             print("[DEBUG] No destination_id found during handover, implying no handover prep. That means it is the exit_sink.")
         if self.inventory[destination_id].is_exit:
-            # Increment the pallets counter for the last station exit
             self._record_completion(self.inventory[destination_id], station.active_pallet_id, event.get('timestamp', time.time()))
-            print(f"[DEBUG]: 🏁 Pallet {station.active_pallet_id} has EXITED the system from {station.id}.")
-        # Clear the active pallet ID from the current station
+            print(f"[DEBUG]: Pallet {station.active_pallet_id} has EXITED the system from {station.id}.")
         station.active_pallet_id = None
-        # Clear the current_destination
         station.current_destination = None
 
     def _record_completion(self, station, pallet_id, timestamp):
         # 1. Increment the internal counter
         self.throughput_count += 1
         
-        # 2. Add to the Metrics Buffer (The Permanent Record)
-        # This allows you to graph "Throughput Over Time" later
-        self._add_to_buffer(
+        # 2. Stream to database immediately
+        self._stream_metric(
             timestamp=timestamp,
             comp_id=station.id,
             name="throughput_total",
@@ -312,30 +339,48 @@ class LogicEngine:
             # Future types: 'snapshot_value' (from payload), 'counter'
 
             if value is not None:
-                # Add to Pre-Allocated Buffer
-                self._add_to_buffer(timestamp, station.id, m_name, value, station.current_state)
+                # Stream immediately to database
+                self._stream_metric(timestamp, station.id, m_name, value, station.current_state)
 
-    def _add_to_buffer(self, timestamp, comp_id, name, value, context):
+    def _stream_metric(self, timestamp, comp_id, name, value, context):
         """
-        O(1) Append. Flushes when full.
+        STREAM DIRECTLY TO DATABASE (NO BUFFERING)
+        Falls back to CSV if database is unavailable
         """
-        # Format Timestamp for readability in CSV (optional, can be raw epoch)
         ts_iso = datetime.fromtimestamp(timestamp).isoformat()
         
-        row = (ts_iso, comp_id, name, round(value, 4), "s", context)
-        self.buffer[self.buf_idx] = row
-        self.buf_idx += 1
+        print(f"[STREAM] Attempting to write: {comp_id}.{name} = {value:.4f}")
+        print(f"  db_manager exists: {self.db_manager is not None}")
+        if self.db_manager:
+            print(f"  db_manager.enabled: {self.db_manager.enabled}")
+            print(f"  db_manager.engine: {self.db_manager.engine is not None}")
         
-        if self.buf_idx >= self.buffer_size:
-            self.flush_buffer()
+        # Try database first
+        if self.db_manager and self.db_manager.enabled:
+            try:
+                self.db_manager.insert_metric(
+                    timestamp=ts_iso,
+                    component_id=comp_id,
+                    metric_name=name,
+                    value=round(value, 4),
+                    unit="s",
+                    state_context=context
+                )
+                print(f"[STREAM] ✓ DB: {comp_id}.{name} = {value:.4f}")
+            except Exception as e:
+                print(f"[STREAM] ✗ DB failed: {e}. Writing to CSV.")
+                self._write_to_csv(ts_iso, comp_id, name, value, context)
+        else:
+            # Fallback to CSV
+            print(f"[STREAM] ⚠ Using CSV fallback (DB not available)")
+            self._write_to_csv(ts_iso, comp_id, name, value, context)
 
-    def flush_buffer(self):
-        """Batch write to disk."""
-        if self.buf_idx == 0: return
-
-        with open(self.output_file, 'a', newline='') as f:
-            writer = csv.writer(f)
-            # Write slice [0 : idx]
-            writer.writerows(self.buffer[:self.buf_idx])
-            
-        self.buf_idx = 0
+    def _write_to_csv(self, ts_iso, comp_id, name, value, context):
+        """Fallback: Write single row to CSV"""
+        try:
+            with open(self.output_file, 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow([ts_iso, comp_id, name, round(value, 4), "s", context])
+            print(f"[CSV] ✓ Written: {comp_id}.{name}")
+        except Exception as e:
+            print(f"[CSV] ✗ Failed to write: {e}")

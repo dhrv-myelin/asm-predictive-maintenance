@@ -1,25 +1,7 @@
 """
 src/main.py
 The Entry Point for the Industrial Digital Twin Engine.
-
-Orchestrates the Inventory, Parser, Logic Engine, and Visualizer.
-
-Arguments:
-  --mode      [Required] 'record' (generate baseline) or 'monitor' (detect anomalies)
-  --input     [Optional] Path to log file (default: data/machine_logs.txt)
-  --patterns  [Optional] Path to regex config (default: config/patterns/prod_patterns.yaml)
-  --viz       [Flag]     Enable Rerun.io 3D Visualization
-  --live      [Flag]     Tail the log file indefinitely (Real-time mode)
-
-Usage Examples:
-  # 1. Sanity Check (Synthetic Logs + Test Patterns + Visualizer)
-  python src/main.py --mode record --viz --patterns config/log_patterns/test_patterns.yaml
-
-  # 2. Production Baseline (Real Logs + Production Patterns)
-  python src/main.py --mode record --input data/real_logs.txt --patterns config/log_patterns/prod_patterns.yaml
-
-  # 3. Production Monitoring (Live Tailing)
-  python src/main.py --mode monitor --live --input data/real_logs.txt
+NOW WITH DIRECT TIMESCALEDB STREAMING (NO CSV)
 """
 import argparse
 import json
@@ -27,10 +9,10 @@ import yaml
 import time
 import os
 import sys
-import csv
 import statistics
 from datetime import datetime
 from collections import defaultdict
+from sqlalchemy import text
 
 # Import our modules
 from inventory import SystemInventory
@@ -38,6 +20,7 @@ from log_parser import LogParser
 from engine import LogicEngine
 from viz_adapter import VizAdapter
 from utils.tag_resolver import TagResolver
+from db_manager import TimescaleDBManager
 
 def load_yaml(path):
     with open(path, 'r') as f:
@@ -45,58 +28,59 @@ def load_yaml(path):
     
 def load_json(path):
     if not os.path.exists(path):
-        return {} # Return empty dict if optional config is missing
+        return {}
     with open(path, 'r') as f:
         return json.load(f)
 
-def run_record_mode(engine, baseline_file):
+def run_record_mode(engine, db_manager, baseline_file):
     """
-    Generates Baseline using standard Python libraries only.
-    No Pandas required.
+    Generates Baseline from TimescaleDB
     """
-    
     print("\n--- RECORD MODE: Generating Baseline ---")
     
-    # 1. Flush Buffer
-    engine.flush_buffer()
+    if not db_manager or not db_manager.enabled:
+        print("ERROR: Database not available. Cannot generate baseline.")
+        print("Tip: Check config/db_config.json and ensure TimescaleDB is running")
+        return
     
-    # 2. Read CSV and Aggregate Data
-    # Structure: dict of lists -> { ('l1_dispenser', 'cycle_time'): [12.0, 12.5, ...] }
+    # Read data from database
+    print("Reading metrics from database...")
+    rows = db_manager.get_metrics_for_baseline()
+    
+    if not rows:
+        print("No data recorded in database.")
+        print("Possible causes:")
+        print("  1. No log events were processed")
+        print("  2. Database connection failed during processing")
+        print("  3. No metrics were generated from the logs")
+        return
+    
+    print(f"✓ Found {len(rows)} metric records")
+    
+    # Aggregate data
     grouped_data = defaultdict(list)
     
-    try:
-        with open(engine.output_file, 'r') as f:
-            reader = csv.reader(f)
-            header = next(reader, None) # Skip header
-            if not header:
-                print("No data recorded.")
-                return
-
-            for row in reader:
-                # CSV: [timestamp, comp_id, metric_name, value, unit, context...]
-                if len(row) < 4: continue
-                
-                comp_id = row[1]
-                metric = row[2]
-                try:
-                    val = float(row[3])
-                    grouped_data[(comp_id, metric)].append(val)
-                except ValueError:
-                    continue
-
-    except FileNotFoundError:
-        print("No CSV file found.")
+    for row in rows:
+        comp_id = row[0]
+        metric = row[1]
+        value = row[2]
+        
+        if value is not None:
+            grouped_data[(comp_id, metric)].append(value)
+    
+    if not grouped_data:
+        print("No valid metrics found for baseline calculation.")
         return
-
-    # 3. Calculate Statistics
+    
+    # Calculate Statistics
     baseline = {}
     
-    print(f"{'Component':<20} | {'Metric':<20} | {'Mean':<8} | {'StdDev':<8}")
-    print("-" * 65)
+    print(f"\n{'Component':<20} | {'Metric':<20} | {'Mean':<8} | {'StdDev':<8} | {'Samples':<8}")
+    print("-" * 80)
 
     for (comp_id, metric), values in grouped_data.items():
         if len(values) < 2:
-            print(f"Skipping {comp_id}.{metric} (Not enough data points)")
+            print(f"Skipping {comp_id}.{metric} (Only {len(values)} data point(s))")
             continue
             
         avg = statistics.mean(values)
@@ -104,68 +88,69 @@ def run_record_mode(engine, baseline_file):
         min_v = min(values)
         max_v = max(values)
         
-        # Initialize dict structure
-        if comp_id not in baseline: baseline[comp_id] = {}
+        if comp_id not in baseline:
+            baseline[comp_id] = {}
         
-        # Logic: Normal = Mean +/- 3 Sigma (or 10% min buffer)
-        # If variance is tiny (std ~ 0), we force a small tolerance so alerts don't spam.
         safe_std = std if std > 0 else (avg * 0.05)
         
         baseline[comp_id][metric] = {
             "mean": round(avg, 2),
             "std_dev": round(std, 4),
-            "min_limit": round(min_v * 0.9, 2), # 10% below historical min
-            "max_limit": round(max_v * 1.1, 2)  # 10% above historical max
+            "min_limit": round(min_v * 0.9, 2),
+            "max_limit": round(max_v * 1.1, 2),
+            "sample_count": len(values)
         }
         
-        print(f"{comp_id:<20} | {metric:<20} | {avg:<8.2f} | {std:<8.2f}")
+        print(f"{comp_id:<20} | {metric:<20} | {avg:<8.2f} | {std:<8.4f} | {len(values):<8}")
 
-    # 4. Save to JSON
+    if not baseline:
+        print("\nNo baseline could be generated. Need at least 2 samples per metric.")
+        return
+
+    # Save to JSON
     with open(baseline_file, 'w') as f:
         json.dump(baseline, f, indent=2)
         
-    print(f"\nSuccess! Baseline saved to: {baseline_file}")
+    print(f"\n✓ Success! Baseline saved to: {baseline_file}")
+    print(f"  Components: {len(baseline)}")
+    print(f"  Total metrics: {sum(len(metrics) for metrics in baseline.values())}")
 
 def run_monitor_mode(engine, baseline_file):
-    """
-    Loads baseline and (in future) injects it into Engine for real-time alerting.
-    For MVP, the Engine just records data. We can add a 'Check vs Baseline' hook here.
-    """
+    """Loads baseline for future alerting logic"""
     print(f"\n--- MONITOR MODE: Using Baseline {baseline_file} ---")
     if not os.path.exists(baseline_file):
         print("WARNING: Baseline file not found! Running in Data Collection only.")
+        print(f"  Generate a baseline first by running: --mode record")
     else:
         with open(baseline_file, 'r') as f:
             baseline = json.load(f)
-            print("Baseline loaded. (Real-time alerting logic goes here in Phase 4)")
+            print(f"✓ Baseline loaded with {len(baseline)} components")
+            print("  (Real-time alerting logic goes here in Phase 4)")
 
 def main():
     parser = argparse.ArgumentParser(description="Industrial Log Analytics Engine")
-    parser.add_argument('--mode', choices=['record', 'monitor'], required=True, help="Operation Mode")
-    parser.add_argument('--input', default='data/machine_logs.txt', help="Path to log file")
-    parser.add_argument('--live', action='store_true', help="Tail the file (Infinite Loop)")
-    parser.add_argument('--viz', action='store_true', help="Enable Visualization (Rerun)")
-    parser.add_argument('--patterns', default='config/log_patterns/prod_patterns.yaml', help="Path to regex config")
+    parser.add_argument('--mode', choices=['record', 'monitor'], required=True)
+    parser.add_argument('--input', default='data/machine_logs.txt')
+    parser.add_argument('--live', action='store_true')
+    parser.add_argument('--viz', action='store_true')
+    parser.add_argument('--patterns', default='config/log_patterns/prod_patterns.yaml')
+    parser.add_argument('--no-db', action='store_true', help='Disable database (fallback to CSV)')
     args = parser.parse_args()
 
     # 1. Load Configuration
     print("Loading Configs...")
     try:
-        # 1. Essential Configs
         graph_config = load_yaml("config/machine_graph.yaml")
         logic_config = load_yaml("config/process_logic.yaml")
-
-        # 2. Hardware Configs (Future-Proofing the Inputs)
-        # These are not currently used by Regex Parser, but loaded for the Engine's Inventory
+        
         print("Loading Hardware Maps...")
         io_config = load_json("config/IOConfig.json")
         gantry_config = load_json("config/GantryConfig.json")
-        # log_patterns is loaded by Parser internally
     except FileNotFoundError as e:
         print(f"CRITICAL ERROR: Missing config file. {e}")
         sys.exit(1)
 
-    # 2. Build System (Inventory)
+    # 2. Build System Inventory
     print("Building Inventory...")
     try:
         inventory = SystemInventory.build(graph_config, logic_config)
@@ -173,13 +158,43 @@ def main():
         print(f"Configuration Error: {e}")
         sys.exit(1)
 
-    # 3. Initialize Visualizer if requested
+    # 3. Initialize Database Manager
+    db_manager = None
+    if not args.no_db:
+        print("\n=== Initializing TimescaleDB ===")
+        try:
+            db_manager = TimescaleDBManager("config/db_config.json")
+            
+            if db_manager.enabled:
+                print("✓ TimescaleDB streaming enabled")
+                # Test the connection
+                try:
+                    if db_manager.engine:
+                        with db_manager.engine.connect() as conn:
+                            result = conn.execute(text("SELECT version();"))
+                            version_info = result.fetchone()[0][:50]
+                            print(f"✓ Database connection verified: {version_info}...")
+                    else:
+                        print("✗ Engine not initialized.")
+                        db_manager.enabled = False
+                except Exception as e:
+                    print(f"✗ Connection test failed: {e}")
+                    db_manager.enabled = False
+            else:
+                print("✗ Database failed to initialize - check errors above")
+                print(f"  Config loaded: {db_manager.config}")
+                
+        except Exception as e:
+            print(f"✗ Fatal error during DB setup: {e}")
+            db_manager = None
+
+
+    # 4. Initialize Visualizer
     start_time_str = None
     try:
         with open(args.input, 'r') as f:
             first_line = f.readline()
-            # Assuming format: "2026-01-21 10:00:00,000 ..."
-            start_time_str = first_line.split(' [')[0] # Grab date part
+            start_time_str = first_line.split(' [')[0]
     except:
         pass
 
@@ -188,19 +203,18 @@ def main():
         print(f"Initializing Visualizer with Base Time: {start_time_str}")   
         viz = VizAdapter("config/viz_resources.yaml", start_time_str=start_time_str)
 
-
-    # 4. Initialize Engine
-
+    # 5. Initialize Engine
     resolver = TagResolver("config/machine_graph.yaml")
 
     engine = LogicEngine(
         inventory=inventory, 
-        output_file="data/process_metrics.csv",
+        output_file="data/process_metrics.csv",  # Fallback CSV
         visualizer=viz,
-        tag_resolver=resolver
+        tag_resolver=resolver,
+        db_manager=db_manager
     )
 
-    # 5. Initialize Parser
+    # 6. Initialize Parser
     print(f"Loading Patterns from: {args.patterns}")
     if not os.path.exists(args.patterns):
         print(f"CRITICAL: Pattern file not found at {args.patterns}")
@@ -208,60 +222,52 @@ def main():
 
     log_parser = LogParser(args.patterns)
 
-    # 6. Run the Loop
-    print(f"Starting Engine on: {args.input}")
+    # 7. Run the Loop
+    print(f"\n=== Starting Engine ===")
+    print(f"Input: {args.input}")
+    print(f"Mode: {args.mode.upper()}")
+    if db_manager and db_manager.enabled:
+        print(f"Storage: TimescaleDB ({db_manager.config['database']})")
+    else:
+        print(f"Storage: CSV (fallback)")
     if args.live:
         print(">> LIVE MODE ACTIVE (Press Ctrl+C to stop)")
+    print("=" * 50 + "\n")
 
-    error_log_path = "data/error_dump.csv"
     line_count = 0
     start_time = time.time()
-    
-    # Initialize error CSV with headers
-    if not os.path.exists(error_log_path):
-        with open(error_log_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(["Timestamp", "Station Name", "Severity", "Service Name", "Log Message", "Extra"])
     
     try:
         for timestamp, event in log_parser.parse_file(args.input, live_mode=args.live):
             # Normal engine processing
             engine.process_event(timestamp, event)
             
-            # --- ERROR AND WARN DUMPING LOGIC ---
-            if event.get("level") in ["ERROR", "WARN"]:
+            # ERROR AND WARN LOGGING
+            if event.get("level") in ["ERROR", "WARN"] and db_manager and db_manager.enabled:
                 raw_line = event.get("raw_line", "")
-                
-                # Parse the original log line
-                # Format: 2025-12-12 00:14:02,128 [13] ERROR Services... - Message
-                parts = raw_line.split(' ', 4)  # Split into max 5 parts
+                parts = raw_line.split(' ', 4)
                 
                 if len(parts) >= 5:
                     log_timestamp = parts[0] + " " + parts[1]
-                    # parts[2] is thread_id [13] - skip it
-                    severity = parts[3]  # ERROR or WARN
+                    severity = parts[3]
                     
-                    # Split the rest to get service and message
                     rest = parts[4].split(' - ', 1)
                     service_name = rest[0].strip() if len(rest) > 0 else ""
                     log_message = rest[1].strip() if len(rest) > 1 else ""
                     
-                    # Extract station name from target (if available)
                     station_name = event.get("target", "")
-                    
-                    # Extra field - can be used for thread_id or other metadata
                     thread_id = parts[2].strip('[]') if len(parts) > 2 else ""
                     extra = f"thread_id={thread_id}"
                     
-                    with open(error_log_path, 'a', newline='') as f:
-                        writer = csv.writer(f)
-                        writer.writerow([log_timestamp, station_name, severity, service_name, log_message, extra])
-                else:
-                    # Fallback: save raw line if parsing fails
-                    with open(error_log_path, 'a', newline='') as f:
-                        writer = csv.writer(f)
-                        writer.writerow([raw_line, "", "", "", "", "parsing_failed"])
-            # ---------------------------
+                    # Convert timestamp string to datetime
+                    try:
+                        dt = datetime.strptime(log_timestamp, "%Y-%m-%d %H:%M:%S,%f")
+                    except:
+                        dt = datetime.now()
+                    
+                    db_manager.insert_error(
+                        dt, station_name, severity, service_name, log_message, extra
+                    )
             
             line_count += 1
             if line_count % 5000 == 0:
@@ -270,16 +276,21 @@ def main():
                 print(f"Processed {line_count} events... ({int(rate)} ev/s)")
 
     except KeyboardInterrupt:
-        print("\nStopping by User Request...")
+        print("\n\n=== Stopping by User Request ===")
 
     finally:
         # Graceful Shutdown
-        engine.flush_buffer()
+        print("\n=== Shutting Down ===")
+        
         print(f"Engine Stopped. Total Events: {line_count}")
         
-        # If in Record Mode, generate the JSON now
+        # Generate baseline from database (ONLY in record mode)
         if args.mode == 'record':
-            run_record_mode(engine, "data/process_baseline.json")
+            run_record_mode(engine, db_manager, "data/process_baseline.json")
+        
+        # Close database connection
+        if db_manager:
+            db_manager.close()
 
 if __name__ == "__main__":
     main()

@@ -31,10 +31,17 @@ def load_json(path):
         return {}
     with open(path, 'r') as f:
         return json.load(f)
+    
 
-def run_record_mode(engine, db_manager, baseline_file):
+def run_record_mode(engine, db_manager, baseline_file, last_log_timestamp=None):
     """
     Generates Baseline from TimescaleDB
+    
+    Args:
+        engine: LogicEngine instance
+        db_manager: TimescaleDBManager instance
+        baseline_file: Path to save baseline JSON
+        last_log_timestamp: Timestamp of the last log line processed (datetime)
     """
     print("\n--- RECORD MODE: Generating Baseline ---")
     
@@ -114,7 +121,16 @@ def run_record_mode(engine, db_manager, baseline_file):
     print(f"\n✓ Success! Baseline saved to: {baseline_file}")
     print(f"  Components: {len(baseline)}")
     print(f"  Total metrics: {sum(len(metrics) for metrics in baseline.values())}")
-
+    
+    # ========================================================================
+    # Load baseline into database and merge timestamps
+    # ========================================================================
+    print("\n--- Loading Baseline into Database ---")
+    if db_manager.load_baseline_from_json(baseline_file):
+        print("\n--- Merging Timestamps ---")
+        db_manager.merge_timestamps_to_baseline(last_log_timestamp=last_log_timestamp)
+    else:
+        print("⚠ Skipping timestamp merge - baseline load failed")
 def run_monitor_mode(engine, baseline_file):
     """Loads baseline for future alerting logic"""
     print(f"\n--- MONITOR MODE: Using Baseline {baseline_file} ---")
@@ -236,9 +252,17 @@ def main():
 
     line_count = 0
     start_time = time.time()
+    last_log_timestamp = None  # Track the last log timestamp as datetime object
     
     try:
         for timestamp, event in log_parser.parse_file(args.input, live_mode=args.live):
+            # Track the last timestamp from the log file
+            # Convert Unix timestamp to datetime object if needed
+            if isinstance(timestamp, (int, float)):
+                last_log_timestamp = datetime.fromtimestamp(timestamp)
+            else:
+                last_log_timestamp = timestamp
+            
             # Normal engine processing
             engine.process_event(timestamp, event)
             
@@ -286,7 +310,11 @@ def main():
         
         # Generate baseline from database (ONLY in record mode)
         if args.mode == 'record':
-            run_record_mode(engine, db_manager, "data/process_baseline.json")
+            if last_log_timestamp:
+                print(f"\nLast log timestamp from file: {last_log_timestamp}")
+            else:
+                print("\n⚠ Warning: No log timestamp captured, will use current time")
+            run_record_mode(engine, db_manager, "data/process_baseline.json", last_log_timestamp=last_log_timestamp)
         
         # Close database connection
         if db_manager:

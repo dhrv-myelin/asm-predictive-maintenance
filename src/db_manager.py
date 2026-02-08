@@ -551,6 +551,107 @@ class TimescaleDBManager:
             traceback.print_exc()
             return []
     
+    def merge_timestamps_to_baseline(self, last_log_timestamp=None):
+        """
+        Merge timestamps from process_metrics into baseline_metrics.
+        - created_at: Gets the MAX timestamp from process_metrics for that metric
+        - updated_at: Gets the last log line timestamp (when baseline was generated)
+        
+        Args:
+            last_log_timestamp: The timestamp of the last log line processed (datetime object)
+        
+        Returns:
+            int: Number of rows updated, or -1 if failed
+        """
+        if not self.enabled:
+            print("[DB] ✗ Database not enabled - cannot merge timestamps")
+            return -1
+        
+        try:
+            print("\n[DB] Merging timestamps from process_metrics into baseline_metrics...")
+            
+            # If no last_log_timestamp provided, use current time
+            if last_log_timestamp is None:
+                print("[DB]   ⚠ No last log timestamp provided, using CURRENT_TIMESTAMP for updated_at")
+                update_query = f"""
+                UPDATE {self.baseline_table} bm
+                SET 
+                    created_at = pm.max_timestamp,
+                    updated_at = CURRENT_TIMESTAMP
+                FROM (
+                    SELECT 
+                        component_id,
+                        metric_name,
+                        MAX(timestamp) as max_timestamp
+                    FROM {self.metrics_table}
+                    GROUP BY component_id, metric_name
+                ) pm
+                WHERE 
+                    bm.station_name = pm.component_id 
+                    AND bm.metric_name = pm.metric_name
+                """
+                
+                with self.engine.connect() as conn:
+                    result = conn.execute(text(update_query))
+                    conn.commit()
+                    rows_updated = result.rowcount
+            else:
+                print(f"[DB]   Using last log timestamp: {last_log_timestamp}")
+                update_query = f"""
+                UPDATE {self.baseline_table} bm
+                SET 
+                    created_at = pm.max_timestamp,
+                    updated_at = :last_log_ts
+                FROM (
+                    SELECT 
+                        component_id,
+                        metric_name,
+                        MAX(timestamp) as max_timestamp
+                    FROM {self.metrics_table}
+                    GROUP BY component_id, metric_name
+                ) pm
+                WHERE 
+                    bm.station_name = pm.component_id 
+                    AND bm.metric_name = pm.metric_name
+                """
+                
+                with self.engine.connect() as conn:
+                    result = conn.execute(text(update_query), {"last_log_ts": last_log_timestamp})
+                    conn.commit()
+                    rows_updated = result.rowcount
+            
+            print(f"[DB] ✓ Updated {rows_updated} baseline metrics with timestamps")
+            print(f"[DB]   - created_at: MAX(timestamp) from process_metrics per metric")
+            print(f"[DB]   - updated_at: Last log line timestamp ({last_log_timestamp})")
+            
+            # Quick verification
+            verify_query = f"""
+            SELECT 
+                COUNT(*) as total,
+                COUNT(created_at) as with_created,
+                COUNT(updated_at) as with_updated
+            FROM {self.baseline_table}
+            """
+            
+            with self.engine.connect() as conn:
+                result = conn.execute(text(verify_query))
+                row = result.fetchone()
+                
+                print(f"[DB]   Stats: Total={row[0]}, With created_at={row[1]}, With updated_at={row[2]}")
+                
+                if row[1] < row[0] or row[2] < row[0]:
+                    print(f"[DB]   ⚠ Warning: Some metrics missing timestamps")
+                else:
+                    print(f"[DB]   ✓ All baseline metrics have proper timestamps")
+            
+            return rows_updated
+                
+        except Exception as e:
+            print(f"[DB] ✗ Timestamp merge failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return -1
+        
     def close(self):
         """Close connection"""
         if self.engine:

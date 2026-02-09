@@ -44,7 +44,7 @@ class LogicEngine:
             with open(self.output_file, 'x', newline='') as f:
                 writer = csv.writer(f)
                 # TALL FORMAT: Easy for Pivot Tables & SQL
-                writer.writerow(["timestamp", "component_id", "metric_name", "value", "unit", "state_context"])
+                writer.writerow(["timestamp", "station_name", "metric_name", "value", "unit", "state_context"])
         except FileExistsError:
             pass # Append mode is fine
     
@@ -302,7 +302,7 @@ class LogicEngine:
         for key, value in inference_dict.items():
             self.virtual_state_map[station.id][key] = value
 
-def _generate_metrics(self, station, state_def, timestamp):
+    def _generate_metrics(self, station, state_def, timestamp):
         """
         Calculates values based on Config and adds to Buffer.
         """
@@ -343,7 +343,7 @@ def _generate_metrics(self, station, state_def, timestamp):
             try:
                 self.db_manager.insert_metric(
                     timestamp=ts_iso,
-                    component_id=comp_id,
+                    station_name=comp_id,
                     metric_name=name,
                     value=round(value, 4),
                     unit="s",

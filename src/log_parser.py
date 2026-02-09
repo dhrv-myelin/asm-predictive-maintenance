@@ -80,7 +80,26 @@ class LogParser:
         except ValueError:
             return
 
-        # 2. Extract Service Context
+        if ' ERROR ' in line_text:
+            yield epoch, {
+                "type": "ERROR_LOG",
+                "target": None,
+                "level": "ERROR",
+                "destination": None,
+                "category": "",
+                "payload": {},
+                "raw_line": line_text
+            }
+        elif ' WARN ' in line_text:
+            yield epoch, {
+                "type": "WARN_LOG",
+                "target": None,
+                "level": "WARN",
+                "destination": None,
+                "category": "",
+                "payload": {},
+                "raw_line": line_text
+            }
         svc_match = self.service_extractor.match(content_to_match)
         service_name = svc_match.group(1) if svc_match else "Unknown"
 
@@ -93,7 +112,7 @@ class LogParser:
                 yield epoch, self._build_event(pattern, pmatch, service_name)
                 break
 
-    def _build_event(self, pattern, match, service_name):
+    def _build_event(self, pattern, match, service_name, raw_line=""):
         groups = match.groupdict()
         
         # 1. Apply Mappings to ALL capture groups first
@@ -116,8 +135,10 @@ class LogParser:
 
         return {
             "type": pattern['event_type'],
-            "target": target,      # Who reported the log
+            "target": target,  
+            "level": service_name,    # Who reported the log
             "destination": destination, # Where the pallet is going (if known)
             "state_resolver" : pattern.get('state_resolver', {}), # Optional instructions for state inference
-            "payload": mapped_payload
+            "payload": mapped_payload,
+            "raw_line": raw_line  # Store the complete log line
         }

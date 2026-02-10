@@ -14,6 +14,7 @@ __pycache__/
 .env
 .vscode
 config_backup/
+src/__pycache__
 
 # Log, system state snapshots, captured time series data
 data/*

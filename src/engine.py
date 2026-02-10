@@ -302,7 +302,7 @@ class LogicEngine:
         for key, value in inference_dict.items():
             self.virtual_state_map[station.id][key] = value
 
-def _generate_metrics(self, station, state_def, timestamp):
+    def _generate_metrics(self, station, state_def, timestamp):
         """
         Calculates values based on Config and adds to Buffer.
         """

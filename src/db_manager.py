@@ -118,7 +118,7 @@ class TimescaleDBManager:
                 conn.execute(text(f"""
                     CREATE TABLE IF NOT EXISTS {self.metrics_table} (
                         timestamp TIMESTAMPTZ NOT NULL,
-                        component_id TEXT NOT NULL,
+                        station_name TEXT NOT NULL,
                         metric_name TEXT NOT NULL,
                         value DOUBLE PRECISION,
                         unit TEXT,
@@ -162,7 +162,7 @@ class TimescaleDBManager:
                 print(f"  Creating indexes...")
                 conn.execute(text(f"""
                     CREATE INDEX IF NOT EXISTS idx_metrics_component 
-                        ON {self.metrics_table} (component_id, timestamp DESC)
+                        ON {self.metrics_table} (station_name, timestamp DESC)
                 """))
                 
                 conn.execute(text(f"""
@@ -213,7 +213,7 @@ class TimescaleDBManager:
             with self.engine.connect() as conn:
                 conn.execute(text(f"""
                     INSERT INTO {self.metrics_table} 
-                    (timestamp, component_id, metric_name, value, unit, state_context)
+                    (timestamp, station_name, metric_name, value, unit, state_context)
                     VALUES (:ts, :comp, :metric, :val, :unit, :ctx)
                 """), batch_dicts)
                 conn.commit()
@@ -223,7 +223,7 @@ class TimescaleDBManager:
         except Exception as e:
             print(f"[DB] ✗ Batch insert error: {e}")
 
-    def insert_metric(self, timestamp, component_id, metric_name, value, unit, state_context):
+    def insert_metric(self, timestamp, station_name, metric_name, value, unit, state_context):
         """Insert a single metric - STREAMING"""
         if not self.enabled:
             print(f"[DB] ✗ Cannot insert - database not enabled")
@@ -234,16 +234,16 @@ class TimescaleDBManager:
             return
             
         try:
-            print(f"[DB] Attempting insert: {component_id}.{metric_name} = {value}")
+            print(f"[DB] Attempting insert: {station_name}.{metric_name} = {value}")
             
             with self.engine.connect() as conn:
                 result = conn.execute(text(f"""
                     INSERT INTO {self.metrics_table} 
-                    (timestamp, component_id, metric_name, value, unit, state_context)
+                    (timestamp, station_name, metric_name, value, unit, state_context)
                     VALUES (:ts, :comp, :metric, :val, :unit, :ctx)
                 """), {
                     "ts": timestamp,
-                    "comp": component_id,
+                    "comp": station_name,
                     "metric": metric_name,
                     "val": value,
                     "unit": unit,
@@ -537,7 +537,7 @@ class TimescaleDBManager:
             print("  Querying database for all metrics...")
             with self.engine.connect() as conn:
                 result = conn.execute(text(f"""
-                    SELECT component_id, metric_name, value
+                    SELECT station_name, metric_name, value
                     FROM {self.metrics_table}
                     ORDER BY timestamp
                 """))
@@ -580,14 +580,14 @@ class TimescaleDBManager:
                     updated_at = CURRENT_TIMESTAMP
                 FROM (
                     SELECT 
-                        component_id,
+                        station_name,
                         metric_name,
                         MAX(timestamp) as max_timestamp
                     FROM {self.metrics_table}
-                    GROUP BY component_id, metric_name
+                    GROUP BY station_name, metric_name
                 ) pm
                 WHERE 
-                    bm.station_name = pm.component_id 
+                    bm.station_name = pm.station_name 
                     AND bm.metric_name = pm.metric_name
                 """
                 
@@ -604,14 +604,14 @@ class TimescaleDBManager:
                     updated_at = :last_log_ts
                 FROM (
                     SELECT 
-                        component_id,
+                        station_name,
                         metric_name,
                         MAX(timestamp) as max_timestamp
                     FROM {self.metrics_table}
-                    GROUP BY component_id, metric_name
+                    GROUP BY station_name, metric_name
                 ) pm
                 WHERE 
-                    bm.station_name = pm.component_id 
+                    bm.station_name = pm.station_name 
                     AND bm.metric_name = pm.metric_name
                 """
                 

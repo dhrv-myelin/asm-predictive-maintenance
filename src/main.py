@@ -4,6 +4,7 @@ The Entry Point for the Industrial Digital Twin Engine.
 NOW WITH DIRECT TIMESCALEDB STREAMING (NO CSV)
 """
 import argparse
+from html import parser
 import json
 import yaml
 import time
@@ -13,6 +14,7 @@ import statistics
 from datetime import datetime
 from collections import defaultdict
 from sqlalchemy import text
+from datetime import datetime, timedelta
 
 # Import our modules
 from inventory import SystemInventory
@@ -33,7 +35,8 @@ def load_json(path):
         return json.load(f)
     
 
-def run_record_mode(engine, db_manager, baseline_file, last_log_timestamp=None):
+
+def run_record_mode(engine, db_manager, baseline_file,baseline_hours,last_log_timestamp=None):
     """
     Generates Baseline from TimescaleDB
     
@@ -49,67 +52,120 @@ def run_record_mode(engine, db_manager, baseline_file, last_log_timestamp=None):
         print("ERROR: Database not available. Cannot generate baseline.")
         print("Tip: Check config/db_config.json and ensure TimescaleDB is running")
         return
-    
-    # Read data from database
+
+    # Load existing baseline if present
+    if os.path.exists(baseline_file):
+        with open(baseline_file, "r") as f:
+            baseline = json.load(f)
+        print(f"✓ Loaded existing baseline: {baseline_file}")
+    else:
+        baseline = {}
+        print("✓ No existing baseline found. Creating new one.")
+
+    # Fetch all metric data from database
     print("Reading metrics from database...")
     rows = db_manager.get_metrics_for_baseline()
-    
+
+    # Get earliest timestamp
+    with db_manager.engine.connect() as conn:
+        start_ts = conn.execute(text("""
+            SELECT MIN(timestamp) FROM process_metrics
+        """)).scalar()
+
+        if start_ts is None:
+            print("No data found.")
+            return
+
+        if baseline_hours is not None:
+            print(f"Using first {baseline_hours} hours for baseline")
+
+            rows = conn.execute(text("""
+                SELECT station_name, metric_name, value
+                FROM process_metrics
+                WHERE timestamp <= :end_time
+            """), {
+                "end_time": start_ts + timedelta(hours=baseline_hours)
+            }).fetchall()
+        else:
+            rows = conn.execute(text("""
+                SELECT station_name, metric_name, value
+                FROM process_metrics
+            """)).fetchall()
+
+    print(f"✓ Retrieved {len(rows)} records")
+
+
     if not rows:
-        print("No data recorded in database.")
-        print("Possible causes:")
-        print("  1. No log events were processed")
-        print("  2. Database connection failed during processing")
-        print("  3. No metrics were generated from the logs")
+        print("No metric data found. Baseline not updated.")
         return
-    
+
     print(f"✓ Found {len(rows)} metric records")
-    
-    # Aggregate data
+
+    # Group values by (component, metric)
     grouped_data = defaultdict(list)
-    
-    for row in rows:
-        comp_id = row[0]
-        metric = row[1]
-        value = row[2]
-        
+
+    for comp_id, metric, value in rows:
         if value is not None:
             grouped_data[(comp_id, metric)].append(value)
-    
-    if not grouped_data:
-        print("No valid metrics found for baseline calculation.")
-        return
-    
-    # Calculate Statistics
-    baseline = {}
-    
-    print(f"\n{'Component':<20} | {'Metric':<20} | {'Mean':<8} | {'StdDev':<8} | {'Samples':<8}")
-    print("-" * 80)
 
+    if not grouped_data:
+        print("No valid numeric metrics found.")
+        return
+
+    print(
+        f"\n{'Component':<20} | {'Metric':<30} | "
+        f"{'Mean':<8} | {'Std':<8} | {'Min':<8} | {'Max':<8} | {'Samples':<7}"
+    )
+    print("-" * 110)
+
+    # Compute statistics
     for (comp_id, metric), values in grouped_data.items():
+
         if len(values) < 2:
-            print(f"Skipping {comp_id}.{metric} (Only {len(values)} data point(s))")
+            print(f"Skipping {comp_id}.{metric} (only {len(values)} sample)")
             continue
-            
+
         avg = statistics.mean(values)
         std = statistics.stdev(values)
-        min_v = min(values)
-        max_v = max(values)
-        
+        observed_min = min(values)
+        observed_max = max(values)
+
+        # Ensure component exists
         if comp_id not in baseline:
             baseline[comp_id] = {}
-        
-        safe_std = std if std > 0 else (avg * 0.05)
-        
-        baseline[comp_id][metric] = {
-            "mean": round(avg, 2),
-            "std_dev": round(std, 4),
-            "min_limit": round(min_v * 0.9, 2),
-            "max_limit": round(max_v * 1.1, 2),
-            "sample_count": len(values)
-        }
-        
-        print(f"{comp_id:<20} | {metric:<20} | {avg:<8.2f} | {std:<8.4f} | {len(values):<8}")
 
+        # If metric exists → expand limits
+        if metric in baseline[comp_id]:
+            old_entry = baseline[comp_id][metric]
+
+            old_min = old_entry.get("min_limit", observed_min)
+            old_max = old_entry.get("max_limit", observed_max)
+
+            baseline[comp_id][metric] = {
+                "mean": round(avg, 6),
+                "std_dev": round(std, 6),
+                "min_limit": round(min(old_min, observed_min), 6),
+                "max_limit": round(max(old_max, observed_max), 6),
+                "sample_count": len(values),
+                "record_time": datetime.now().isoformat()
+            }
+
+        # New metric → create fresh baseline
+        else:
+            baseline[comp_id][metric] = {
+                "mean": round(avg, 6),
+                "std_dev": round(std, 6),
+                "min_limit": round(observed_min, 6),
+                "max_limit": round(observed_max, 6),
+                "sample_count": len(values),
+                "record_time": datetime.now().isoformat()
+            }
+
+        print(
+            f"{comp_id:<20} | {metric:<30} | "
+            f"{avg:<8.2f} | {std:<8.4f} | "
+            f"{observed_min:<8.2f} | {observed_max:<8.2f} | {len(values):<7}"
+        )
     if not baseline:
         print("\nNo baseline could be generated. Need at least 2 samples per metric.")
         return
@@ -151,7 +207,14 @@ def main():
     parser.add_argument('--viz', action='store_true')
     parser.add_argument('--patterns', default='config/log_patterns/prod_patterns.yaml')
     parser.add_argument('--no-db', action='store_true', help='Disable database (fallback to CSV)')
+    parser.add_argument(
+    '--baseline_hours',
+    type=int,
+    default=4,
+    help='Hours of data to use for baseline (record mode)'
+)
     args = parser.parse_args()
+    BASELINE_HOURS = args.baseline_hours
 
     # 1. Load Configuration
     print("Loading Configs...")
@@ -314,7 +377,7 @@ def main():
                 print(f"\nLast log timestamp from file: {last_log_timestamp}")
             else:
                 print("\n⚠ Warning: No log timestamp captured, will use current time")
-            run_record_mode(engine, db_manager, "data/process_baseline.json", last_log_timestamp=last_log_timestamp)
+            run_record_mode(engine, db_manager, "data/process_baseline.json",args.baseline_hours,last_log_timestamp=last_log_timestamp)
         
         # Close database connection
         if db_manager:

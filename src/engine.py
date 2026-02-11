@@ -260,7 +260,7 @@ class LogicEngine:
         """Update the state for the station and generate metrics and inferences."""
         # A. Metrics (Exit Old State)
         curr_def = station.logic_template['states'][station.current_state]
-        self._generate_metrics(station, curr_def, timestamp)
+        self._generate_metrics(station, curr_def, transition, timestamp)
         
         # B. Inference
         if 'state_inference' in transition:
@@ -302,11 +302,16 @@ class LogicEngine:
         for key, value in inference_dict.items():
             self.virtual_state_map[station.id][key] = value
 
-    def _generate_metrics(self, station, state_def, timestamp):
+    def _generate_metrics(self, station, state_def, transition, timestamp):
         """
         Calculates values based on Config and adds to Buffer.
         """
-        metrics_config = state_def.get('metrics', [])
+        metrics_config = []
+        for trans in state_def.get('transitions', []):
+            if trans['event'] == transition['event']:
+                metrics_config = trans.get('metrics', [])
+                break
+            
         if not metrics_config: return
 
         for m_conf in metrics_config:

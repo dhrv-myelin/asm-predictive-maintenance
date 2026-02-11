@@ -21,7 +21,7 @@ patterns:
     target_id: "system"
 
   - name: "Global Metrics Update"
-    regex: "Updated metrics => TotalPallets:\\s*(?P<TotalPallets>\\d+),\\s*TotalUnits:\\s*(?P<TotalUnits>\\d+),\\s*OK:\\s*(?P<OK>\\d+),\\s*NG:\\s*(?P<NG>\\d+),\\s*Yield:\\s*(?P<Yield>[\\d.]+)%,\\s*Rolling UPH:\\s*(?P<Rolling_UPH>\\d+),\\s*TotalTime:\\s*(?P<TotalTime>[\\d.]+)"
+    regex: "Updated metrics => TotalPallets:\\s*(?P<total_pallets>\\d+),\\s*TotalUnits:\\s*(?P<total_units>\\d+),\\s*OK:\\s*(?P<ok_pallets>\\d+),\\s*NG:\\s*(?P<ng_pallets>\\d+),\\s*Yield:\\s*(?P<yield>[\\d.]+)%,\\s*Rolling UPH:\\s*(?P<rolling_uph>\\d+),\\s*TotalTime:\\s*(?P<total_time>[\\d.]+)"
     event_type: "UPDATED_METRICS"
     target_id: "system"
 
@@ -407,7 +407,7 @@ patterns:
         "L2 Inspection": "l2_inspection"   
 
 # ==========================================
-# 6. INSPECTION STATION
+# 6. COMMON 
 # ========================================== 
 
   # Transition: IDLE -> Pallet Arrival

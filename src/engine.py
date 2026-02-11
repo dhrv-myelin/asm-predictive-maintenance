@@ -90,9 +90,14 @@ class LogicEngine:
             # print(f"[DEBUG]: state_resolver: {state_resolver}")
             target_id = self._state_based_target_resolver(state_resolver, payload)
             print(f"[DEBUG]: State Resolved target from {state_resolver} to Target ID: {target_id}" )
+        
+        if target_id=="system":
+            print("event : ",event)
+            self._push_raw_metrics(event,timestamp)
+            return
 
         if not target_id or target_id not in self.inventory:
-            print(f"[DEBUG]: ❌ Event ski pped: Unknown target ID '{target_id}'")
+            print(f"[DEBUG]: ❌ Event skipped: Unknown target ID '{target_id}'")
             return
         
         station = self.inventory[target_id]
@@ -193,6 +198,7 @@ class LogicEngine:
             comp_id=station.id,
             name="throughput_total",
             value=self.throughput_count,
+            unit="units",
             context="EXIT"
         )
 
@@ -328,9 +334,36 @@ class LogicEngine:
 
             if value is not None:
                 # Stream immediately to database
-                self._stream_metric(timestamp, station.id, m_name, value, station.current_state)
+                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state)
+    
+    def _push_raw_metrics(self, event, timestamp):
+        def normalize(value):
+            if isinstance(value, str):
+                s = value.strip()
+                if s.isdigit():
+                    return int(s)
+                try:
+                    return float(s)
+                except ValueError:
+                    return value
+            return value
 
-    def _stream_metric(self, timestamp, comp_id, name, value, context):
+        payload = event.get('payload', {})
+        for key in payload:
+            if key == 'pallet_id':
+                continue
+            value = normalize(payload[key])
+            self._stream_metric(
+                timestamp=timestamp,
+                comp_id=event.get('target', 'system'),
+                name=f"{key}",
+                value=value,
+                unit=None,
+                context=event.get('type')
+            )
+
+
+    def _stream_metric(self, timestamp, comp_id, name, value, unit, context):
         """
         STREAM DIRECTLY TO DATABASE (NO BUFFERING)
         Falls back to CSV if database is unavailable
@@ -351,24 +384,24 @@ class LogicEngine:
                     station_name=comp_id,
                     metric_name=name,
                     value=round(value, 4),
-                    unit="s",
+                    unit=unit,
                     state_context=context
                 )
                 print(f"[STREAM] ✓ DB: {comp_id}.{name} = {value:.4f}")
             except Exception as e:
                 print(f"[STREAM] ✗ DB failed: {e}. Writing to CSV.")
-                self._write_to_csv(ts_iso, comp_id, name, value, context)
+                self._write_to_csv(ts_iso, comp_id, name, value, unit, context)
         else:
             # Fallback to CSV
             print(f"[STREAM] ⚠ Using CSV fallback (DB not available)")
-            self._write_to_csv(ts_iso, comp_id, name, value, context)
+            self._write_to_csv(ts_iso, comp_id, name, value, unit, context)
 
-    def _write_to_csv(self, ts_iso, comp_id, name, value, context):
+    def _write_to_csv(self, ts_iso, comp_id, name, value, unit, context):
         """Fallback: Write single row to CSV"""
         try:
             with open(self.output_file, 'a', newline='') as f:
                 writer = csv.writer(f)
-                writer.writerow([ts_iso, comp_id, name, round(value, 4), "s", context])
+                writer.writerow([ts_iso, comp_id, name, round(value, 4), unit, context])
             print(f"[CSV] ✓ Written: {comp_id}.{name}")
         except Exception as e:
             print(f"[CSV] ✗ Failed to write: {e}")

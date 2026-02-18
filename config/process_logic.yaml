@@ -131,6 +131,10 @@ definitions:
               actuators.stopper_up: false
           - event: "STOPPER_KEEPING_DOWN"
             next_state: "PALLET_RELEASING"
+            metrics:
+              - name: "buffer_holding_and_pre_stopper_down_time"
+                type: "duration_seconds"
+                description: "Time pallet spends holding in buffer"
             transition_stage: "handover_prep"
             state_inference:
               actuators.stopper_down: true
@@ -163,6 +167,10 @@ definitions:
               actuators.stopper_up: true
           - event: "STOPPER_KEEPING_UP"
             next_state: "IDLE"
+            metrics:
+              - name: "buffer_pallet_release_and_pre_stopper_up_time"
+                type: "duration_seconds"
+                description: "Time taken to release pallet"
             transition_stage: "handover"
             state_inference:
               sensors.presence: false

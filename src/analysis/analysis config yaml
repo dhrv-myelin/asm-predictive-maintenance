@@ -1,0 +1,573 @@
+# =============================================================================
+# analysis_config.yaml
+# =============================================================================
+# Single source of truth for all metric inference configurations.
+#
+# metric key format:  <line>__<metric_name>
+#   e.g.  l1__system__cycle_time
+#
+# analysis_types:
+#   forecast  → Mamba SSM multi-step ahead prediction
+#   anomaly   → western_electric | zscore | isolation_forest
+#   health    → linear-regression composite health score (0-100)
+#   rul       → linear-regression remaining useful life
+#
+# drift:
+#   psi  (Population Stability Index)  — preferred for manufacturing
+#   ks   (Kolmogorov-Smirnov)          — for smaller datasets
+# =============================================================================
+
+global:
+  device: auto                        # auto | cpu | cuda
+  lookback_hours: 24
+  min_train_samples: 50
+  val_split: 0.2
+  retrain_trigger: both               # drift | manual | both
+  drift_threshold: 0.2
+  drift_method: psi
+  max_model_age_days: 7
+
+  mamba:
+    seq_len: 12
+    hidden_dim: 64
+    d_state: 16
+    d_conv: 4
+    num_layers: 2
+    dropout: 0.2
+    learning_rate: 0.001
+    num_epochs: 200
+    loss_weight_recon: 0.3
+    scaler_type: robust               # robust | minmax
+    batch_size: 32
+    early_stopping_patience: 20
+    grad_clip: 1.0
+
+# =============================================================================
+# Line configs — available wide-format columns per line.
+# The DataLoader uses these to know which columns exist in the wide df.
+# =============================================================================
+line_configs:
+  l1:
+    line_prefix: l1
+    available_columns:
+      shuttle:
+        - system__count
+        - shuttle_pre_scan_time
+        - shuttle_scan_success_time
+        - shuttle_post_scan_delay
+        - shuttle_carrier_motion_time
+        - shuttle_stopper_lowering_time
+        - shuttle_pallet_release_time
+        - shuttle_stopper_rising_time
+      buffer:
+        - l1_buffer_a__buffer_holding_time
+        - l1_buffer_a__buffer_stopper_lowering_time
+        - l1_buffer_a__buffer_pallet_release_time
+        - l1_buffer_a__buffer_stopper_rising_time
+      dispenser:
+        - l1_dispenser__dispenser_entry_unclamp_time
+        - l1_dispenser__dispenser_delay_post_entry_unclamp
+        - l1_dispenser__dispenser_pallet_lifting_1_time
+        - l1_dispenser__dispenser_entry_clamping_time
+        - l1_dispenser__dispenser_delay_post_clamping
+        - l1_dispenser__dispenser_pallet_stopper_releasing_time
+        - l1_dispenser__dispenser_delay_pre_gantry_positioning
+        - l1_dispenser__dispenser_gantry_positioning_time
+        - l1_dispenser__dispenser_dispensing_time
+        - l1_dispenser__dispenser_pallet_unpositioning_time
+        - l1_dispenser__dispenser_pallet_stopper_locking_time
+        - l1_dispenser__dispenser_pre_exit_unclamping
+        - l1_dispenser__dispenser_exit_unclamping
+        - l1_dispenser__dispenser_post_exit_unclamp
+        - l1_dispenser__dispenser_pallet_lowering_1
+        - l1_dispenser__dispenser_stopper_lowering
+        - l1_dispenser__dispenser_pallet_releasing
+        - l1_dispenser__dispenser_stopper_rasing
+      inspection:
+        - l1_inspection__inspection_lifter_rising_time
+        - l1_inspection__inspection_gantry_positioning_time
+        - l1_inspection__inspection_core_vision_system_time
+        - l1_inspection__inspection_post_vision_check_delay
+        - l1_inspection__inspection_lifter_lowering_time
+        - l1_inspection__inspection_pallet_releasing_time
+      system:
+        - system__cycle_time
+        - system__total_time
+        - system__rolling_uph
+        - system__ng_pallets
+        - system__yield
+        - system__total_units
+        - system__total_pallets
+        - system__ok_pallets
+
+  l2:
+    line_prefix: l2
+    available_columns:
+      shuttle:
+        - system__count
+        - shuttle_pre_scan_time
+        - shuttle_scan_success_time
+        - shuttle_post_scan_delay
+        - shuttle_carrier_motion_time
+        - shuttle_stopper_lowering_time
+        - shuttle_pallet_release_time
+        - shuttle_stopper_rising_time
+      dispenser:
+        - l2_dispenser__dispenser_entry_unclamp_time
+        - l2_dispenser__dispenser_delay_post_entry_unclamp
+        - l2_dispenser__dispenser_pallet_lifting_1_time
+        - l2_dispenser__dispenser_entry_clamping_time
+        - l2_dispenser__dispenser_delay_post_clamping
+        - l2_dispenser__dispenser_pallet_stopper_releasing_time
+        - l2_dispenser__dispenser_delay_pre_gantry_positioning
+        - l2_dispenser__dispenser_gantry_positioning_time
+        - l2_dispenser__dispenser_dispensing_time
+        - l2_dispenser__dispenser_pallet_unpositioning_time
+        - l2_dispenser__dispenser_pallet_stopper_locking_time
+        - l2_dispenser__dispenser_pre_exit_unclamping
+        - l2_dispenser__dispenser_exit_unclamping
+        - l2_dispenser__dispenser_post_exit_unclamp
+        - l2_dispenser__dispenser_pallet_lowering_1
+        - l2_dispenser__dispenser_stopper_lowering
+        - l2_dispenser__dispenser_pallet_releasing
+        - l2_dispenser__dispenser_stopper_rasing
+      inspection:
+        - l2_inspection__inspection_lifter_rising_time
+        - l2_inspection__inspection_gantry_positioning_time
+        - l2_inspection__inspection_core_vision_system_time
+        - l2_inspection__inspection_post_vision_check_delay
+        - l2_inspection__inspection_lifter_lowering_time
+        - l2_inspection__inspection_pallet_releasing_time
+      system:
+        - system__cycle_time
+        - system__total_time
+        - system__rolling_uph
+        - system__ng_pallets
+        - system__yield
+        - system__total_units
+        - system__total_pallets
+        - system__ok_pallets
+
+# =============================================================================
+# Per-metric configurations
+# =============================================================================
+metrics:
+
+  # ---------------------------------------------------------------------------
+  # SYSTEM CYCLE TIME — primary KPI
+  # ---------------------------------------------------------------------------
+  l1__system__cycle_time:
+    target_column: system__cycle_time
+    line: l1
+    description: "Total cycle time for one pallet through the full L1 line"
+    features:
+      required:
+        - l1_dispenser__dispenser_dispensing_time
+        - l1_dispenser__dispenser_gantry_positioning_time
+        - l1_inspection__inspection_core_vision_system_time
+        - shuttle_scan_success_time
+        - shuttle_carrier_motion_time
+        - l1_buffer_a__buffer_holding_time
+      strategy: auto
+      window_size: 12
+    analysis:
+      types: [forecast, anomaly, health, rul]
+      forecast_horizon: 10
+      anomaly_method: western_electric
+      anomaly_fallback: zscore
+    training:
+      min_train_samples: 60
+      val_split: 0.2
+      retrain_trigger: both
+      drift_threshold: 0.15
+      max_model_age_days: 3
+    mamba:
+      seq_len: 12
+      hidden_dim: 64
+      d_state: 16
+      d_conv: 4
+      num_layers: 2
+      dropout: 0.2
+      learning_rate: 0.001
+      num_epochs: 200
+      loss_weight_recon: 0.3
+      scaler_type: robust
+    health:
+      failure_threshold: null
+      degradation_weight: 0.4
+      anomaly_weight: 0.3
+      trend_weight: 0.3
+
+  l2__system__cycle_time:
+    target_column: system__cycle_time
+    line: l2
+    description: "Total cycle time for one pallet through the full L2 line"
+    features:
+      required:
+        - l2_dispenser__dispenser_dispensing_time
+        - l2_dispenser__dispenser_gantry_positioning_time
+        - l2_inspection__inspection_core_vision_system_time
+        - shuttle_scan_success_time
+        - shuttle_carrier_motion_time
+      strategy: auto
+      window_size: 12
+    analysis:
+      types: [forecast, anomaly, health, rul]
+      forecast_horizon: 10
+      anomaly_method: western_electric
+      anomaly_fallback: zscore
+    training:
+      min_train_samples: 60
+      val_split: 0.2
+      retrain_trigger: both
+      drift_threshold: 0.15
+      max_model_age_days: 3
+    mamba:
+      seq_len: 12
+      hidden_dim: 64
+      d_state: 16
+      d_conv: 4
+      num_layers: 2
+      dropout: 0.2
+      learning_rate: 0.001
+      num_epochs: 200
+      loss_weight_recon: 0.3
+      scaler_type: robust
+    health:
+      failure_threshold: null
+      degradation_weight: 0.4
+      anomaly_weight: 0.3
+      trend_weight: 0.3
+
+  # ---------------------------------------------------------------------------
+  # DISPENSER DISPENSING TIME
+  # ---------------------------------------------------------------------------
+  l1__l1_dispenser__dispenser_dispensing_time:
+    target_column: l1_dispenser__dispenser_dispensing_time
+    line: l1
+    description: "Actual material dispensing time at L1 dispenser"
+    features:
+      required:
+        - l1_dispenser__dispenser_gantry_positioning_time
+        - l1_dispenser__dispenser_entry_clamping_time
+        - l1_dispenser__dispenser_pallet_unpositioning_time
+        - system__cycle_time
+      strategy: auto
+      window_size: 10
+    analysis:
+      types: [forecast, anomaly, health, rul]
+      forecast_horizon: 10
+      anomaly_method: isolation_forest
+      anomaly_fallback: zscore
+    training:
+      min_train_samples: 50
+      val_split: 0.2
+      retrain_trigger: both
+      drift_threshold: 0.2
+      max_model_age_days: 7
+    mamba:
+      seq_len: 10
+      hidden_dim: 64
+      d_state: 16
+      d_conv: 4
+      num_layers: 2
+      dropout: 0.2
+      learning_rate: 0.001
+      num_epochs: 200
+      loss_weight_recon: 0.3
+      scaler_type: robust
+    health:
+      failure_threshold: null
+      degradation_weight: 0.5
+      anomaly_weight: 0.3
+      trend_weight: 0.2
+
+  l2__l2_dispenser__dispenser_dispensing_time:
+    target_column: l2_dispenser__dispenser_dispensing_time
+    line: l2
+    description: "Actual material dispensing time at L2 dispenser"
+    features:
+      required:
+        - l2_dispenser__dispenser_gantry_positioning_time
+        - l2_dispenser__dispenser_entry_clamping_time
+        - l2_dispenser__dispenser_pallet_unpositioning_time
+        - system__cycle_time
+      strategy: auto
+      window_size: 10
+    analysis:
+      types: [forecast, anomaly, health, rul]
+      forecast_horizon: 10
+      anomaly_method: isolation_forest
+      anomaly_fallback: zscore
+    training:
+      min_train_samples: 50
+      val_split: 0.2
+      retrain_trigger: both
+      drift_threshold: 0.2
+      max_model_age_days: 7
+    mamba:
+      seq_len: 10
+      hidden_dim: 64
+      d_state: 16
+      d_conv: 4
+      num_layers: 2
+      dropout: 0.2
+      learning_rate: 0.001
+      num_epochs: 200
+      loss_weight_recon: 0.3
+      scaler_type: robust
+    health:
+      failure_threshold: null
+      degradation_weight: 0.5
+      anomaly_weight: 0.3
+      trend_weight: 0.2
+
+  # ---------------------------------------------------------------------------
+  # VISION INSPECTION TIME
+  # ---------------------------------------------------------------------------
+  l1__l1_inspection__inspection_core_vision_system_time:
+    target_column: l1_inspection__inspection_core_vision_system_time
+    line: l1
+    description: "Core vision system processing time at L1 inspection"
+    features:
+      required:
+        - l1_inspection__inspection_gantry_positioning_time
+        - l1_inspection__inspection_lifter_rising_time
+        - system__ng_pallets
+        - system__yield
+      strategy: auto
+      window_size: 10
+    analysis:
+      types: [forecast, anomaly, health]
+      forecast_horizon: 8
+      anomaly_method: zscore
+      anomaly_fallback: zscore
+    training:
+      min_train_samples: 50
+      val_split: 0.2
+      retrain_trigger: both
+      drift_threshold: 0.2
+      max_model_age_days: 7
+    mamba:
+      seq_len: 10
+      hidden_dim: 32
+      d_state: 8
+      d_conv: 4
+      num_layers: 2
+      dropout: 0.2
+      learning_rate: 0.001
+      num_epochs: 150
+      loss_weight_recon: 0.3
+      scaler_type: robust
+    health:
+      failure_threshold: null
+      degradation_weight: 0.4
+      anomaly_weight: 0.4
+      trend_weight: 0.2
+
+  l2__l2_inspection__inspection_core_vision_system_time:
+    target_column: l2_inspection__inspection_core_vision_system_time
+    line: l2
+    description: "Core vision system processing time at L2 inspection"
+    features:
+      required:
+        - l2_inspection__inspection_gantry_positioning_time
+        - l2_inspection__inspection_lifter_rising_time
+        - system__ng_pallets
+        - system__yield
+      strategy: auto
+      window_size: 10
+    analysis:
+      types: [forecast, anomaly, health]
+      forecast_horizon: 8
+      anomaly_method: zscore
+      anomaly_fallback: zscore
+    training:
+      min_train_samples: 50
+      val_split: 0.2
+      retrain_trigger: both
+      drift_threshold: 0.2
+      max_model_age_days: 7
+    mamba:
+      seq_len: 10
+      hidden_dim: 32
+      d_state: 8
+      d_conv: 4
+      num_layers: 2
+      dropout: 0.2
+      learning_rate: 0.001
+      num_epochs: 150
+      loss_weight_recon: 0.3
+      scaler_type: robust
+    health:
+      failure_threshold: null
+      degradation_weight: 0.4
+      anomaly_weight: 0.4
+      trend_weight: 0.2
+
+  # ---------------------------------------------------------------------------
+  # SHUTTLE SCAN TIME
+  # ---------------------------------------------------------------------------
+  l1__shuttle_scan_success_time:
+    target_column: shuttle_scan_success_time
+    line: l1
+    description: "Barcode/RFID scan duration at shuttle station (shared resource)"
+    features:
+      required:
+        - shuttle_pre_scan_time
+        - shuttle_post_scan_delay
+        - system__count
+      strategy: auto
+      window_size: 10
+    analysis:
+      types: [forecast, anomaly, health, rul]
+      forecast_horizon: 10
+      anomaly_method: zscore
+      anomaly_fallback: zscore
+    training:
+      min_train_samples: 50
+      val_split: 0.2
+      retrain_trigger: both
+      drift_threshold: 0.2
+      max_model_age_days: 7
+    mamba:
+      seq_len: 10
+      hidden_dim: 32
+      d_state: 8
+      d_conv: 4
+      num_layers: 2
+      dropout: 0.15
+      learning_rate: 0.001
+      num_epochs: 150
+      loss_weight_recon: 0.3
+      scaler_type: minmax
+    health:
+      failure_threshold: 1.5
+      degradation_weight: 0.4
+      anomaly_weight: 0.35
+      trend_weight: 0.25
+
+  # ---------------------------------------------------------------------------
+  # SYSTEM YIELD
+  # ---------------------------------------------------------------------------
+  l1__system__yield:
+    target_column: system__yield
+    line: l1
+    description: "Rolling yield percentage at L1"
+    features:
+      required:
+        - system__ng_pallets
+        - system__ok_pallets
+        - system__total_pallets
+        - system__cycle_time
+      strategy: auto
+      window_size: 15
+    analysis:
+      types: [forecast, anomaly, health]
+      forecast_horizon: 10
+      anomaly_method: western_electric
+      anomaly_fallback: zscore
+    training:
+      min_train_samples: 60
+      val_split: 0.2
+      retrain_trigger: both
+      drift_threshold: 0.15
+      max_model_age_days: 3
+    mamba:
+      seq_len: 15
+      hidden_dim: 64
+      d_state: 16
+      d_conv: 4
+      num_layers: 2
+      dropout: 0.2
+      learning_rate: 0.0005
+      num_epochs: 200
+      loss_weight_recon: 0.3
+      scaler_type: minmax
+    health:
+      failure_threshold: 0.85
+      degradation_weight: 0.5
+      anomaly_weight: 0.3
+      trend_weight: 0.2
+
+  l2__system__yield:
+    target_column: system__yield
+    line: l2
+    description: "Rolling yield percentage at L2"
+    features:
+      required:
+        - system__ng_pallets
+        - system__ok_pallets
+        - system__total_pallets
+        - system__cycle_time
+      strategy: auto
+      window_size: 15
+    analysis:
+      types: [forecast, anomaly, health]
+      forecast_horizon: 10
+      anomaly_method: western_electric
+      anomaly_fallback: zscore
+    training:
+      min_train_samples: 60
+      val_split: 0.2
+      retrain_trigger: both
+      drift_threshold: 0.15
+      max_model_age_days: 3
+    mamba:
+      seq_len: 15
+      hidden_dim: 64
+      d_state: 16
+      d_conv: 4
+      num_layers: 2
+      dropout: 0.2
+      learning_rate: 0.0005
+      num_epochs: 200
+      loss_weight_recon: 0.3
+      scaler_type: minmax
+    health:
+      failure_threshold: 0.85
+      degradation_weight: 0.5
+      anomaly_weight: 0.3
+      trend_weight: 0.2
+
+  # ---------------------------------------------------------------------------
+  # SYSTEM ROLLING UPH
+  # ---------------------------------------------------------------------------
+  l1__system__rolling_uph:
+    target_column: system__rolling_uph
+    line: l1
+    description: "Rolling units per hour throughput at L1"
+    features:
+      required:
+        - system__cycle_time
+        - system__total_units
+        - system__yield
+      strategy: auto
+      window_size: 12
+    analysis:
+      types: [forecast, anomaly, health]
+      forecast_horizon: 10
+      anomaly_method: western_electric
+      anomaly_fallback: zscore
+    training:
+      min_train_samples: 50
+      val_split: 0.2
+      retrain_trigger: both
+      drift_threshold: 0.2
+      max_model_age_days: 5
+    mamba:
+      seq_len: 12
+      hidden_dim: 64
+      d_state: 16
+      d_conv: 4
+      num_layers: 2
+      dropout: 0.2
+      learning_rate: 0.001
+      num_epochs: 200
+      loss_weight_recon: 0.3
+      scaler_type: robust
+    health:
+      failure_threshold: null
+      degradation_weight: 0.4
+      anomaly_weight: 0.3
+      trend_weight: 0.3

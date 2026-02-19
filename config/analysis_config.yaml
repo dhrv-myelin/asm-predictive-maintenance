@@ -32,7 +32,7 @@ target:
 
   # ── SYSTEM ────────────────────────────────────────────────────────────────
 
-  system-cycle_time:
+  system__cycle_time:
     - method: mamba
       required_features:
         - system__cycle_time
@@ -40,9 +40,11 @@ target:
         - shuttle_carrier_motion_time
         - l1_dispenser__dispenser_dispensing_time
         - l1_inspection__inspection_core_vision_system_time
+        - timestamp
 
-      history_window: 10
-      prediction_window: 10
+      history_window: 6
+      stride: 2
+      prediction_window: 4
 
       mode: offline
 

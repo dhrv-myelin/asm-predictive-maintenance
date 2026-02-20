@@ -4,6 +4,7 @@ The Entry Point for the Industrial Digital Twin Engine.
 NOW WITH DIRECT TIMESCALEDB STREAMING (NO CSV)
 """
 import argparse
+from html import parser
 import json
 import yaml
 import time
@@ -114,7 +115,7 @@ def run_record_mode(baseline_file, baseline_hours):
 
         if len(values) < 2:
             continue
-            
+
         avg = statistics.mean(values)
         std = statistics.stdev(values)
         min_val = min(values)
@@ -209,7 +210,14 @@ def main():
     parser.add_argument('--viz', action='store_true')
     parser.add_argument('--patterns', default='config/log_patterns/prod_patterns.yaml')
     parser.add_argument('--no-db', action='store_true', help='Disable database (fallback to CSV)')
+    parser.add_argument(
+    '--baseline_hours',
+    type=int,
+    default=4,
+    help='Hours of data to use for baseline (record mode)'
+)
     args = parser.parse_args()
+    BASELINE_HOURS = args.baseline_hours
 
     # 1. Load Configuration
     print("Loading Configs...")

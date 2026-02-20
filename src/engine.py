@@ -163,6 +163,31 @@ class LogicEngine:
             context = {"pallet_id": station.active_pallet_id}
             self.viz.update(timestamp, station.id, station.current_state, context)
 
+    def _reset_system(self):
+        """
+        Resets all mutable engine and station state to initial values.
+        Called when a SYSTEM_RESET event is received.
+        """
+        # 1. Reset engine-level counters
+        self.throughput_count = 0
+
+        # 2. Clear all virtual sensor memory
+        self.virtual_state_map = {cid: {} for cid in self.inventory}
+
+        # 3. Reset every station back to its configured initial state
+        for station in self.inventory.values():
+            station.current_state = station.logic_template.get('initial_state', 'IDLE')
+            station.previous_state = None
+            station.state_entry_time = 0.0
+            station.active_pallet_id = None
+            station.expected_pallet_id = None
+            station.current_destination = None
+            station.metric_timers = {}
+
+        print("--------------------------------------------")
+        print("[SYSTEM RESET]: All station states, pallet tracking, and counters cleared.")
+        print("--------------------------------------------")
+
     def _get_destination_id(self, station, event):
         payload = event.get("payload", {})
 

@@ -13,15 +13,24 @@ import statistics
 from datetime import datetime
 from collections import defaultdict
 from sqlalchemy import text
-
+from datetime import datetime, timedelta
+from src.inventory import SystemInventory
+from src.log_parser import LogParser
+from src.engine import LogicEngine
+from src.viz_adapter import VizAdapter
+from src.utils.tag_resolver import TagResolver
+from src.database import engine as db_engine
+import statistics
 # Import our modules
-from inventory import SystemInventory
-from log_parser import LogParser
-from engine import LogicEngine
-from viz_adapter import VizAdapter
-from utils.tag_resolver import TagResolver
-from db_manager import TimescaleDBManager
-
+#from inventory import SystemInventory
+#from log_parser import LogParser
+#from engine import LogicEngine
+#from viz_adapter import VizAdapter
+#from utils.tag_resolver import TagResolver
+#from db_manager import TimescaleDBManager
+#from src.inventory import SystemInventory
+#from src.db_manager import TimescaleDBManager
+from src.engine import LogicEngine
 def load_yaml(path):
     with open(path, 'r') as f:
         return yaml.safe_load(f)
@@ -33,104 +42,153 @@ def load_json(path):
         return json.load(f)
     
 
-def run_record_mode(engine, db_manager, baseline_file, last_log_timestamp=None):
-    """
-    Generates Baseline from TimescaleDB
-    
-    Args:
-        engine: LogicEngine instance
-        db_manager: TimescaleDBManager instance
-        baseline_file: Path to save baseline JSON
-        last_log_timestamp: Timestamp of the last log line processed (datetime)
-    """
-    print("\n--- RECORD MODE: Generating Baseline ---")
-    
-    if not db_manager or not db_manager.enabled:
-        print("ERROR: Database not available. Cannot generate baseline.")
-        print("Tip: Check config/db_config.json and ensure TimescaleDB is running")
-        return
-    
-    # Read data from database
-    print("Reading metrics from database...")
-    rows = db_manager.get_metrics_for_baseline()
-    
-    if not rows:
-        print("No data recorded in database.")
-        print("Possible causes:")
-        print("  1. No log events were processed")
-        print("  2. Database connection failed during processing")
-        print("  3. No metrics were generated from the logs")
-        return
-    
-    print(f"✓ Found {len(rows)} metric records")
-    
-    # Aggregate data
-    grouped_data = defaultdict(list)
-    
-    for row in rows:
-        comp_id = row[0]
-        metric = row[1]
-        value = row[2]
-        
-        if value is not None:
-            grouped_data[(comp_id, metric)].append(value)
-    
-    if not grouped_data:
-        print("No valid metrics found for baseline calculation.")
-        return
-    
-    # Calculate Statistics
-    baseline = {}
-    
-    print(f"\n{'Component':<20} | {'Metric':<20} | {'Mean':<8} | {'StdDev':<8} | {'Samples':<8}")
-    print("-" * 80)
 
-    for (comp_id, metric), values in grouped_data.items():
+def run_record_mode(baseline_file, baseline_hours):
+    """
+    Generate baseline from TimescaleDB process_metrics table.
+    """
+
+    print("\n--- RECORD MODE: Generating Baseline ---")
+    from src.db.models import BaselineMetric
+    from src.database import SessionLocal
+
+    if db_engine is None:
+        print("Database engine not initialized.")
+        return
+
+    baseline = {}
+
+    with db_engine.connect() as conn:
+
+        # Get earliest timestamp
+        start_ts = conn.execute(
+            text("SELECT MIN(timestamp) FROM process_metrics")
+        ).scalar()
+
+        if start_ts is None:
+            print("No metric data found in database.")
+            return
+
+        # Apply baseline hour window
+        if baseline_hours:
+            print(f"Using first {baseline_hours} hours for baseline")
+            rows = conn.execute(
+                text("""
+                    SELECT station_name, metric_name, value
+                    FROM process_metrics
+                    WHERE timestamp <= :end_time
+                """),
+                {"end_time": start_ts + timedelta(hours=baseline_hours)}
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                text("""
+                    SELECT station_name, metric_name, value
+                    FROM process_metrics
+                """)
+            ).fetchall()
+
+    if not rows:
+        print("No data retrieved for baseline.")
+        return
+
+    print(f"✓ Retrieved {len(rows)} records")
+
+    grouped_data = defaultdict(list)
+
+    for station_name, metric_name, value in rows:
+        if value is not None:
+            grouped_data[(station_name, metric_name)].append(value)
+
+    if not grouped_data:
+        print("No numeric metrics found.")
+        return
+
+    print(
+        f"\n{'Station':<20} | {'Metric':<30} | "
+        f"{'Mean':<8} | {'Std':<8} | {'Min':<8} | {'Max':<8} | {'Samples':<7}"
+    )
+    print("-" * 110)
+
+    for (station, metric), values in grouped_data.items():
+
         if len(values) < 2:
-            print(f"Skipping {comp_id}.{metric} (Only {len(values)} data point(s))")
             continue
             
         avg = statistics.mean(values)
         std = statistics.stdev(values)
-        min_v = min(values)
-        max_v = max(values)
-        
-        if comp_id not in baseline:
-            baseline[comp_id] = {}
-        
-        safe_std = std if std > 0 else (avg * 0.05)
-        
-        baseline[comp_id][metric] = {
-            "mean": round(avg, 2),
-            "std_dev": round(std, 4),
-            "min_limit": round(min_v * 0.9, 2),
-            "max_limit": round(max_v * 1.1, 2),
-            "sample_count": len(values)
+        min_val = min(values)
+        max_val = max(values)
+
+        if station not in baseline:
+            baseline[station] = {}
+
+        baseline[station][metric] = {
+            "mean": round(avg, 6),
+            "std_dev": round(std, 6),
+            "min_limit": round(min_val, 6),
+            "max_limit": round(max_val, 6),
+            "sample_count": len(values),
+            "created_at": datetime.now().isoformat()
         }
-        
-        print(f"{comp_id:<20} | {metric:<20} | {avg:<8.2f} | {std:<8.4f} | {len(values):<8}")
+
+        print(
+            f"{station:<20} | {metric:<30} | "
+            f"{avg:<8.2f} | {std:<8.4f} | "
+            f"{min_val:<8.2f} | {max_val:<8.2f} | {len(values):<7}"
+        )
 
     if not baseline:
-        print("\nNo baseline could be generated. Need at least 2 samples per metric.")
+        print("Not enough samples to create baseline.")
         return
 
-    # Save to JSON
-    with open(baseline_file, 'w') as f:
+    os.makedirs(os.path.dirname(baseline_file), exist_ok=True)
+
+    with open(baseline_file, "w") as f:
         json.dump(baseline, f, indent=2)
-        
-    print(f"\n✓ Success! Baseline saved to: {baseline_file}")
-    print(f"  Components: {len(baseline)}")
-    print(f"  Total metrics: {sum(len(metrics) for metrics in baseline.values())}")
-    
-    # ========================================================================
-    # Load baseline into database and merge timestamps
-    # ========================================================================
-    print("\n--- Loading Baseline into Database ---")
-    if db_manager.load_baseline_from_json(baseline_file):
-        print("\n--- Merging Timestamps ---")
-        db_manager.merge_timestamps_to_baseline(last_log_timestamp=last_log_timestamp)
-    else:
-        print("⚠ Skipping timestamp merge - baseline load failed")
+
+    print(f"\n✓ Baseline saved to: {baseline_file}")
+    print(f"  Stations: {len(baseline)}")
+    print(f"  Total metrics: {sum(len(v) for v in baseline.values())}")
+    # --- Save baseline to database ---
+    from sqlalchemy.dialects.postgresql import insert
+
+    print("\n--- Saving baseline to database ---")
+
+    with SessionLocal() as session:
+        for station, metrics in baseline.items():
+            for metric, stats in metrics.items():
+
+                stmt = insert(BaselineMetric).values(
+                station_name=station,
+                metric_name=metric,
+                mean=stats["mean"],
+                std_dev=stats["std_dev"],
+                min_limit=stats["min_limit"],
+                max_limit=stats["max_limit"],
+                sample_count=stats["sample_count"],
+                unit="seconds"
+            )
+
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["station_name", "metric_name"],
+                    set_={
+                    "mean": stats["mean"],
+                    "std_dev": stats["std_dev"],
+                    "min_limit": stats["min_limit"],
+                    "max_limit": stats["max_limit"],
+                    "sample_count": stats["sample_count"],
+                    "unit": "seconds"
+                }
+            )
+
+                session.execute(stmt)
+
+        session.commit()
+
+    print("✓ Baseline upserted into database")
+
+
 def run_monitor_mode(engine, baseline_file):
     """Loads baseline for future alerting logic"""
     print(f"\n--- MONITOR MODE: Using Baseline {baseline_file} ---")
@@ -170,39 +228,10 @@ def main():
     print("Building Inventory...")
     try:
         inventory = SystemInventory.build(graph_config, logic_config)
+        
     except ValueError as e:
         print(f"Configuration Error: {e}")
         sys.exit(1)
-
-    # 3. Initialize Database Manager
-    db_manager = None
-    if not args.no_db:
-        print("\n=== Initializing TimescaleDB ===")
-        try:
-            db_manager = TimescaleDBManager("config/db_config.json")
-            
-            if db_manager.enabled:
-                print("✓ TimescaleDB streaming enabled")
-                # Test the connection
-                try:
-                    if db_manager.engine:
-                        with db_manager.engine.connect() as conn:
-                            result = conn.execute(text("SELECT version();"))
-                            version_info = result.fetchone()[0][:50]
-                            print(f"✓ Database connection verified: {version_info}...")
-                    else:
-                        print("✗ Engine not initialized.")
-                        db_manager.enabled = False
-                except Exception as e:
-                    print(f"✗ Connection test failed: {e}")
-                    db_manager.enabled = False
-            else:
-                print("✗ Database failed to initialize - check errors above")
-                print(f"  Config loaded: {db_manager.config}")
-                
-        except Exception as e:
-            print(f"✗ Fatal error during DB setup: {e}")
-            db_manager = None
 
 
     # 4. Initialize Visualizer
@@ -224,10 +253,8 @@ def main():
 
     engine = LogicEngine(
         inventory=inventory, 
-        output_file="data/process_metrics.csv",  # Fallback CSV
         visualizer=viz,
         tag_resolver=resolver,
-        db_manager=db_manager
     )
 
     # 6. Initialize Parser
@@ -242,10 +269,7 @@ def main():
     print(f"\n=== Starting Engine ===")
     print(f"Input: {args.input}")
     print(f"Mode: {args.mode.upper()}")
-    if db_manager and db_manager.enabled:
-        print(f"Storage: TimescaleDB ({db_manager.config['database']})")
-    else:
-        print(f"Storage: CSV (fallback)")
+    print("Storage: TimescaleDB")
     if args.live:
         print(">> LIVE MODE ACTIVE (Press Ctrl+C to stop)")
     print("=" * 50 + "\n")
@@ -258,6 +282,7 @@ def main():
         for timestamp, event in log_parser.parse_file(args.input, live_mode=args.live):
             # Track the last timestamp from the log file
             # Convert Unix timestamp to datetime object if needed
+            print("PARSED EVENT:", event)
             if isinstance(timestamp, (int, float)):
                 last_log_timestamp = datetime.fromtimestamp(timestamp)
             else:
@@ -267,31 +292,7 @@ def main():
             engine.process_event(timestamp, event)
             
             # ERROR AND WARN LOGGING
-            if event.get("level") in ["ERROR", "WARN"] and db_manager and db_manager.enabled:
-                raw_line = event.get("raw_line", "")
-                parts = raw_line.split(' ', 4)
-                
-                if len(parts) >= 5:
-                    log_timestamp = parts[0] + " " + parts[1]
-                    severity = parts[3]
-                    
-                    rest = parts[4].split(' - ', 1)
-                    service_name = rest[0].strip() if len(rest) > 0 else ""
-                    log_message = rest[1].strip() if len(rest) > 1 else ""
-                    
-                    station_name = event.get("target", "")
-                    thread_id = parts[2].strip('[]') if len(parts) > 2 else ""
-                    extra = f"thread_id={thread_id}"
-                    
-                    # Convert timestamp string to datetime
-                    try:
-                        dt = datetime.strptime(log_timestamp, "%Y-%m-%d %H:%M:%S,%f")
-                    except:
-                        dt = datetime.now()
-                    
-                    db_manager.insert_error(
-                        dt, station_name, severity, service_name, log_message, extra
-                    )
+            
             
             line_count += 1
             if line_count % 5000 == 0:
@@ -314,11 +315,8 @@ def main():
                 print(f"\nLast log timestamp from file: {last_log_timestamp}")
             else:
                 print("\n⚠ Warning: No log timestamp captured, will use current time")
-            run_record_mode(engine, db_manager, "data/process_baseline.json", last_log_timestamp=last_log_timestamp)
-        
-        # Close database connection
-        if db_manager:
-            db_manager.close()
-
+            run_record_mode(
+    "data/process_baseline.json",
+    args.baseline_hours)
 if __name__ == "__main__":
     main()

@@ -1,386 +1,368 @@
 """
 src/engine.py
 The Brain. Manages state transitions, inferences, and metric generation.
+Streams directly to PostgreSQL using SQLAlchemy.
 """
-import csv
-import time
-from datetime import datetime
-from unicodedata import category
 
+import time
+from datetime import datetime, timezone
+from src.db.models import ProcessMetric, ErrorLog
+from src.database import SessionLocal
+from src.db.models import ProcessMetric
+from src.db.models import ErrorLog
 class LogicEngine:
-    def __init__(self, inventory, output_file="data/process_metrics.csv", 
-                visualizer=None, tag_resolver=None, db_manager=None):
+    def __init__(
+        self,
+        inventory,
+        output_file=None,
+        visualizer=None,
+        tag_resolver=None,
+        db_manager=None
+    ):
         self.inventory = inventory
         self.output_file = output_file
         self.viz = visualizer
         self.tag_resolver = tag_resolver
         self.db_manager = db_manager
-        
+
         self.throughput_count = 0
-        
-        # Virtual state map
         self.virtual_state_map = {cid: {} for cid in self.inventory}
 
-        # DEBUG: Check database status
-        print("\n[ENGINE INIT DEBUG]")
-        print(f"  db_manager passed: {db_manager is not None}")
-        if db_manager:
-            print(f"  db_manager.enabled: {db_manager.enabled}")
-            print(f"  db_manager.engine: {db_manager.engine is not None}")
-        else:
-            print(f"  db_manager is None!")
 
-        # Initialize CSV as fallback (only if DB is disabled)
-        if not db_manager or not db_manager.enabled:
-            self._init_output_file()
-            print("⚠ Running in CSV fallback mode")
-        else:
-            print("✓ Running in DATABASE STREAMING mode")
-            # Load baseline metrics from process_baseline.json into database
-            self._load_baseline_metrics()
+   # def _stream_error(self, timestamp, event):
+      #  try:
+          #  ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
-    def _init_output_file(self):
-        """Creates the file with header if it doesn't exist."""
+           # with SessionLocal() as session:
+              #  error = ErrorLog(
+             #   timestamp=ts_dt,
+             #   level=event.get("level"),
+             #   message=event.get("raw_line")
+          #  )
+            #    session.add(error)
+             #   session.commit()
+
+           # print(f"[DB] ✓ ERROR logged")
+
+        #except Exception as e:
+            #print(f"[DB ERROR - ERROR_LOG] {e}")
+
+ 
+    def _stream_error(self, timestamp, event):
         try:
-            with open(self.output_file, 'x', newline='') as f:
-                writer = csv.writer(f)
-                # TALL FORMAT: Easy for Pivot Tables & SQL
-                writer.writerow(["timestamp", "component_id", "metric_name", "value", "unit", "state_context"])
-        except FileExistsError:
-            pass # Append mode is fine
+            ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+ 
+            with SessionLocal() as session:
+                error = ErrorLog(
+                    timestamp=ts_dt,
+                    severity=event.get("level"),        # Fixed: severity
+                    log_message=event.get("raw_line")   # Fixed: log_message
+                )
+                session.add(error)
+                session.commit()
+ 
+            print(f"[DB] ✓ ERROR logged")
+ 
+        except Exception as e:
+            print(f"[DB ERROR - ERROR_LOG] {e}")
 
-    def _load_baseline_metrics(self):
-        """
-        Load baseline metrics from process_baseline.json into the database.
-        This is called during engine initialization if database is enabled.
-        """
-        if not self.db_manager or not self.db_manager.enabled:
-            print("[ENGINE] ⚠ Skipping baseline load - database not enabled")
-            return
-        
-        baseline_file = "data/process_baseline.json"
-        print(f"\n[ENGINE] Loading baseline metrics from {baseline_file}...")
-        
-        success = self.db_manager.load_baseline_from_json(baseline_file)
-        
-        if success:
-            print(f"[ENGINE] ✓ Baseline metrics loaded successfully")
-        else:
-            print(f"[ENGINE] ⚠ Failed to load baseline metrics (file may not exist yet)")
+    # ============================================================
+    # EVENT PROCESSING
+    # ============================================================
 
     def process_event(self, timestamp, event):
-        payload = event.get('payload', {})
-        category = event.get('category', '')
-        target_id = event.get('target')
+        payload = event.get("payload", {})
+        target_id = event.get("target")
+        if event["type"] == "ERROR_LOG":
+            print("ENGINE SAW ERROR_LOG")
+            self._stream_error(timestamp, event)
+            return
 
-        if event['type'] == "SYSTEM_RESET":
-            self.throughput_count = 0
-            print("--------------------------------------------\n")
-            print("[DEBUG]: System Reset Event Processed. Throughput counter reset to 0.")
-            print("\n--------------------------------------------")
-
-        print(f"[DEBUG]: Payload: {payload}, Category: {category}, Target ID: {target_id}")
+        if event["type"] == "SYSTEM_RESET":
+            self._reset_system()
+            print("\n[RESET] Throughput counter reset.\n")
 
         # 1. Resolve Target (Tag -> ID)
         if not target_id and 'tag_id' in payload and self.tag_resolver:
             target_id = self.tag_resolver.resolve(payload['tag_id'])
             event['target'] = target_id
             print(f"[DEBUG]: Resolved Tag '{payload['tag_id']}' to Target ID: {target_id}")
+        
+        if not target_id and 'state_resolver' in event:
+            state_resolver = event.get('state_resolver', {})
+            # print(f"[DEBUG]: state_resolver: {state_resolver}")
+            target_id = self._state_based_target_resolver(state_resolver, payload)
+            print(f"[DEBUG]: State Resolved target from {state_resolver} to Target ID: {target_id}" )
+        
+        if target_id=="system":
+            print("event : ",event)
+            self._push_raw_metrics(event,timestamp)
+        payload = event.get("payload", {})
+        target_id = event.get("target")
+        if event["type"] == "ERROR_LOG":
+            print("ENGINE SAW ERROR_LOG")
+            self._stream_error(timestamp, event)
+            return
+
+        if event["type"] == "SYSTEM_RESET":
+            self.throughput_count = 0
+            print("\n[RESET] Throughput counter reset.\n")
+
+        # Resolve tag → station
+        if not target_id and "tag_id" in payload and self.tag_resolver:
+            target_id = self.tag_resolver.resolve(payload["tag_id"])
+            event["target"] = target_id
+
+        if not target_id and "state_resolver" in event:
+            target_id = self._state_based_target_resolver(
+                event.get("state_resolver", {}), payload
+            )
+
+        if target_id == "system":
+            self._push_raw_metrics(event, timestamp)
+            return
 
         if not target_id or target_id not in self.inventory:
-            print(f"[DEBUG]: ❌ Event skipped: Unknown target ID '{target_id}'")
             return
-        
+
         station = self.inventory[target_id]
+        transition_stage = ""
 
-        # 2. IDENTIFY: If a pallet ID is in the log, update the station immediately
-        if 'pallet_id' in payload:
-            station.active_pallet_id = payload['pallet_id']
-            print(f"[DEBUG]: Updated Station '{target_id}' with Pallet ID: {station.active_pallet_id}")
+        for item in (
+            station.logic_template.get("states", {})
+            .get(station.current_state, {})
+            .get("transitions", [])
+        ):
+            if item.get("event") == event["type"]:
+                transition_stage = item.get("transition_stage", "")
 
-        # 3. ARRIVAL: Claim from Inbox
-        if category == "arrival":
-            if not getattr(station, 'is_entry', False):
-                if station.expected_pallet_id:
-                    station.active_pallet_id = station.expected_pallet_id
-                    station.expected_pallet_id = None
-                    print(f"[DEBUG]: ✅ [{target_id}] ARRIVAL SUCCESS: Claimed Pallet ID {station.active_pallet_id} from Inbox")
-                else:
-                    # Use standard print - if this doesn't show, the 'arrival' category is missing in YAML
-                    print(f"[DEBUG]: ❌ [{target_id}] ARRIVAL FAIL: Inbox Empty")
+        if "pallet_id" in payload:
+            station.active_pallet_id = payload["pallet_id"]
 
-    
-        # 4. HANDOVER PREP: Prepare for Handover to Next Station
-        if category == "handover_prep" and station.active_pallet_id:
-            destination_id = self._get_destination_id(station, event)
-            if destination_id is None:
-                print(f"[WARN] ⚠️ [HANDOVER PREP] {station.id}: Buggy handover prep as destination_id could not be determined.")
-            self._prepare_handover(station, dest_id=destination_id)
+        # Arrival
+        if transition_stage == "arrival" and not getattr(station, "is_entry", False):
+            if station.expected_pallet_id:
+                station.active_pallet_id = station.expected_pallet_id
+                station.expected_pallet_id = None
 
-        # 5. LOGIC: Run the actual state machine
+        # Handover prep
+        if transition_stage == "handover_prep" and station.active_pallet_id:
+            dest_id = self._get_destination_id(station, event)
+            if dest_id:
+                self._prepare_handover(station, dest_id)
+
+        # Core state machine
         self._handle_station_logic(station, event, timestamp)
 
-        if category == "handover":
+        # Execute handover
+        if transition_stage == "handover":
             self._execute_handover(station, event)
 
-        # D. Viz Update
+        # Visualization
         if self.viz:
-            print(f"[DEBUG]: Updating Viz for Station {station.id} in State {station.current_state} with Pallet {station.active_pallet_id}")
-            context = {'pallet_id': station.active_pallet_id}
+            context = {"pallet_id": station.active_pallet_id}
             self.viz.update(timestamp, station.id, station.current_state, context)
 
     def _get_destination_id(self, station, event):
-        """Given a station and event, determine the destination station ID."""
-        payload = event.get('payload', {})
-        dest_id = None
+        payload = event.get("payload", {})
 
-        # A. Explicit Target - A routing node (like the shuttle)
-        if 'destination' in payload:
-            dest_id = payload['destination']
-            print(f"[DEBUG]: GET DESTINATION: Explicit target found: {dest_id}")
-        
-        # B. Implicit Target (Buffer/Dispenser case - use Graph)
-        else:
-            nodes = getattr(station, 'downstream_nodes', [])
-            if len(nodes) == 1:
-                dest_id = nodes[0]
-                print(f"[DEBUG]: 🟢 [GET DESTINATION] {station.id}: Single (implicit) downstream node found: {dest_id}")
-            else:
-                print(f"[WARN] ⚠️ [GET DESTINATION] {station.id}: Cannot determine destination as we have {len(nodes)} downstream nodes inspite of being a non-routing station.")
-        
-        if dest_id and dest_id not in self.inventory:
-            print(f"[WARN] ⚠️ [GET DESTINATION] {station.id}: Destination ID '{dest_id}' is invalid. Setting it to None. Only these stations exist: {list(self.inventory.keys())}")
-            dest_id = None
+        if "destination" in payload:
+            return payload["destination"]
 
-        return dest_id
+        nodes = getattr(station, "downstream_nodes", [])
+        if len(nodes) == 1:
+            return nodes[0]
+
+        return None
 
     def _prepare_handover(self, station, dest_id):
-        """Prepares for handover by setting the destination node's expected pallet id. This is essential as the current pallet id could be lost or overwritten if something else is already entering this station. In case of routing stations, essential to set the current_destination as it could be lost post this preparation, so we always set it regardless of routing/non-routing stations. TO BE CALLED ONLY IF CATEGORY == 'handover_prep'"""
         self.inventory[dest_id].expected_pallet_id = station.active_pallet_id
         station.current_destination = dest_id
-        print(f"[DEBUG]: 🚚 HANDOVER PREP FOR {station.id} -> {dest_id} | Pallet: {station.active_pallet_id}")
 
     def _execute_handover(self, station, event):
-        """Completes the handover by clearing the active pallet id from the current station."""
-        destination_id = station.current_destination
-        if destination_id is None:
-            destination_id = "exit_sink"
-            print("[DEBUG] No destination_id found during handover, implying no handover prep. That means it is the exit_sink.")
+        destination_id = station.current_destination or "exit_sink"
+
         if self.inventory[destination_id].is_exit:
-            self._record_completion(self.inventory[destination_id], station.active_pallet_id, event.get('timestamp', time.time()))
-            print(f"[DEBUG]: Pallet {station.active_pallet_id} has EXITED the system from {station.id}.")
+            self._record_completion(
+                self.inventory[destination_id],
+                station.active_pallet_id,
+                event.get("timestamp", time.time()),
+            )
+
         station.active_pallet_id = None
         station.current_destination = None
 
     def _record_completion(self, station, pallet_id, timestamp):
-        # 1. Increment the internal counter
         self.throughput_count += 1
-        
-        # 2. Stream to database immediately
+
         self._stream_metric(
             timestamp=timestamp,
             comp_id=station.id,
             name="throughput_total",
             value=self.throughput_count,
-            context="EXIT"
+            unit="units",
+            context="EXIT",
         )
 
         if self.viz:
-            # Update the graph
             self.viz.log_completion(timestamp, self.throughput_count)
-            # Update the text readout
             self.viz.update_scoreboard(self.throughput_count)
-        
-        print(f"[DEBUG]: 🏆 TOTAL THROUGHPUT: {self.throughput_count} (Last: {pallet_id})")
 
+    # ============================================================
+    # STATE MACHINE
+    # ============================================================
 
     def _handle_station_logic(self, station, event, timestamp):
-        """
-        Returns True if a valid transition was found and executed.
-        """
-        current_state_def = station.logic_template['states'].get(station.current_state)
-        if not current_state_def: return False
+        current_state_def = station.logic_template["states"].get(
+            station.current_state
+        )
+        if not current_state_def:
+            return False
 
-        # 1. Check strict transitions
-        for trans in current_state_def.get('transitions', []):
-            if trans['event'] == event['type']:
-                print(f"[DEBUG]: Attempting transition {trans['event']} for Station {station.id} in State {station.current_state}")
+        for trans in current_state_def.get("transitions", []):
+            if trans["event"] == event["type"]:
                 if self._check_hardware_prereqs(station, trans):
                     self._execute_transition(station, trans, timestamp)
                     return True
+
         return False
 
-    def _handle_permissive_catchup(self, station, event, timestamp):
-        """
-        The 'Magic' Fix: Looks ahead 1-2 steps to see if we missed a log.
-        Currently not used, but needed in future for robustness.
-        """
-        curr_state_name = station.current_state
-        logic_states = station.logic_template['states']
-        
-        # brute-force search: Which state *does* accept this event?
-        # We look for a state 'target_candidate' that responds to this event
-        possible_intermediate_states = []
-        
-        for state_name, state_def in logic_states.items():
-            for trans in state_def.get('transitions', []):
-                if trans['event'] == event['type']:
-                    # Found a state that WOULD accept this event
-                    # Now, is it reachable from current state?
-                    # For MVP, we allow a "Force Jump" if we can find a direct path
-                    # But often, simplest is best: just FORCE the transition logic to run
-                    # as if we were already in that state.
-                    
-                    # 1. "Fake" the exit from current state (Duration = Unknown/Long)
-                    # We accept the gap.
-                    
-                    # 2. "Teleport" to the state that accepts this event
-                    print(f"⚠️ [JUMP] {station.id}: Missed transition. Jumping {curr_state_name} -> {state_name}")
-                    
-                    # Force update the state without metrics (because we missed the real entry time)
-                    station.current_state = state_name
-                    station.state_entry_time = timestamp # Reset clock
-                    
-                    # 3. Now execute the ACTUAL event that brought us here
-                    # This ensures we enter the *next* state correctly
-                    self._execute_transition(station, trans, timestamp)
-                    return
-
     def _execute_transition(self, station, transition, timestamp):
-        """Update the state for the station and generate metrics and inferences."""
-        # A. Metrics (Exit Old State)
-        curr_def = station.logic_template['states'][station.current_state]
-        self._generate_metrics(station, curr_def, timestamp)
-        
-        # B. Inference
-        if 'state_inference' in transition:
-            self._apply_inference(station, transition['state_inference'])
-            
-        # C. Move
-        station.set_state(transition['next_state'], timestamp)
-        print(f"[DEBUG]: ✅ [{station.id}] Transitioned to State '{station.current_state}' at {datetime.fromtimestamp(timestamp).isoformat()}")
+        curr_def = station.logic_template["states"][station.current_state]
+        self._generate_metrics(station, curr_def, transition, timestamp)
 
+        if "state_inference" in transition:
+            self._apply_inference(station, transition["state_inference"])
+
+        station.set_state(transition["next_state"], timestamp)
 
     def _check_hardware_prereqs(self, station, transition):
-        """
-        Verifies if virtual sensors match requirements.
-        Format: ["sensors.presence == True"]
-        """
-        checks = transition.get('hardware_check', [])
-        if not checks: return True
+        checks = transition.get("hardware_check", [])
+        if not checks:
+            return True
 
         virtual_memory = self.virtual_state_map[station.id]
 
         for condition in checks:
-            # Simple Parser: "key == value"
-            if "==" not in condition: continue
-            
-            key, val_str = condition.split('==')
+            if "==" not in condition:
+                continue
+
+            key, val_str = condition.split("==")
             key = key.strip()
-            expected_val = val_str.strip().lower() == 'true'
-            
-            # Check Memory (Default to False if unknown)
+            expected_val = val_str.strip().lower() == "true"
             actual_val = virtual_memory.get(key, False)
-            
+
             if actual_val != expected_val:
-                return False # Constraint Failed
-        
+                return False
+
         return True
 
-    def _handle_handover(self, station, event):
-        # We only act if the pattern category is 'handover'
-        if event.get('category') != "handover":
-            return
-
-        print(f"DEBUG: Handover triggered for {station.id}. Current ID: {station.active_pallet_id}")
-
-        # 1. SHUTTLE: Use the mapping to find the destination
-        if event.get('type') == "PALLET_ROUTE":
-            dest_id = event.get('payload', {}).get('target')
-            # Mapping from 'L1_Buffer_A' to 'l1_buffer_a' happens in patterns.py, 
-            # so payload['target'] should already be the lowercase ID.
-            if dest_id and station.active_pallet_id:
-                self.inventory[dest_id].expected_pallet_id = station.active_pallet_id
-                print(f"  >>> SHUTTLE PUSH: {station.active_pallet_id} -> {dest_id}")
-
-        # 2. LINEAR (Buffer/Dispenser): Use the Graph Topology
-        elif event.get('type') == "STOPPER_OPEN":
-            nodes = getattr(station, 'downstream_nodes', [])
-            if len(nodes) == 1 and station.active_pallet_id:
-                next_id = nodes[0]
-                self.inventory[next_id].expected_pallet_id = station.active_pallet_id
-                print(f"  >>> LINEAR PUSH: {station.active_pallet_id} -> {next_id}")
-            else:
-                print(f"  >>> LINEAR PUSH FAILED: Nodes={nodes}, HasID={bool(station.active_pallet_id)}")
-
-
     def _apply_inference(self, station, inference_dict):
-        """Forces the virtual sensors to match the inferred reality."""
         for key, value in inference_dict.items():
             self.virtual_state_map[station.id][key] = value
 
-    def _generate_metrics(self, station, state_def, timestamp):
-        """
-        Calculates values based on Config and adds to Buffer.
-        """
-        metrics_config = state_def.get('metrics', [])
-        if not metrics_config: return
+    # ============================================================
+    # METRICS
+    # ============================================================
+
+    def _generate_metrics(self, station, state_def, transition, timestamp):
+        metrics_config = []
+
+        for trans in state_def.get("transitions", []):
+            if trans["event"] == transition["event"]:
+                metrics_config = trans.get("metrics", [])
+                break
 
         for m_conf in metrics_config:
-            m_name = m_conf['name']
-            m_type = m_conf['type']
+            m_name = m_conf["name"]
+            m_type = m_conf["type"]
             value = None
 
-            if m_type == 'duration_seconds':
-                # Calculate Duration (Current Time - Entry Time)
+            if m_type == "duration_seconds":
                 if station.state_entry_time > 0:
                     value = timestamp - station.state_entry_time
-            
-            # Future types: 'snapshot_value' (from payload), 'counter'
 
             if value is not None:
-                # Stream immediately to database
-                self._stream_metric(timestamp, station.id, m_name, value, station.current_state)
-
-    def _stream_metric(self, timestamp, comp_id, name, value, context):
-        """
-        STREAM DIRECTLY TO DATABASE (NO BUFFERING)
-        Falls back to CSV if database is unavailable
-        """
-        ts_iso = datetime.fromtimestamp(timestamp).isoformat()
-        
-        print(f"[STREAM] Attempting to write: {comp_id}.{name} = {value:.4f}")
-        print(f"  db_manager exists: {self.db_manager is not None}")
-        if self.db_manager:
-            print(f"  db_manager.enabled: {self.db_manager.enabled}")
-            print(f"  db_manager.engine: {self.db_manager.engine is not None}")
-        
-        # Try database first
-        if self.db_manager and self.db_manager.enabled:
-            try:
-                self.db_manager.insert_metric(
-                    timestamp=ts_iso,
-                    component_id=comp_id,
-                    metric_name=name,
-                    value=round(value, 4),
-                    unit="s",
-                    state_context=context
+                self._stream_metric(
+                    timestamp,
+                    station.id,
+                    m_name,
+                    value,
+                    m_type,
+                    station.current_state,
                 )
-                print(f"[STREAM] ✓ DB: {comp_id}.{name} = {value:.4f}")
-            except Exception as e:
-                print(f"[STREAM] ✗ DB failed: {e}. Writing to CSV.")
-                self._write_to_csv(ts_iso, comp_id, name, value, context)
-        else:
-            # Fallback to CSV
-            print(f"[STREAM] ⚠ Using CSV fallback (DB not available)")
-            self._write_to_csv(ts_iso, comp_id, name, value, context)
 
-    def _write_to_csv(self, ts_iso, comp_id, name, value, context):
-        """Fallback: Write single row to CSV"""
+    def _push_raw_metrics(self, event, timestamp):
+        payload = event.get("payload", {})
+
+        for key, value in payload.items():
+            if key == "pallet_id":
+                continue
+
+            self._stream_metric(
+                timestamp=timestamp,
+                comp_id=event.get("target", "system"),
+                name=key,
+                value=value,
+                unit=None,
+                context=event.get("type"),
+            )
+
+    # ============================================================
+    # DATABASE STREAM
+    # ============================================================
+
+    def _stream_metric(self, timestamp, comp_id, name, value, unit, context):
         try:
-            with open(self.output_file, 'a', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow([ts_iso, comp_id, name, round(value, 4), "s", context])
-            print(f"[CSV] ✓ Written: {comp_id}.{name}")
+            #ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            with SessionLocal() as session:
+                metric = ProcessMetric(
+                    timestamp=ts_dt,
+                    station_name=comp_id,
+                    metric_name=name,
+                    value=round(value, 4)
+                    if isinstance(value, (int, float))
+                    else value,
+                    unit=unit,
+                    state_context=context,
+                )
+                session.add(metric)
+                session.commit()
+
+            print(f"[DB] ✓ {comp_id}.{name} = {value}")
+
         except Exception as e:
-            print(f"[CSV] ✗ Failed to write: {e}")
+            print(f"[DB ERROR] {e}")
+
+    # ============================================================
+    # TARGET RESOLUTION
+    # ============================================================
+
+    def _state_based_target_resolver(self, state_resolver, payload):
+        target_type = state_resolver.get("target_type")
+        current_state = state_resolver.get("current_state")
+        logic_type = state_resolver.get("logic_type")
+
+        if logic_type == "filter_expected_pallet_id_state":
+            for station_id, station in self.inventory.items():
+                if (
+                    station.current_state == current_state
+                    and station.expected_pallet_id == payload.get("pallet_id")
+                ):
+                    return station_id
+
+        if logic_type == "filter_station_type_state_oldest":
+            oldest = None
+            for station_id, station in self.inventory.items():
+                if (
+                    station.config.get("logic_template") == target_type
+                    and station.current_state == current_state
+                ):
+                    if not oldest or station.state_entry_time < oldest[1]:
+                        oldest = (station_id, station.state_entry_time)
+
+            if oldest:
+                return oldest[0]
+
+        return None

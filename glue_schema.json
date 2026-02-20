@@ -1,0 +1,200 @@
+{
+    "public": {
+        "error_logs": {
+            "columns": [
+                {
+                    "name": "log_message",
+                    "type": "text",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "station_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "timestamp",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": false,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "service_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "severity",
+                    "type": "text",
+                    "default": null,
+                    "nullable": false,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "extra",
+                    "type": "text",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                }
+            ]
+        },
+        "process_metrics": {
+            "columns": [
+                {
+                    "name": "unit",
+                    "type": "text",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "component_id",
+                    "type": "text",
+                    "default": null,
+                    "nullable": false,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "value",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "timestamp",
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": false,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "metric_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": false,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "state_context",
+                    "type": "text",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                }
+            ]
+        },
+        "baseline_metrics": {
+            "columns": [
+                {
+                    "name": "min_limit",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "sample_count",
+                    "type": "integer",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "metric_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": false,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "unit",
+                    "type": "text",
+                    "default": "'seconds'::text",
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "max_limit",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "mean",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "default": "nextval('baseline_metrics_id_seq'::regclass)",
+                    "nullable": false,
+                    "foreign_key": null,
+                    "primary_key": true
+                },
+                {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "default": "CURRENT_TIMESTAMP",
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "default": "CURRENT_TIMESTAMP",
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "station_name",
+                    "type": "text",
+                    "default": null,
+                    "nullable": false,
+                    "foreign_key": null,
+                    "primary_key": false
+                },
+                {
+                    "name": "std_dev",
+                    "type": "double precision",
+                    "default": null,
+                    "nullable": true,
+                    "foreign_key": null,
+                    "primary_key": false
+                }
+            ]
+        }
+    }
+}

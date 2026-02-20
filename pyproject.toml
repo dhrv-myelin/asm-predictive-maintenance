@@ -5,8 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    "pandas>=2.0.3",
-    "psycopg2>=2.9.10",
-    "pyyaml>=6.0.3",
-    "rerun-sdk>=0.22.1",
+  "pandas>=2.0.3",
+  "psycopg2-binary>=2.9.10",
+  "pyyaml>=6.0.3",
+  "rerun-sdk>=0.22.1",
+  "torch>=2.5.1",
 ]

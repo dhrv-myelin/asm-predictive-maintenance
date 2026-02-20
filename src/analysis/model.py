@@ -188,6 +188,8 @@ class Model:
         else:
             raise ValueError(f"Unknown model_type: {self.model_type}")
 
+    # INFO: this needs to be changed, to take into account data can be diff
+    #
     # ─────────────────────────────────────────────
     # TABULAR INFERENCE
     # ─────────────────────────────────────────────

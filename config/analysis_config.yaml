@@ -34,7 +34,7 @@ target:
 
   system__cycle_time:
     - method: mamba
-    - model_type: sequence   # to differ whether to use smth like torch or sklearn
+      model_type: sequence   # to differ whether to use smth like torch or sklearn
       required_features:
         - system__cycle_time
         - shuttle_scan_success_time
@@ -60,6 +60,7 @@ target:
 
       train_params:
         num_epochs: 200
+        val_split: 0.2
         learning_rate: 0.001
         dropout: 0.2
 

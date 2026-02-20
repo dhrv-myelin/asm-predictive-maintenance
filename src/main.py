@@ -24,6 +24,9 @@ from viz_adapter import VizAdapter
 from utils.tag_resolver import TagResolver
 from db_manager import TimescaleDBManager
 
+from datetime import datetime, timezone
+import time
+
 def load_yaml(path):
     with open(path, 'r') as f:
         return yaml.safe_load(f)
@@ -34,7 +37,7 @@ def load_json(path):
     with open(path, 'r') as f:
         return json.load(f)
     
-
+STREAMING = False
 
 def run_record_mode(engine, db_manager, baseline_file,baseline_hours,last_log_timestamp=None):
     """
@@ -316,11 +319,35 @@ def main():
     line_count = 0
     start_time = time.time()
     last_log_timestamp = None  # Track the last log timestamp as datetime object
+
+    prev_ts = None
     
     try:
         for timestamp, event in log_parser.parse_file(args.input, live_mode=args.live):
             # Track the last timestamp from the log file
             # Convert Unix timestamp to datetime object if needed
+
+            if STREAMING:
+                file_ts = timestamp
+                if isinstance(file_ts, datetime):
+                    file_ts = file_ts.timestamp()
+                else:
+                    file_ts = float(file_ts)
+
+                if prev_ts is not None:
+                    delta = file_ts - prev_ts
+                    
+                    # Safety: avoid negative or insane delays
+                    if delta > 0:
+                        delta = min(delta, 1)
+                        print("[DEBUG] Delta waiting time : ", delta)
+                        time.sleep(delta)
+
+                prev_ts = file_ts
+                now_ts = time.time()  # seconds since epoch
+                event["timestamp"] = now_ts
+                timestamp = now_ts
+
             if isinstance(timestamp, (int, float)):
                 last_log_timestamp = datetime.fromtimestamp(timestamp)
             else:

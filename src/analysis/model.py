@@ -1,8 +1,11 @@
 import os
-
+import numpy as np
 import torch
-import numpy
 import yaml
+
+# from analysis import data_handler
+
+# from analysis import data_handler
 
 # config path
 CONFIG_PATH = os.getcwd() + "/config/analysis_config.yaml"
@@ -20,33 +23,33 @@ def load_config(path):
 
 
 # model class
-class Model:
-
-    # takes in the config, the target and the model to use
-
-    def __init__(self, config, model_name, target_name):
-
-        self.model_name = model_name
-        self.target_name = target_name
-
-        all_configs = config["target"][target_name]
-
-        # find config matching model_name
-        self.config = next(c for c in all_configs if c["method"] == model_name)
-
-        # Extract config fields
-        self.method = self.config["method"]
-        # required features from wide table
-        self.required_features = self.config["required_features"]
-        self.history_window = self.config["history_window"]
-        self.prediction_window = self.config["prediction_window"]
-        self.mode = self.config.get("mode", "offline")
-
-    def train_model(self):
-        pass
-
-    def real_time_inference(self):
-        pass
+# class Model:
+#
+#     # takes in the config, the target and the model to use
+#
+#     def __init__(self, config, model_name, target_name):
+#
+#         self.model_name = model_name
+#         self.target_name = target_name
+#
+#         all_configs = config["target"][target_name]
+#
+#         # find config matching model_name
+#         self.config = next(c for c in all_configs if c["method"] == model_name)
+#
+#         # Extract config fields
+#         self.method = self.config["method"]
+#         # required features from wide table
+#         self.required_features = self.config["required_features"]
+#         self.history_window = self.config["history_window"]
+#         self.prediction_window = self.config["prediction_window"]
+#         self.mode = self.config.get("mode", "offline")
+#
+#     def train_model(self):
+#         pass
+#
+#     def real_time_inference(self):
+#         pass
 
 
 class Model:
@@ -65,20 +68,26 @@ class Model:
     # ─────────────────────────────────────────────
     # INIT
     # ─────────────────────────────────────────────
-    def __init__(self, data_handler, model, config, target_name):
+    def __init__(self, data_handler, model, model_name, config, target_name):
 
         self.data_handler = data_handler
         self.model = model
-        self.config = config
         self.target_name = target_name
+        self.model_name = model_name
 
-        self.method = config["method"]
-        self.model_type = config["model_type"]
+        all_configs = config["target"][self.target_name]["method"]
 
-        self.history_window = config.get("history_window", None)
-        self.prediction_window = config.get("prediction_window", 1)
+        # find config matching model_name
+        self.config = next(c for c in all_configs if c["name"] == self.model_name)
 
-        print(config)
+        # self.method = config["method"]
+        # self.model_type = config["model_type"]
+        #
+        # self.history_window = config.get("history_window", None)
+        # self.prediction_window = config.get("prediction_window", 1)
+
+        print(self.config)
+        print(type(all_configs))
 
     # ─────────────────────────────────────────────
     # PUBLIC TRAIN ENTRY
@@ -231,6 +240,17 @@ class Model:
 
 if __name__ == "__main__":
 
+    from data_handler import DataHandler
+    from models.architectures.mamba import Mamba_TS
+
+    data_handler = DataHandler
+
     config = load_config(CONFIG_PATH)
 
-    model = Model(config, "mamba", "system__cycle_time")
+    model = Model(
+        data_handler=data_handler,
+        model=Mamba_TS,
+        model_name="xgboost",
+        config=config,
+        target_name="system__cycle_time",
+    )

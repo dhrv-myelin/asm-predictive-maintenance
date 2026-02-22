@@ -1,256 +1,286 @@
-import os
 import numpy as np
+import mlflow
+import mlflow.pytorch
 import torch
+import torch.nn as nn
 import yaml
 
-# from analysis import data_handler
 
-# from analysis import data_handler
+from models.mamba import Mamba_TS
 
-# config path
-CONFIG_PATH = os.getcwd() + "/config/analysis_config.yaml"
+# ============================================================
+# Main Wrapper
+# ============================================================
 
-
-def load_config(path):
-
-    with open(path, "r") as f:
-        data = yaml.safe_load(f)
-
-        # test_config = data["target"]["system__cycle_time"][0]
-        # print(test_config)
-
-    return data
-
-
-# model class
-# class Model:
-#
-#     # takes in the config, the target and the model to use
-#
-#     def __init__(self, config, model_name, target_name):
-#
-#         self.model_name = model_name
-#         self.target_name = target_name
-#
-#         all_configs = config["target"][target_name]
-#
-#         # find config matching model_name
-#         self.config = next(c for c in all_configs if c["method"] == model_name)
-#
-#         # Extract config fields
-#         self.method = self.config["method"]
-#         # required features from wide table
-#         self.required_features = self.config["required_features"]
-#         self.history_window = self.config["history_window"]
-#         self.prediction_window = self.config["prediction_window"]
-#         self.mode = self.config.get("mode", "offline")
-#
-#     def train_model(self):
-#         pass
-#
-#     def real_time_inference(self):
-#         pass
+models = {
+    "mamba": Mamba_TS,
+}
 
 
 class Model:
     """
-    Generic ML model wrapper.
+    Simple universal wrapper for:
+        - PyTorch models
+        - Sklearn models
 
-    Supports:
-        - sequence models (PyTorch: Mamba, LSTM, Transformer)
-        - tabular models (sklearn: XGBoost, RF, Linear, etc)
-
-    Public API:
-        train_model()
-        real_time_inference()
+    Expected by orchestrator:
+        train(X, y)
+        real_time_inference(window_df)
     """
 
-    # ─────────────────────────────────────────────
-    # INIT
-    # ─────────────────────────────────────────────
-    def __init__(self, data_handler, model, model_name, config, target_name):
+    def __init__(self, data_handler, model, config, target_name):
 
+        # basic inputs
+
+        # datahandler class
         self.data_handler = data_handler
-        self.model = model
+        # HACK: method str from config
+        self.model_name = model
+        # config of just that method
+        self.config = config
         self.target_name = target_name
-        self.model_name = model_name
 
-        all_configs = config["target"][self.target_name]["method"]
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        # find config matching model_name
-        self.config = next(c for c in all_configs if c["name"] == self.model_name)
+        self.model_type = self.config["model_type"]
 
-        # self.method = config["method"]
-        # self.model_type = config["model_type"]
-        #
-        # self.history_window = config.get("history_window", None)
-        # self.prediction_window = config.get("prediction_window", 1)
+        # used to init either sklearn or torch
+        self.backend = self._init_backend()
 
-        print(self.config)
-        print(type(all_configs))
+    # --------------------------------------------------------
+    # Backend Selection
+    # --------------------------------------------------------
 
-    # ─────────────────────────────────────────────
-    # PUBLIC TRAIN ENTRY
-    # ─────────────────────────────────────────────
-    def train_model(self):
+    def _init_backend(self):
 
-        if self.model_type == "tabular":
-            self._train_tabular()
+        if self.model_type == "sequence":
+            return TorchBackend(self.config, self.device)
 
-        elif self.model_type == "sequence":
-            self._train_sequence()
+        elif self.model_type == "tabular":
+            return SklearnBackend(self.config)
 
         else:
-            raise ValueError(f"Unknown model_type: {self.model_type}")
+            raise ValueError(f"Unsupported method: {self.model_name}")
 
-    # ─────────────────────────────────────────────
-    # TABULAR TRAINING (sklearn style)
-    # ─────────────────────────────────────────────
-    def _train_tabular(self):
+    # --------------------------------------------------------
+    # Training
+    # --------------------------------------------------------
 
-        df = self.data_handler.df.copy()
+    def train(self, X, y):
+        """
+        X: (N, seq_len, num_features)
+        y: (N, num_targets)
+        """
 
-        if df.empty:
-            raise RuntimeError("No training data available")
+        if self.model_type == "tabular":
+            # Flatten sequence dimension
+            N, seq_len, num_features = X.shape
+            X = X.reshape(N, seq_len * num_features)
 
-        X = df.drop(columns=[self.target_name, "timestamp"], errors="ignore")
-        y = df[self.target_name]
+        # sequence models keep shape (N, seq_len, num_features)
 
-        print(f"[TABULAR TRAIN] Rows: {len(df)}, Features: {X.shape[1]}")
+        self.backend.train(X, y)
 
-        self.model.fit(X.values, y.values)
+    # --------------------------------------------------------
+    # Real-time inference
+    # --------------------------------------------------------
 
-    # ─────────────────────────────────────────────
-    # SEQUENCE TRAINING (PyTorch style)
-    # ─────────────────────────────────────────────
-    def _train_sequence(self):
+    def real_time_inference(self, window_df):
+        """
+        window_df: DataFrame (seq_len, num_features + timestamp)
+        """
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(device)
-        self.model.train()
+        # Drop timestamp + target if present
+        X = window_df.drop(
+            columns=["timestamp", self.target_name], errors="ignore"
+        ).to_numpy()
 
-        train_params = self.config.get("train_params", {})
-        lr = train_params.get("learning_rate", 1e-3)
-        epochs = train_params.get("num_epochs", 10)
+        if self.model_type == "tabular":
+            # Flatten entire window into one row
+            X = X.reshape(1, -1)
 
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
-        loss_fn = torch.nn.MSELoss()
+        elif self.model_type == "sequence":
+            # Add batch dimension
+            X = X[np.newaxis, ...]
 
-        print(f"[SEQUENCE TRAIN] Epochs={epochs}, Device={device}")
+        preds = self.backend.predict(X)
 
-        for epoch in range(epochs):
+        return np.array(preds).flatten().tolist()
 
-            ts = None
-            total_loss = 0
-            steps = 0
 
-            while True:
+# ============================================================
+# Torch Backend
+# ============================================================
 
-                out = self.data_handler.fetch_next_window(ts, for_training=True)
-                if out is None:
-                    break
 
-                X_df, y_df = out
+class TorchBackend:
 
-                # remove timestamp
-                X_df = X_df.drop(columns=["timestamp"], errors="ignore")
+    def __init__(self, config, device):
 
-                X = torch.tensor(
-                    X_df.values, dtype=torch.float32, device=device
-                ).unsqueeze(0)
-                y = torch.tensor(
-                    y_df.values, dtype=torch.float32, device=device
-                ).unsqueeze(0)
+        # cuda device if possible
+        self.device = device
 
-                optimizer.zero_grad()
+        # config only contains required params
+        self.config = config
 
-                pred = self.model(X)
+        # 👇 YOU plug in your torch model class here
+        # Replace YourTorchModel with your actual model
+        self.model = models[config["method"]](**config.get("arch", {}))
 
-                loss = loss_fn(pred.squeeze(), y.squeeze())
+        self.model.to(self.device)
 
-                loss.backward()
-                optimizer.step()
+        self.criterion = nn.MSELoss()
+        self.optimizer = torch.optim.Adam(
+            self.model.parameters(), lr=config.get("lr", 1e-3)
+        )
 
-                total_loss += loss.item()
-                steps += 1
+        mlflow.pytorch.autolog()
 
-                ts = (
-                    X_df.index[0]
-                    if "timestamp" not in X_df
-                    else X_df.iloc[0]["timestamp"]
+    def train(self, X, y):
+
+        print("Starting training...")
+
+        X = torch.tensor(X, dtype=torch.float32).to(self.device)
+        y = torch.tensor(y, dtype=torch.float32).to(self.device)
+
+        N = X.shape[0]
+
+        # ---------------------------------------------------------
+        # SPLIT (leave your config placeholders)
+        # ---------------------------------------------------------
+
+        # train_ratio = self.config["train_ratio"]
+        # val_ratio = self.config["val_ratio"]
+        # test_ratio = self.config["test_ratio"]
+
+        train_ratio = 0.7
+        val_ratio = 0.15
+        test_ratio = 0.15
+
+        train_end = int(N * train_ratio)
+        val_end = train_end + int(N * val_ratio)
+
+        X_train, y_train = X[:train_end], y[:train_end]
+        X_val, y_val = X[train_end:val_end], y[train_end:val_end]
+        X_test, y_test = X[val_end:], y[val_end:]
+
+        epochs = self.config.get("epochs", 10)
+        lr = self.config.get("lr", 1e-3)
+
+        # ---------------------------------------------------------
+        # MLflow Run
+        # ---------------------------------------------------------
+
+        with mlflow.start_run():
+
+            # Log hyperparameters
+            mlflow.log_param("epochs", epochs)
+            mlflow.log_param("learning_rate", lr)
+            mlflow.log_param("model_name", self.config["method"])
+
+            for epoch in range(epochs):
+
+                self.model.train()
+                self.optimizer.zero_grad()
+
+                recon, pred = self.model(X_train)
+                train_loss = self.criterion(pred, y_train)
+
+                train_loss.backward()
+                self.optimizer.step()
+
+                # Validation
+                self.model.eval()
+                with torch.no_grad():
+                    _, pred_val = self.model(X_val)
+                    val_loss = self.criterion(pred_val, y_val)
+
+                # Log metrics per epoch
+                mlflow.log_metric("train_loss", train_loss.item(), step=epoch)
+                mlflow.log_metric("val_loss", val_loss.item(), step=epoch)
+
+                print(
+                    f"Epoch {epoch+1}/{epochs} "
+                    f"| Train Loss: {train_loss.item():.6f} "
+                    f"| Val Loss: {val_loss.item():.6f}"
                 )
 
-            avg_loss = total_loss / max(steps, 1)
-            print(f"Epoch {epoch+1}/{epochs}  Loss={avg_loss:.5f}")
-
-    # ─────────────────────────────────────────────
-    # PUBLIC INFERENCE ENTRY
-    # ─────────────────────────────────────────────
-    def real_time_inference(self):
-
-        if self.model_type == "tabular":
-            return self._inference_tabular()
-
-        elif self.model_type == "sequence":
-            return self._inference_sequence()
-
-        else:
-            raise ValueError(f"Unknown model_type: {self.model_type}")
-
-    # INFO: this needs to be changed, to take into account data can be diff
-    #
-    # ─────────────────────────────────────────────
-    # TABULAR INFERENCE
-    # ─────────────────────────────────────────────
-    def _inference_tabular(self):
-
-        df = self.data_handler.df
-
-        if df.empty:
-            return None
-
-        X = df.tail(1).drop(columns=[self.target_name, "timestamp"], errors="ignore")
-
-        pred = self.model.predict(X.values)
-
-        return np.asarray(pred)
-
-    # ─────────────────────────────────────────────
-    # SEQUENCE INFERENCE
-    # ─────────────────────────────────────────────
-    def _inference_sequence(self):
-
-        df = self.data_handler.df
-
-        if len(df) < self.history_window:
-            return None
-
-        X_df = df.tail(self.history_window).drop(columns=["timestamp"], errors="ignore")
-
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        X = torch.tensor(X_df.values, dtype=torch.float32, device=device).unsqueeze(0)
+        # -----------------------------------------------------
+        # Test Evaluation
+        # -----------------------------------------------------
 
         self.model.eval()
         with torch.no_grad():
-            pred = self.model(X)
+            _, pred_test = self.model(X_test)
+            test_loss = self.criterion(pred_test, y_test)
 
-        return pred.squeeze().cpu().numpy()
+        mlflow.log_metric("test_loss", test_loss.item())
+
+        print(f"\nFinal Test Loss: {test_loss.item():.6f}")
+
+        # -----------------------------------------------------
+        # Log Model Artifact
+        # -----------------------------------------------------
+
+        mlflow.pytorch.log_model(self.model, "model")
+
+    def predict(self, X):
+
+        self.model.eval()
+
+        X = torch.tensor(X, dtype=torch.float32).to(self.device)
+
+        with torch.no_grad():
+            recon, pred = self.model(X)
+
+        return pred.cpu().numpy()
+
+
+# ============================================================
+# Sklearn Backend
+# ============================================================
+
+
+# TODO:
+class SklearnBackend:
+
+    def __init__(self, config) -> None:
+        pass
+
+    def train(self):
+        pass
+
+    def predict(self):
+        pass
+
+    pass
 
 
 if __name__ == "__main__":
 
-    from data_handler import DataHandler
-    from models.architectures.mamba import Mamba_TS
+    pass
 
-    data_handler = DataHandler
+    # from data_handler import DataHandler
 
-    config = load_config(CONFIG_PATH)
+    # import os
 
-    model = Model(
-        data_handler=data_handler,
-        model=Mamba_TS,
-        model_name="xgboost",
-        config=config,
-        target_name="system__cycle_time",
-    )
+    # config path
+    # CONFIG_PATH = os.getcwd() + "/config/analysis_config.yaml"
+
+    # def load_config(path):
+
+    # with open(path, "r") as f:
+    # data = yaml.safe_load(f)
+    # return data
+
+    # data_handler = DataHandler
+
+    # config = load_config(CONFIG_PATH)
+
+    # model = Model(
+    #     data_handler=data_handler,
+    #     model="mamba",
+    #     # model_name="xgboost",
+    #     config=config,
+    #     target_name="system__cycle_time",
+    # )

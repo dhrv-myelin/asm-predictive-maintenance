@@ -33,6 +33,7 @@ target:
   # ── SYSTEM ────────────────────────────────────────────────────────────────
 
   system__cycle_time:
+
     - method: mamba
       model_type: sequence   # to differ whether to use smth like torch or sklearn
       required_features:
@@ -42,6 +43,7 @@ target:
         - l1_dispenser__dispenser_dispensing_time
         - l1_inspection__inspection_core_vision_system_time
         - timestamp
+    
 
       history_window: 6
       stride: 2
@@ -50,13 +52,21 @@ target:
       mode: offline
 
       arch:
+        
+        #place holders for mamba_ts class init not in arch already
+        input_size: 4 #HACK: should do len(required_features) - 2 (because timestamp and target feature are in required_features)
+        forecast_horizon: 4
+
+
         seq_len: 12
         hidden_dim: 64
         d_state: 16
         d_conv: 4
         num_layers: 2
-        loss_weight_recon: 0.3
-        device: auto 
+
+        #HACK: these two should ideally be removed, as i feed tis into init for the model class
+        # loss_weight_recon: 0.3
+        # device: auto 
 
       train_params:
         num_epochs: 200
@@ -66,6 +76,26 @@ target:
 
       analysis_types: [forecast]
 
+  # # ───────────── TABULAR METHOD ─────────────
+  #   - method: xgboost
+  #     model_type: tabular
+  #     required_features:
+  #       - shuttle_scan_success_time
+  #       - shuttle_carrier_motion_time
+  #       - l1_dispenser__dispenser_dispensing_time
+  #       - l1_inspection__inspection_core_vision_system_time
+  #
+  #     history_window: 6
+  #     stride: 2
+  #     prediction_window: 4
+  #     mode: offline
+  #
+  #     train_params:
+  #       n_estimators: 300
+  #       max_depth: 6
+  #       learning_rate: 0.05
+  #
+  #     analysis_types: [forecast]
 
   #   metric: cycle_time
   #   target_column: system__cycle_time

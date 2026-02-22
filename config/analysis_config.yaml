@@ -17,7 +17,7 @@
 
 global:
   db:
-    database_url_env: DATABASE_URL
+    database_url_env: postgresql://postgres:myelin123@localhost:5432/glue-dispenser-db
     input_table: process_metrics
     output_table: analysis_results
     schema: public

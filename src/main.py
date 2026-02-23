@@ -23,7 +23,7 @@ from log_parser import LogParser
 from engine import LogicEngine
 from viz_adapter import VizAdapter
 from utils.tag_resolver import TagResolver
-from src.database import engine as db_engine
+from database import engine as db_engine
 import statistics
 
 from datetime import datetime, timezone
@@ -48,8 +48,8 @@ def run_record_mode(baseline_file, baseline_hours):
     """
 
     print("\n--- RECORD MODE: Generating Baseline ---")
-    from src.db.models import BaselineMetric
-    from src.database import SessionLocal
+    from db.models import BaselineMetric
+    from database import SessionLocal
 
     if db_engine is None:
         print("Database engine not initialized.")
@@ -208,12 +208,6 @@ def main():
     parser.add_argument('--viz', action='store_true')
     parser.add_argument('--patterns', default='config/log_patterns/prod_patterns.yaml')
     parser.add_argument('--no-db', action='store_true', help='Disable database (fallback to CSV)')
-    parser.add_argument(
-    '--baseline_hours',
-    type=int,
-    default=4,
-    help='Hours of data to use for baseline (record mode)'
-)
     parser.add_argument(
     '--baseline_hours',
     type=int,

@@ -171,6 +171,7 @@ class DataHandler:
         Accept one or more raw poller rows, update the active dicts, flush
         any newly completed cycles into self.df, and return self.df.
         """
+        print(f"[DEBUG] Ingesting rows: {len(rows)} rows")
         if not rows:
             return None
 

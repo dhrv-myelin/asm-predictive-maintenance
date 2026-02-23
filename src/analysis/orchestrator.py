@@ -49,11 +49,11 @@ def loop(poller, data_handlers, models, db_util):
                     model = models[name]
 
                     # inference
-                    # preds = model.real_time_inference(window)
+                    preds = model.real_time_inference(window)
 
                     # write
                     last_ts = window.iloc[-1]["timestamp"]
-                    # db_util.insert_results(last_ts, preds)
+                    db_util.insert_results(last_ts, preds)
 
                     # move window
                     curr_ts_map[name] = window.iloc[0]["timestamp"]
@@ -79,12 +79,18 @@ def inference_loop(data_handler, model, db_util):
         print("✅ Window shape:", X.shape)
         # print(X)
 
-        # # inference
+        # inference
         # preds = model.real_time_inference(X)
 
-        # # write results
-        # last_ts = X.iloc[-1]['timestamp']
-        # db_util.insert_results(last_ts, preds)
+        # write results
+        last_ts = X.iloc[-1]['timestamp']
+        db_util.insert_results(
+            last_timestamp=last_ts,
+            values= [0.0] * X.shape[0], # preds
+            station_name = data_handler.target_name.split("__")[0],
+            metric_name = data_handler.target_name.split("__")[1],
+            model_name = model.name
+        )
 
         time.sleep(0.5)   # pacing
 
@@ -119,8 +125,8 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
 
 if __name__ == "__main__":
 
-    TRAIN = True
-    BACKUP_LOGS = False
+    TRAIN = False
+    BACKUP_LOGS = True
     start_ts = datetime(2026, 1, 24, 3, 36, 0)
     end_ts   = datetime(2026, 1, 24, 4, 42, 0)
 

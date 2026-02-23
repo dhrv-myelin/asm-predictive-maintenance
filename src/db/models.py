@@ -9,7 +9,7 @@ from sqlalchemy import (
     Index
 )
 from sqlalchemy.sql import func
-from src.db.base import Base
+from .base import Base
 from sqlalchemy import BigInteger, Identity
 
 # ===============================

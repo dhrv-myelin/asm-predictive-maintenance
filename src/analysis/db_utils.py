@@ -4,7 +4,6 @@ from datetime import timedelta
 class DBUtils:
     def __init__(self, session_factory):
         self._sf = session_factory
-        self.last_written_timestamps = []
     
     def fetch_data(self, start_timestamp, end_timestamp):
         sql = text("""
@@ -27,40 +26,34 @@ class DBUtils:
         return rows
 
 
-    def insert_results(self, last_timestamp, values):
-
-        # remove old predictions
-        for ts in self.last_written_timestamps:
-            self._remove_from_db(ts)
-
-        self.last_written_timestamps = []
+    def insert_results(self, last_timestamp, values, station_name, metric_name, model_name):
 
         curr_ts = last_timestamp
 
         for v in values:
             curr_ts = curr_ts + timedelta(seconds=1)
-            self._write_db(curr_ts, v)
-            self.last_written_timestamps.append(curr_ts)
+            self._write_db(
+                actual_timestamp = last_timestamp,
+                predicted_timestamp = curr_ts,
+                predicted_value = v,
+                station_name = self.station_name,
+                metric_name = self.metric_name,
+                model_name = self.model_name
+            )
 
-    def _remove_from_db(self, timestamp):
+    def _write_db(self,actual_timestamp, predicted_timestamp, predicted_value, station_name, metric_name, model_name):
         sql = text("""
-            DELETE FROM analysis_results
-            WHERE timestamp = :ts
-              AND target = :target
-        """)
-        with self._sf() as s:
-            s.execute(sql, {"ts": timestamp, "target": self.target_name})
-            s.commit()
-
-    def _write_db(self, timestamp, value):
-        sql = text("""
-            INSERT INTO analysis_results (timestamp, target, value)
-            VALUES (:ts, :target, :val)
+            INSERT INTO model_predictions (id, actual_timestamp, predicted_timestamp, predicted_value, station_name, metric_name, model_name)
+            VALUES (:id, :actual_timestamp, :predicted_timestamp, :predicted_value, :station_name, :metric_name, :model_name)
         """)
         with self._sf() as s:
             s.execute(sql, {
-                "ts": timestamp,
-                "target": self.target_name,
-                "val": float(value)
+                "id": None,
+                "actual_timestamp": actual_timestamp,
+                "predicted_timestamp": predicted_timestamp,
+                "predicted_value": predicted_value,
+                "station_name": station_name,
+                "metric_name": metric_name,
+                "model_name": model_name
             })
             s.commit()

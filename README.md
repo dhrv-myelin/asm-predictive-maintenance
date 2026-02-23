@@ -11,8 +11,10 @@ uv add alembic
 uv run alembic upgrade head 
 ```
 
+# Starting Log Parser Service
 ```
-uv run python src/main.py --mode record --input data/vector_buffer.jsonl --patterns config/log_patterns/prod_patterns.yaml
+cd services/log_parser
+uv run python src/main.py --mode record --input data/vector_buffer.jsonl
 ```
 
 Use --no-db for output to a .csv instead of the DB. 

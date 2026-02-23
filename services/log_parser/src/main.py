@@ -288,8 +288,6 @@ def main():
     line_count = 0
     start_time = time.time()
     last_log_timestamp = None  # Track the last log timestamp as datetime object
-
-    prev_ts = None
     
     try:
         for cleaned_line in consumer.stream():

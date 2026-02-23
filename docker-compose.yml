@@ -9,5 +9,5 @@ services:
       - DEBUG_HUB=add_hub_timestamp
     volumes:
       - ./deploy/vector/vector-aggregator-hub.yaml:/etc/vector/vector.yaml:ro
-      - ./data:/app/data
+      - ./services/log_parser/data:/app/data
     restart: unless-stopped

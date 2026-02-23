@@ -1,0 +1,1 @@
+{"file":"D:/Shared\\gdm_project\\logs\\tracked.log","host":"MFP-LPTP-062","message":"2026-02-23 14:45:06,353 [1] INFO  UI.App - Application initialized\r","metadata":{"environment":"prod","facility":"FACTORY_01","hub_ts":"2026-02-23T09:15:08.806876281Z","shipper_id":"${HOSTNAME:-UNNAMED_SHIPPER}"},"source_type":"file","timestamp":"2026-02-23T09:15:07.763991200Z"}

@@ -31,7 +31,7 @@ class DBUtils:
         curr_ts = last_timestamp
 
         for v in values:
-            curr_ts = curr_ts + timedelta(seconds=1)
+            curr_ts = curr_ts + timedelta(seconds=v)
             self._write_db(
                 actual_timestamp = last_timestamp,
                 predicted_timestamp = curr_ts,
@@ -43,12 +43,11 @@ class DBUtils:
 
     def _write_db(self,actual_timestamp, predicted_timestamp, predicted_value, station_name, metric_name, model_name):
         sql = text("""
-            INSERT INTO model_predictions (id, actual_timestamp, predicted_timestamp, predicted_value, station_name, metric_name, model_name)
-            VALUES (:id, :actual_timestamp, :predicted_timestamp, :predicted_value, :station_name, :metric_name, :model_name)
+            INSERT INTO model_predictions (actual_timestamp, predicted_timestamp, predicted_value, station_name, metric_name, model_name)
+            VALUES (:actual_timestamp, :predicted_timestamp, :predicted_value, :station_name, :metric_name, :model_name)
         """)
         with self._sf() as s:
             s.execute(sql, {
-                "id": None,
                 "actual_timestamp": actual_timestamp,
                 "predicted_timestamp": predicted_timestamp,
                 "predicted_value": predicted_value,

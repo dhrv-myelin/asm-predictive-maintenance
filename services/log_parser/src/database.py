@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = "postgresql+psycopg2://postgres:myelin123@localhost/glue-dispenser-db"
+DATABASE_URL = "postgresql+psycopg2://postgres:postgres@localhost:5433/glue-dispenser-db"
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 

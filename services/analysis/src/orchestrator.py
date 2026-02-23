@@ -9,7 +9,7 @@ import time
 import os
 import logging
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -53,7 +53,13 @@ def loop(poller, data_handlers, models, db_util):
 
                     # write
                     last_ts = window.iloc[-1]["timestamp"]
-                    db_util.insert_results(last_ts, preds)
+                    db_util.insert_results(
+                        last_timestamp = last_ts,
+                        values = preds,
+                        station_name = handler.target_name.split("__")[0],
+                        metric_name = handler.target_name.split("__")[1],
+                        model_name =  "mamba"#model.model_name
+                    )
 
                     # move window
                     curr_ts_map[name] = window.iloc[0]["timestamp"]
@@ -81,13 +87,13 @@ def inference_loop(data_handler, model, db_util):
         # print(X)
 
         # inference
-        # preds = model.real_time_inference(X)
+        preds = model.real_time_inference(X)
 
         # write results
         last_ts = X.iloc[-1]['timestamp']
         db_util.insert_results(
             last_timestamp=last_ts,
-            values= [0.0] * X.shape[0], # preds
+            values= preds, #  [0.0] * X.shape[0]
             station_name = data_handler.target_name.split("__")[0],
             metric_name = data_handler.target_name.split("__")[1],
             model_name =  "mamba"#model.model_name
@@ -128,8 +134,8 @@ if __name__ == "__main__":
 
     TRAIN = False
     BACKUP_LOGS = False
-    start_ts = datetime(2026, 1, 24, 3, 36, 0)
-    end_ts = datetime(2026, 1, 24, 4, 42, 0)
+    start_ts = datetime(2026, 1, 23, 22, 6, 0)
+    end_ts = datetime(2026, 1, 23, 23, 10, 35)
 
     config_path = "config/analysis_config.yaml"
     with open(config_path, "r") as f:

@@ -21,7 +21,7 @@ class DBPoller:
         self.if_stop.set()
 
     def poll(self):
-        since = self._last_ts or (datetime.now() - timedelta(minutes=5)) # Add for UTC time stamp: timezone.utc
+        since = self._last_ts or (datetime.now(timezone.utc) - timedelta(minutes=5)) # Add for UTC time stamp: timezone.utc
         # since = self._last_ts or datetime.fromisoformat("2024-01-24T03:00:00+00:00")
         # print("since : ",since)
 

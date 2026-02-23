@@ -17,7 +17,7 @@
 
 global:
   db:
-    database_url_env: postgresql://postgres:myelin123@localhost:5432/glue-dispenser-db
+    database_url_env: postgresql://postgres:postgres@localhost:5433/glue-dispenser-db
     input_table: process_metrics
     output_table: analysis_results
     schema: public
@@ -37,24 +37,57 @@ target:
     - method: mamba
       model_type: sequence   # to differ whether to use smth like torch or sklearn
       required_features:
-        - system__cycle_time
+        - system__count
+        - shuttle_pre_scan_time
         - shuttle_scan_success_time
+        - shuttle_post_scan_delay
         - shuttle_carrier_motion_time
+        - shuttle_stopper_lowering_time
+        - shuttle_pallet_release_time
+        - shuttle_stopper_rising_time
+        - system__cycle_time
+        - l1_buffer_a__buffer_holding_time
+        - l1_buffer_a__buffer_stopper_lowering_time
+        - l1_buffer_a__buffer_pallet_release_time
+        - l1_buffer_a__buffer_stopper_rising_time
+        - l1_dispenser__dispenser_entry_unclamp_time
+        - l1_dispenser__dispenser_delay_post_entry_unclamp
+        - l1_dispenser__dispenser_pallet_lifting_1_time
+        - l1_dispenser__dispenser_entry_clamping_time
+        - l1_dispenser__dispenser_delay_post_clamping
+        - l1_dispenser__dispenser_pallet_stopper_releasing_time
+        - l1_dispenser__dispenser_delay_pre_gantry_positioning
+        - l1_dispenser__dispenser_gantry_positioning_time
         - l1_dispenser__dispenser_dispensing_time
+        - l1_dispenser__dispenser_pallet_unpositioning_time
+        - l1_dispenser__dispenser_pallet_stopper_locking_time
+        - l1_dispenser__dispenser_pre_exit_unclamping
+        - l1_dispenser__dispenser_exit_unclamping
+        - l1_dispenser__dispenser_post_exit_unclamp
+        - l1_dispenser__dispenser_pallet_lowering_1
+        - l1_dispenser__dispenser_stopper_lowering
+        - l1_dispenser__dispenser_pallet_releasing
+        - l1_dispenser__dispenser_stopper_rasing
+        - l1_inspection__inspection_lifter_rising_time
+        - l1_inspection__inspection_gantry_positioning_time
+        - l1_inspection__inspection_core_vision_system_time
+        - l1_inspection__inspection_post_vision_check_delay
+        - l1_inspection__inspection_lifter_lowering_time
+        - l1_inspection__inspection_pallet_releasing_time
         - timestamp
-    
+  
 
-      history_window: 6
-      stride: 2
-      prediction_window: 4
+      history_window: 10
+      stride: 1
+      prediction_window: 7
 
       mode: offline
-
+      load_path: "/home/tarunk/OneDrive/ASM/asm-predictive-maintenance/src/analysis/mlartifacts/263456830539060266/models/m-b6081f0cab2e4438815b92234680f5ff/artifacts/data/model.pth"
       arch:
         
         #place holders for mamba_ts class init not in arch already
-        input_size: 4 #HACK: should do len(required_features) - 2 (because timestamp and target feature are in required_features)
-        forecast_horizon: 4
+        input_size: 36 #HACK: should do len(required_features) - 2 (because timestamp and target feature are in required_features)
+        forecast_horizon: 7
 
 
         seq_len: 12

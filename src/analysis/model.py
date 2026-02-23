@@ -129,6 +129,19 @@ class TorchBackend:
 
         self.model.to(self.device)
 
+        # ✅ ADD THIS BLOCK HERE
+        if config.get("load_path"):
+            print(f"🔄 Loading model from {config['load_path']}")
+
+            self.model = torch.load(
+                config["load_path"], map_location=self.device, weights_only=False
+            )
+
+            self.model.to(self.device)
+            self.model.eval()
+
+            print("✅ Model loaded and set to eval mode")
+
         self.criterion = nn.MSELoss()
         self.optimizer = torch.optim.Adam(
             self.model.parameters(), lr=config.get("lr", 1e-3)

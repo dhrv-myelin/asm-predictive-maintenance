@@ -29,22 +29,20 @@ global:
 # Per-metric configs. Unset fields inherit from global.
 # ---------------------------------------------------------------------------
 target:
-
   # ── SYSTEM ────────────────────────────────────────────────────────────────
 
   system__cycle_time:
-
     - method: mamba
-      model_type: sequence   # to differ whether to use smth like torch or sklearn
+      model_type: sequence # to differ whether to use smth like torch or sklearn
       required_features:
         - system__cycle_time
         - shuttle_scan_success_time
         - shuttle_carrier_motion_time
         - l1_dispenser__dispenser_dispensing_time
-        - l1_inspection__inspection_core_vision_system_time
+        # - l1_inspection__inspection_core_vision_system_time
         - timestamp
-    
 
+      load_path: "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/mlartifacts/1/models/m-7d30cfbbf3574bd8b8cddc6b3db29f79/artifacts/data/model.pth"
       history_window: 6
       stride: 2
       prediction_window: 4
@@ -52,11 +50,9 @@ target:
       mode: offline
 
       arch:
-        
         #place holders for mamba_ts class init not in arch already
-        input_size: 4 #HACK: should do len(required_features) - 2 (because timestamp and target feature are in required_features)
+        input_size: 3 #HACK: should do len(required_features) - 2 (because timestamp and target feature are in required_features)
         forecast_horizon: 4
-
 
         seq_len: 12
         hidden_dim: 64
@@ -66,7 +62,7 @@ target:
 
         #HACK: these two should ideally be removed, as i feed tis into init for the model class
         # loss_weight_recon: 0.3
-        # device: auto 
+        # device: auto
 
       train_params:
         num_epochs: 200

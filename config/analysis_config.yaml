@@ -40,7 +40,6 @@ target:
         - shuttle_scan_success_time
         - shuttle_carrier_motion_time
         - l1_dispenser__dispenser_dispensing_time
-        - l1_inspection__inspection_core_vision_system_time
         - timestamp
 
       history_window: 6

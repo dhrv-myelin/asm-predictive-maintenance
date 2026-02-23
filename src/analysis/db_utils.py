@@ -36,9 +36,9 @@ class DBUtils:
                 actual_timestamp = last_timestamp,
                 predicted_timestamp = curr_ts,
                 predicted_value = v,
-                station_name = self.station_name,
-                metric_name = self.metric_name,
-                model_name = self.model_name
+                station_name = station_name,
+                metric_name = metric_name,
+                model_name = model_name
             )
 
     def _write_db(self,actual_timestamp, predicted_timestamp, predicted_value, station_name, metric_name, model_name):

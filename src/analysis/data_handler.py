@@ -114,6 +114,7 @@ class DataHandler:
 
         # ── config extraction ──────────────────────────────────────────
         self.required_features: list[str] = config["required_features"]
+        print("Required features : ", self.required_features)
         self.format = config.get("format", None)        # 'wide' | None
         self.history_window: int = config["history_window"]
         self.stride: int = config.get("stride", 0) or 0
@@ -123,9 +124,13 @@ class DataHandler:
         #    Each group only includes keys that appear in required_features
         #    (plus 'timestamp' for l1/l2 which is always tracked internally).
         self._fmt_keys  = [k for k in self.required_features if k in _ALL_FMT_BARE_KEYS]
+        print("FMT KEYS : ", self._fmt_keys)
         self._end_keys  = [k for k in self.required_features if k in _ALL_END_KEYS]
+        print("END KEYS : ", self._end_keys)
         self._l1_keys   = [k for k in self.required_features if k in _ALL_L1_KEYS]
+        print("L1 KEYS : ", self._l1_keys)
         self._l2_keys   = [k for k in self.required_features if k in _ALL_L2_KEYS]
+        print("L2 KEYS : ", self._l2_keys)
 
         # 'timestamp' is always tracked internally for L1/L2 even if not in
         # required_features (used for queue ordering); it is removed from the
@@ -200,8 +205,10 @@ class DataHandler:
 
         # ── (a) shuttle / fmt metrics ──────────────────────────────────
         if bare in self._fmt_bare_set:
+            # print(f"[DEBUG] Processing fmt metric: {nmn} with value {val} at timestamp {ts}")
             if self._active_fmt.get(bare, -1) == -1:
                 self._active_fmt[bare] = val
+                # print(f"[DEBUG] Updated active_fmt: {self._active_fmt}")
             if self._fmt_keys and self._is_complete(self._active_fmt):
                 self._fmt_queue.append(copy.copy(self._active_fmt))
                 self._active_fmt = _build_template(self._fmt_keys)
@@ -209,8 +216,10 @@ class DataHandler:
 
         # ── (b) end / summary metrics ──────────────────────────────────
         if nmn in self._end_set:
+            # print(f"[DEBUG] Processing fmt metric: {nmn} with value {val} at timestamp {ts}")
             if self._active_end.get(nmn, -1) == -1:
                 self._active_end[nmn] = val
+                # print(f"[DEBUG] Updated active_end: {self._active_end}")
             if self._end_keys and self._is_complete(self._active_end):
                 self._end_queue.append(copy.copy(self._active_end))
                 self._active_end = _build_template(self._end_keys)
@@ -219,10 +228,13 @@ class DataHandler:
 
         # ── (c) L1 metrics ─────────────────────────────────────────────
         if nmn in self._l1_set:
+            # print(f"[DEBUG] Processing fmt metric: {nmn} with value {val} at timestamp {ts}")
             if self._active_l1.get(nmn, -1) == -1:
                 self._active_l1[nmn] = val
+                # print(f"[DEBUG] Updated active_l1: {self._active_l1}")
             self._active_l1["timestamp"] = ts       # always keep latest ts
             if self._l1_keys and self._is_complete(self._active_l1):
+                print("[DEBUG] Completed L1 dict: ", self._active_l1)
                 self._l1_queue.append(copy.copy(self._active_l1))
                 self._active_l1 = _build_template(self._l1_internal_keys)
                 self._try_flush()
@@ -230,8 +242,10 @@ class DataHandler:
 
         # ── (d) L2 metrics ─────────────────────────────────────────────
         if nmn in self._l2_set:
+            # print(f"[DEBUG] Processing fmt metric: {nmn} with value {val} at timestamp {ts}")
             if self._active_l2.get(nmn, -1) == -1:
                 self._active_l2[nmn] = val
+                # print(f"[DEBUG] Updated active_l2: {self._active_l2}")
             self._active_l2["timestamp"] = ts
             if self._l2_keys and self._is_complete(self._active_l2):
                 self._l2_queue.append(copy.copy(self._active_l2))
@@ -301,6 +315,7 @@ class DataHandler:
         for_training: bool = False,
     ):
         df = self.df
+        print("[DEBUG] self.df.shape", self.df.shape)
         if df.empty:
             return None
 

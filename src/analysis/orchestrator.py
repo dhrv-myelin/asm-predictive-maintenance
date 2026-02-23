@@ -89,7 +89,7 @@ def inference_loop(data_handler, model, db_util):
             values= [0.0] * X.shape[0], # preds
             station_name = data_handler.target_name.split("__")[0],
             metric_name = data_handler.target_name.split("__")[1],
-            model_name = model.name
+            model_name =  "mamba"#model.model_name
         )
 
         time.sleep(0.5)   # pacing

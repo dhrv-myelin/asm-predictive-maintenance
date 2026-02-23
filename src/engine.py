@@ -1,71 +1,74 @@
 """
 src/engine.py
 The Brain. Manages state transitions, inferences, and metric generation.
+Streams directly to PostgreSQL using SQLAlchemy.
 """
-import csv
-import time
-from datetime import datetime
 
+import time
+from datetime import datetime, timezone
+from db.models import ProcessMetric, ErrorLog
+from database import SessionLocal
+from db.models import ProcessMetric
+from db.models import ErrorLog
 class LogicEngine:
-    def __init__(self, inventory, output_file="data/process_metrics.csv", 
-                visualizer=None, tag_resolver=None, db_manager=None):
+    def __init__(
+        self,
+        inventory,
+        output_file=None,
+        visualizer=None,
+        tag_resolver=None,
+        db_manager=None
+    ):
         self.inventory = inventory
         self.output_file = output_file
         self.viz = visualizer
         self.tag_resolver = tag_resolver
         self.db_manager = db_manager
-        
+
         self.throughput_count = 0
-        
-        # Virtual state map
         self.virtual_state_map = {cid: {} for cid in self.inventory}
 
-        # DEBUG: Check database status
-        print("\n[ENGINE INIT DEBUG]")
-        print(f"  db_manager passed: {db_manager is not None}")
-        if db_manager:
-            print(f"  db_manager.enabled: {db_manager.enabled}")
-            print(f"  db_manager.engine: {db_manager.engine is not None}")
-        else:
-            print(f"  db_manager is None!")
 
-        # Initialize CSV as fallback (only if DB is disabled)
-        if not db_manager or not db_manager.enabled:
-            self._init_output_file()
-            print("⚠ Running in CSV fallback mode")
-        else:
-            print("✓ Running in DATABASE STREAMING mode")
-            # Load baseline metrics from process_baseline.json into database
-            self._load_baseline_metrics()
+   # def _stream_error(self, timestamp, event):
+      #  try:
+          #  ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
-    def _init_output_file(self):
-        """Creates the file with header if it doesn't exist."""
+           # with SessionLocal() as session:
+              #  error = ErrorLog(
+             #   timestamp=ts_dt,
+             #   level=event.get("level"),
+             #   message=event.get("raw_line")
+          #  )
+            #    session.add(error)
+             #   session.commit()
+
+           # print(f"[DB] ✓ ERROR logged")
+
+        #except Exception as e:
+            #print(f"[DB ERROR - ERROR_LOG] {e}")
+
+ 
+    def _stream_error(self, timestamp, event):
         try:
-            with open(self.output_file, 'x', newline='') as f:
-                writer = csv.writer(f)
-                # TALL FORMAT: Easy for Pivot Tables & SQL
-                writer.writerow(["timestamp", "station_name", "metric_name", "value", "unit", "state_context"])
-        except FileExistsError:
-            pass # Append mode is fine
-    
-    def _load_baseline_metrics(self):
-        """
-        Load baseline metrics from process_baseline.json into the database.
-        This is called during engine initialization if database is enabled.
-        """
-        if not self.db_manager or not self.db_manager.enabled:
-            print("[ENGINE] ⚠ Skipping baseline load - database not enabled")
-            return
-        
-        baseline_file = "data/process_baseline.json"
-        print(f"\n[ENGINE] Loading baseline metrics from {baseline_file}...")
-        
-        success = self.db_manager.load_baseline_from_json(baseline_file)
-        
-        if success:
-            print(f"[ENGINE] ✓ Baseline metrics loaded successfully")
-        else:
-            print(f"[ENGINE] ⚠ Failed to load baseline metrics (file may not exist yet)")
+            ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+ 
+            with SessionLocal() as session:
+                error = ErrorLog(
+                    timestamp=ts_dt,
+                    severity=event.get("level"),        # Fixed: severity
+                    log_message=event.get("raw_line")   # Fixed: log_message
+                )
+                session.add(error)
+                session.commit()
+ 
+            print(f"[DB] ✓ ERROR logged")
+ 
+        except Exception as e:
+            print(f"[DB ERROR - ERROR_LOG] {e}")
+
+    # ============================================================
+    # EVENT PROCESSING
+    # ============================================================
 
     def process_event(self, timestamp, event):
         payload = event.get('payload', {})
@@ -91,12 +94,20 @@ class LogicEngine:
         if target_id=="system":
             print("event : ",event)
             self._push_raw_metrics(event,timestamp)
+        payload = event.get("payload", {})
+        target_id = event.get("target")
+        if event["type"] == "ERROR_LOG":
+            print("ENGINE SAW ERROR_LOG")
+            self._stream_error(timestamp, event)
+            return
+
+        if target_id == "system":
+            self._push_raw_metrics(event, timestamp)
             return
 
         if not target_id or target_id not in self.inventory:
-            print(f"[DEBUG]: ❌ Event skipped: Unknown target ID '{target_id}'")
             return
-        
+
         station = self.inventory[target_id]
 
         transition_stage = ""
@@ -130,16 +141,16 @@ class LogicEngine:
                 print(f"[WARN] ⚠️ [HANDOVER PREP] {station.id}: Buggy handover prep as destination_id could not be determined.")
             self._prepare_handover(station, dest_id=destination_id)
 
-        # 5. LOGIC: Run the actual state machine
+        # Core state machine
         self._handle_station_logic(station, event, timestamp)
 
+        # Execute handover
         if transition_stage == "handover":
             self._execute_handover(station, event)
 
-        # D. Viz Update
+        # Visualization
         if self.viz:
-            print(f"[DEBUG]: Updating Viz for Station {station.id} in State {station.current_state} with Pallet {station.active_pallet_id}")
-            context = {'pallet_id': station.active_pallet_id}
+            context = {"pallet_id": station.active_pallet_id}
             self.viz.update(timestamp, station.id, station.current_state, context)
 
     def _reset_system(self):
@@ -167,36 +178,47 @@ class LogicEngine:
         print("[SYSTEM RESET]: All station states, pallet tracking, and counters cleared.")
         print("--------------------------------------------")
 
+    def _reset_system(self):
+        """
+        Resets all mutable engine and station state to initial values.
+        Called when a SYSTEM_RESET event is received.
+        """
+        # 1. Reset engine-level counters
+        self.throughput_count = 0
+
+        # 2. Clear all virtual sensor memory
+        self.virtual_state_map = {cid: {} for cid in self.inventory}
+
+        # 3. Reset every station back to its configured initial state
+        for station in self.inventory.values():
+            station.current_state = station.logic_template.get('initial_state', 'IDLE')
+            station.previous_state = None
+            station.state_entry_time = 0.0
+            station.active_pallet_id = None
+            station.expected_pallet_id = None
+            station.current_destination = None
+            station.metric_timers = {}
+
+        print("--------------------------------------------")
+        print("[SYSTEM RESET]: All station states, pallet tracking, and counters cleared.")
+        print("--------------------------------------------")
+
     def _get_destination_id(self, station, event):
-        """Given a station and event, determine the destination station ID."""
-        payload = event.get('payload', {})
-        dest_id = None
+        payload = event.get("payload", {})
 
-        # A. Explicit Target - A routing node (like the shuttle)
-        if 'destination' in payload:
-            dest_id = payload['destination']
-            print(f"[DEBUG]: GET DESTINATION: Explicit target found: {dest_id}")
-        
-        # B. Implicit Target (Buffer/Dispenser case - use Graph)
-        else:
-            nodes = getattr(station, 'downstream_nodes', [])
-            if len(nodes) == 1:
-                dest_id = nodes[0]
-                print(f"[DEBUG]: 🟢 [GET DESTINATION] {station.id}: Single (implicit) downstream node found: {dest_id}")
-            else:
-                print(f"[WARN] ⚠️ [GET DESTINATION] {station.id}: Cannot determine destination as we have {len(nodes)} downstream nodes inspite of being a non-routing station.")
-        
-        if dest_id and dest_id not in self.inventory:
-            print(f"[WARN] ⚠️ [GET DESTINATION] {station.id}: Destination ID '{dest_id}' is invalid. Setting it to None. Only these stations exist: {list(self.inventory.keys())}")
-            dest_id = None
+        if "destination" in payload:
+            return payload["destination"]
 
-        return dest_id
+        nodes = getattr(station, "downstream_nodes", [])
+        if len(nodes) == 1:
+            return nodes[0]
+
+        return None
 
     def _prepare_handover(self, station, dest_id):
         """Prepares for handover by setting the destination node's expected pallet id. This is essential as the current pallet id could be lost or overwritten if something else is already entering this station. In case of routing stations, essential to set the current_destination as it could be lost post this preparation, so we always set it regardless of routing/non-routing stations. TO BE CALLED ONLY IF TRANSITION_STAGE == 'handover_prep'"""
         self.inventory[dest_id].expected_pallet_id = station.active_pallet_id
         station.current_destination = dest_id
-        print(f"[DEBUG]: 🚚 HANDOVER PREP FOR {station.id} -> {dest_id} | Pallet: {station.active_pallet_id}")
 
     def _execute_handover(self, station, event):
         """Completes the handover by clearing the active pallet id from the current station and incrementing pallets counter for last station exit. In case of routing stations, clears the current_destination for the station. TO BE CALLED ONLY IF TRANSITION_STAGE == 'handover'"""
@@ -205,16 +227,18 @@ class LogicEngine:
             destination_id = "exit_sink"
             print("[DEBUG] No destination_id found during handover, implying no handover prep. That means it is the exit_sink.")
         if self.inventory[destination_id].is_exit:
-            self._record_completion(self.inventory[destination_id], station.active_pallet_id, event.get('timestamp', time.time()))
-            print(f"[DEBUG]: Pallet {station.active_pallet_id} has EXITED the system from {station.id}.")
+            self._record_completion(
+                self.inventory[destination_id],
+                station.active_pallet_id,
+                event.get("timestamp", time.time()),
+            )
+
         station.active_pallet_id = None
         station.current_destination = None
 
     def _record_completion(self, station, pallet_id, timestamp):
-        # 1. Increment the internal counter
         self.throughput_count += 1
-        
-        # 2. Stream to database immediately
+
         self._stream_metric(
             timestamp=timestamp,
             comp_id=station.id,
@@ -225,13 +249,12 @@ class LogicEngine:
         )
 
         if self.viz:
-            # Update the graph
             self.viz.log_completion(timestamp, self.throughput_count)
-            # Update the text readout
             self.viz.update_scoreboard(self.throughput_count)
-        
-        print(f"[DEBUG]: 🏆 TOTAL THROUGHPUT: {self.throughput_count} (Last: {pallet_id})")
 
+    # ============================================================
+    # STATE MACHINE
+    # ============================================================
 
     def _handle_station_logic(self, station, event, timestamp):
         """
@@ -246,43 +269,8 @@ class LogicEngine:
                 if self._check_hardware_prereqs(station, trans):
                     self._execute_transition(station, trans, timestamp)
                     return True
-        return False
 
-    def _handle_permissive_catchup(self, station, event, timestamp):
-        """
-        The 'Magic' Fix: Looks ahead 1-2 steps to see if we missed a log.
-        Currently not used, but needed in future for robustness.
-        """
-        curr_state_name = station.current_state
-        logic_states = station.logic_template['states']
-        
-        # brute-force search: Which state *does* accept this event?
-        # We look for a state 'target_candidate' that responds to this event
-        possible_intermediate_states = []
-        
-        for state_name, state_def in logic_states.items():
-            for trans in state_def.get('transitions', []):
-                if trans['event'] == event['type']:
-                    # Found a state that WOULD accept this event
-                    # Now, is it reachable from current state?
-                    # For MVP, we allow a "Force Jump" if we can find a direct path
-                    # But often, simplest is best: just FORCE the transition logic to run
-                    # as if we were already in that state.
-                    
-                    # 1. "Fake" the exit from current state (Duration = Unknown/Long)
-                    # We accept the gap.
-                    
-                    # 2. "Teleport" to the state that accepts this event
-                    print(f"⚠️ [JUMP] {station.id}: Missed transition. Jumping {curr_state_name} -> {state_name}")
-                    
-                    # Force update the state without metrics (because we missed the real entry time)
-                    station.current_state = state_name
-                    station.state_entry_time = timestamp # Reset clock
-                    
-                    # 3. Now execute the ACTUAL event that brought us here
-                    # This ensures we enter the *next* state correctly
-                    self._execute_transition(station, trans, timestamp)
-                    return
+        return False
 
     def _execute_transition(self, station, transition, timestamp):
         """Update the state for the station and generate metrics and inferences."""
@@ -300,33 +288,27 @@ class LogicEngine:
 
 
     def _check_hardware_prereqs(self, station, transition):
-        """
-        Verifies if virtual sensors match requirements.
-        Format: ["sensors.presence == True"]
-        """
-        checks = transition.get('hardware_check', [])
-        if not checks: return True
+        checks = transition.get("hardware_check", [])
+        if not checks:
+            return True
 
         virtual_memory = self.virtual_state_map[station.id]
 
         for condition in checks:
-            # Simple Parser: "key == value"
-            if "==" not in condition: continue
-            
-            key, val_str = condition.split('==')
+            if "==" not in condition:
+                continue
+
+            key, val_str = condition.split("==")
             key = key.strip()
-            expected_val = val_str.strip().lower() == 'true'
-            
-            # Check Memory (Default to False if unknown)
+            expected_val = val_str.strip().lower() == "true"
             actual_val = virtual_memory.get(key, False)
-            
+
             if actual_val != expected_val:
-                return False # Constraint Failed
-        
+                return False
+
         return True
     
     def _apply_inference(self, station, inference_dict):
-        """Forces the virtual sensors to match the inferred reality."""
         for key, value in inference_dict.items():
             self.virtual_state_map[station.id][key] = value
 
@@ -343,16 +325,13 @@ class LogicEngine:
         if not metrics_config: return
 
         for m_conf in metrics_config:
-            m_name = m_conf['name']
-            m_type = m_conf['type']
+            m_name = m_conf["name"]
+            m_type = m_conf["type"]
             value = None
 
-            if m_type == 'duration_seconds':
-                # Calculate Duration (Current Time - Entry Time)
+            if m_type == "duration_seconds":
                 if station.state_entry_time > 0:
                     value = timestamp - station.state_entry_time
-            
-            # Future types: 'snapshot_value' (from payload), 'counter'
 
             if value is not None:
                 # Stream immediately to database
@@ -384,49 +363,30 @@ class LogicEngine:
                 context=event.get('type')
             )
 
-
     def _stream_metric(self, timestamp, comp_id, name, value, unit, context):
-        """
-        STREAM DIRECTLY TO DATABASE (NO BUFFERING)
-        Falls back to CSV if database is unavailable
-        """
-        ts_iso = datetime.fromtimestamp(timestamp).isoformat()
-        
-        print(f"[STREAM] Attempting to write: {comp_id}.{name} = {value:.4f}")
-        print(f"  db_manager exists: {self.db_manager is not None}")
-        if self.db_manager:
-            print(f"  db_manager.enabled: {self.db_manager.enabled}")
-            print(f"  db_manager.engine: {self.db_manager.engine is not None}")
-        
-        # Try database first
-        if self.db_manager and self.db_manager.enabled:
-            try:
-                self.db_manager.insert_metric(
-                    timestamp=ts_iso,
+        try:
+            #ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            with SessionLocal() as session:
+                metric = ProcessMetric(
+                    timestamp=ts_dt,
                     station_name=comp_id,
                     metric_name=name,
-                    value=round(value, 4),
+                    value=round(value, 4)
+                    if isinstance(value, (int, float))
+                    else value,
                     unit=unit,
-                    state_context=context
+                    state_context=context,
                 )
-                print(f"[STREAM] ✓ DB: {comp_id}.{name} = {value:.4f}")
-            except Exception as e:
-                print(f"[STREAM] ✗ DB failed: {e}. Writing to CSV.")
-                self._write_to_csv(ts_iso, comp_id, name, value, unit, context)
-        else:
-            # Fallback to CSV
-            print(f"[STREAM] ⚠ Using CSV fallback (DB not available)")
-            self._write_to_csv(ts_iso, comp_id, name, value, unit, context)
+                session.add(metric)
+                session.commit()
 
-    def _write_to_csv(self, ts_iso, comp_id, name, value, unit, context):
-        """Fallback: Write single row to CSV"""
-        try:
-            with open(self.output_file, 'a', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow([ts_iso, comp_id, name, round(value, 4), unit, context])
-            print(f"[CSV] ✓ Written: {comp_id}.{name}")
+            print(f"[DB] ✓ {comp_id}.{name} = {value}")
+
         except Exception as e:
-            print(f"[CSV] ✗ Failed to write: {e}")
+            print(f"[STREAM] ✗ DB failed: {e}. Writing to CSV.")
+            self._write_to_csv(ts_iso, comp_id, name, value, context)
+
             
     def _state_based_target_resolver(self, state_resolver, payload):
         """

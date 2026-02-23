@@ -131,10 +131,10 @@ if __name__ == "__main__":
     start_ts = datetime(2026, 1, 24, 3, 36, 0)
     end_ts = datetime(2026, 1, 24, 4, 42, 0)
 
-    config_path = ".config/analysis_config.yaml"
+    config_path = "config/analysis_config.yaml"
     with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
-
+    print("[DEBUG] Loaded config : ", cfg)
     # resolve DB URL
     # DATABASE_URL = os.getenv(cfg['global']['db']['database_url_env'])
     # INFO: removed getenv bc im not making it a env

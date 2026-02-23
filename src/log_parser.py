@@ -35,37 +35,10 @@ class LogParser:
             except re.error as e:
                 print(f"Error compiling regex for '{p['name']}': {e}")
 
-    def parse_file(self, log_path, live_mode=False):
-        """
-        Generator: Yields (timestamp_float, event_dict).
-        If live_mode=True, it never returns; it keeps waiting for new lines.
-        """
-        print(f"Parsing: {log_path} (Live Mode: {live_mode})")
-        
-        with open(log_path, 'r') as f:
-            # 1. Catch Up Phase (Read existing data)
-            while True:
-                line = f.readline()
-                if not line:
-                    if live_mode:
-                        # End of file reached, but we are live.
-                        # Wait briefly and try reading again.
-                        time.sleep(0.1) 
-                        continue
-                    else:
-                        # Static mode: End of file means we are done.
-                        break
-                
-                # Process the valid line
-                clean_line = line.strip()
-                if not clean_line: continue
-                
-                yield from self._process_line(clean_line, line)
-
-    def _process_line(self, line_text, full_raw_line):
+    def process_line(self, line_text):
         """Helper to parse a single line and yield events if matched."""
         
-        print("--------------new event--------------")
+        print("[DEBUG] --------------new event--------------")
         # 1. Extract Timestamp
         match_header = self.header_pattern.match(line_text)
         if not match_header:

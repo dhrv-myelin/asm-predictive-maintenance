@@ -5,6 +5,12 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Run Command 
 In root (~/asm-predictive-maintenance/):
+
+```
+uv add alembic 
+uv run alembic upgrade head 
+```
+
 ```
 uv run python src/main.py --mode record --input data/vector_buffer.jsonl --patterns config/log_patterns/prod_patterns.yaml
 ```

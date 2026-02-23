@@ -63,6 +63,7 @@ class LogParser:
                 "payload": {},
                 "raw_line": line_text
             }
+            return
         elif ' WARN ' in line_text:
             yield epoch, {
                 "type": "WARN_LOG",
@@ -73,6 +74,7 @@ class LogParser:
                 "payload": {},
                 "raw_line": line_text
             }
+            return
         svc_match = self.service_extractor.match(content_to_match)
         service_name = svc_match.group(1) if svc_match else "Unknown"
 

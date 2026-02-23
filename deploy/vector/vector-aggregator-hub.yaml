@@ -1,0 +1,37 @@
+# Use a local data directory for the hub's internal checkpoints
+data_dir: "/var/lib/vector"
+
+sources:
+  from_edge_shippers:
+    type: "vector"
+    address: "0.0.0.0:6000"
+    acknowledgements: true
+
+transforms:
+  # Optional: Add a timestamp of when the Hub received the data
+  # Helpful to see network latency vs machine log time
+  add_hub_timestamp:
+    type: "remap"
+    inputs: ["from_edge_shippers"]
+    source: |
+      .metadata.hub_ts = now()
+
+sinks:
+  # --- PRODUCTION SINK: The JSONL file for your Python Engine ---
+  twin_buffer_file:
+    type: "file"
+    inputs: ["add_hub_timestamp"]
+    path: "/app/data/vector_buffer.jsonl"
+    encoding:
+      codec: "json"
+    # Flush data to disk every 1 second so Python sees it almost instantly
+    idle_timeout_secs: 1
+
+  # --- DEBUG SINK: Useful for 'docker logs -f' ---
+  hub_console:
+    type: "console"
+    # This defaults to 'none' (silent). 
+    # To see logs, set DEBUG_HUB=add_hub_timestamp in docker-compose
+    inputs: ["${DEBUG_HUB:-none}"]
+    encoding:
+      codec: "text"

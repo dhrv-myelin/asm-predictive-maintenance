@@ -1,0 +1,40 @@
+data_dir: '${VECTOR_DATA_DIR:-C:/tmp/vector_data}'
+
+sources:
+  machine_logs:
+    type: "file"
+    include: ['${LOG_PATH:-C:/ProgramData/AppName/Logs/*.log}']
+    read_from: "beginning"
+    fingerprint:
+      strategy: "device_and_inode"
+
+transforms:
+  add_context:
+    type: "remap"
+    inputs: ["machine_logs"]
+    source: |
+      # These variables will be unique per station
+      .metadata.shipper_id = "${SHIPPER_ID:-${HOSTNAME:-UNNAMED_SHIPPER}}"
+      .metadata.facility = "${FACILITY_NAME:-FACTORY_01}"
+      .metadata.environment = "${ENV:-prod}"
+
+sinks:
+  to_hub:
+    type: "vector"
+    inputs: ["add_context"]
+    # Dynamic IP and Port for the Consumer
+    address: "${HUB_IP}:${HUB_PORT:-6000}"
+    acknowledgements:
+      enabled: true
+    buffer:
+      type: "disk"
+      # Max size is now configurable (e.g., 500MB vs 2GB)
+      max_size: ${BUFFER_SIZE_BYTES:-1073741824}
+      when_full: "block"
+
+# --- DEBUG SINK: Disabled by default ---
+  debug_terminal:
+    type: "console"
+    inputs: ["${DEBUG_INPUT:-none}"]
+    encoding:
+      codec: "text"      

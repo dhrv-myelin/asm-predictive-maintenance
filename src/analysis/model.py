@@ -1,9 +1,11 @@
 import numpy as np
 import mlflow
-import mlflow.pytorch
+import mlflow.pytorch  # type: ignorew.pytorch
+
+# import mlfloimport mlflow
+import mlflow.sklearn  # type: ignorew.sklearn
 import torch
 import torch.nn as nn
-import yaml
 
 
 from models.mamba import Mamba_TS
@@ -14,6 +16,7 @@ from models.mamba import Mamba_TS
 
 models = {
     "mamba": Mamba_TS,
+    # TODO: need to add sklearn models.
 }
 
 
@@ -254,46 +257,81 @@ class TorchBackend:
 # ============================================================
 
 
-# TODO:
 class SklearnBackend:
 
-    def __init__(self, config) -> None:
-        pass
+    def __init__(self, config):
 
-    def train(self):
-        pass
+        self.config = config
 
-    def predict(self):
-        pass
+        if config["method"] not in models:
+            raise ValueError(f"Unknown sklearn model: {config['method']}")
 
-    pass
+        # Initialize sklearn model with arch params
+        self.model = models[config["method"]](**config.get("arch", {}))
 
+        # Optional model loading
+        if config.get("load_path"):
+            print(f"🔄 Loading sklearn model from {config['load_path']}")
+            self.model = mlflow.sklearn.load_model(config["load_path"])
+            print("✅ Model loaded")
 
-if __name__ == "__main__":
+        mlflow.sklearn.autolog()
 
-    pass
+    # --------------------------------------------------------
+    # Training
+    # --------------------------------------------------------
 
-    # from data_handler import DataHandler
+    def train(self, X, y):
 
-    # import os
+        print("Starting sklearn training...")
 
-    # config path
-    # CONFIG_PATH = os.getcwd() + "/config/analysis_config.yaml"
+        N = X.shape[0]
 
-    # def load_config(path):
+        # same split logic as torch backend
+        train_ratio = 0.7
+        val_ratio = 0.15
+        test_ratio = 0.15
 
-    # with open(path, "r") as f:
-    # data = yaml.safe_load(f)
-    # return data
+        train_end = int(N * train_ratio)
+        val_end = train_end + int(N * val_ratio)
 
-    # data_handler = DataHandler
+        X_train, y_train = X[:train_end], y[:train_end]
+        X_val, y_val = X[train_end:val_end], y[train_end:val_end]
+        X_test, y_test = X[val_end:], y[val_end:]
 
-    # config = load_config(CONFIG_PATH)
+        with mlflow.start_run():
 
-    # model = Model(
-    #     data_handler=data_handler,
-    #     model="mamba",
-    #     # model_name="xgboost",
-    #     config=config,
-    #     target_name="system__cycle_time",
-    # )
+            mlflow.log_param("model_name", self.config["method"])
+            mlflow.log_params(self.config.get("arch", {}))
+
+            # Fit model
+            self.model.fit(X_train, y_train)
+
+            # Validation
+            y_val_pred = self.model.predict(X_val)
+            val_loss = mean_squared_error(y_val, y_val_pred)
+
+            mlflow.log_metric("val_loss", val_loss)
+
+            print(f"Validation Loss: {val_loss:.6f}")
+
+            # Test
+            y_test_pred = self.model.predict(X_test)
+            test_loss = mean_squared_error(y_test, y_test_pred)
+
+            mlflow.log_metric("test_loss", test_loss)
+
+            print(f"Final Test Loss: {test_loss:.6f}")
+
+            # Log model artifact
+            mlflow.sklearn.log_model(self.model, "model")
+
+    # --------------------------------------------------------
+    # Inference
+    # --------------------------------------------------------
+
+    def predict(self, X):
+
+        preds = self.model.predict(X)
+
+        return preds

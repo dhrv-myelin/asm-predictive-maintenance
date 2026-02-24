@@ -1,0 +1,2448 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bfc3wenp44lxcc"
+        },
+        "enable": false,
+        "filter": {
+          "exclude": true,
+          "ids": [
+            11,
+            14,
+            1,
+            12,
+            13
+          ]
+        },
+        "hide": false,
+        "iconColor": "red",
+        "mappings": {
+          "text": {
+            "source": "field",
+            "value": "text"
+          },
+          "time": {
+            "source": "field",
+            "value": "time"
+          }
+        },
+        "name": "Idle Time Violations",
+        "target": {
+          "dataset": "glue-dispenser-db",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  'Nelson Rule Violation' AS title,\n  rule_description AS text\nFROM shuttle_station_shuttle_idle_time_view\nWHERE rule_description <> ''\n  AND $__timeFilter(time)\nORDER BY time;",
+          "refId": "Anno",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      },
+      {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bfc3wenp44lxcc"
+        },
+        "enable": false,
+        "filter": {
+          "exclude": false,
+          "ids": [
+            11
+          ]
+        },
+        "hide": false,
+        "iconColor": "red",
+        "name": "Post Scan Violations",
+        "target": {
+          "dataset": "glue-dispenser-db",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  'Nelson Rule Violation' AS title,\n  rule_description AS text\nFROM shuttle_station_shuttle_post_scan_delay_view\nWHERE rule_description <> ''\n  AND $__timeFilter(time)\nORDER BY time;",
+          "refId": "Anno",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      },
+      {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bfc3wenp44lxcc"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "New annotation",
+        "target": {
+          "dataset": "glue-dispenser-db",
+          "editorMode": "builder",
+          "format": "table",
+          "rawSql": "",
+          "refId": "Anno"
+        }
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 11,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "description": "\n",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": true,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "Duration(sec)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "new_glue_db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": true,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  s.time,\n  s.value,\n  b.mean\nFROM shuttle_station_station_view s\nJOIN station_baseline_view b\n  ON b.station_name = 'shuttle_station'\nWHERE $__timeFilter(s.time)\nORDER BY s.time;\n",
+          "refId": "D",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "new_glue_db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH station_values AS (\n  SELECT\n    timestamp AS time,\n    SUM(value) AS value\n  FROM process_metrics\n  WHERE station_name = 'shuttle_station'\n  GROUP BY timestamp\n)\n\nSELECT\n  sv.time,\n  sv.value,\n  b.mean\nFROM station_values sv\nJOIN station_baseline_view b\n  ON b.station_name = 'shuttle_station'\nWHERE $__timeFilter(sv.time)\nORDER BY sv.time;\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "DROP VIEW IF EXISTS public.shuttle_station_overall_view;\n\nCREATE VIEW public.shuttle_station_overall_view AS\n\n-- ─────────────────────────────────────────────\n-- CONFIGURATION: change 'shuttle_station' and\n-- 'shuttle_idle_time' to target a different station.\n-- ─────────────────────────────────────────────\n\nWITH config AS (\n    SELECT\n        'shuttle_station'  AS station_name,\n        'shuttle_idle_time' AS exclude_metric   -- the idle_time metric for this station\n),\n\n-- Sum baseline means and combine stds (sqrt of sum of variances)\n-- for all metrics of the station EXCEPT the idle_time metric\nstation_baseline AS (\n    SELECT\n        SUM(bm.mean)                        AS station_mean,\n        SQRT(SUM(bm.std_dev * bm.std_dev))  AS station_std\n    FROM public.baseline_metrics bm, config\n    WHERE bm.station_name = config.station_name\n      AND bm.metric_name  != config.exclude_metric\n),\n\n-- Sum live metric values per timestamp (excluding idle_time)\nlive_values AS (\n    SELECT\n        pm.timestamp AS time,\n        SUM(pm.value) AS station_value\n    FROM public.process_metrics pm, config\n    WHERE pm.station_name = config.station_name\n      AND pm.metric_name  != config.exclude_metric\n      AND $__timeFilter(pm.timestamp)\n    GROUP BY pm.timestamp\n),\n\nordered AS (\n    SELECT\n        lv.time,\n        lv.station_value                             AS value,\n        sb.station_mean                              AS mean,\n        sb.station_std                               AS std,\n        sb.station_mean + 2.5 * sb.station_std       AS upper_2_5sigma,\n        sb.station_mean - 2.5 * sb.station_std       AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY lv.time)         AS rn\n    FROM live_values lv\n    CROSS JOIN station_baseline sb\n),\n\nrules AS (\n    SELECT\n        *,\n\n        -- RULE 1: One point beyond 3σ (Extreme outlier)\n        (ABS(value - mean) > 3 * std) AS rule1,\n\n        -- RULE 2: Nine or more consecutive points on the same side of the mean (Shift)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          OR\n            COUNT(*) FILTER (WHERE value < mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          THEN TRUE ELSE FALSE\n        END AS rule2,\n\n        -- RULE 3: Six consecutive points steadily increasing or decreasing (Drift/Trend)\n        CASE\n          WHEN\n            (value > LAG(value,1) OVER w AND\n             LAG(value,1) OVER w > LAG(value,2) OVER w AND\n             LAG(value,2) OVER w > LAG(value,3) OVER w AND\n             LAG(value,3) OVER w > LAG(value,4) OVER w AND\n             LAG(value,4) OVER w > LAG(value,5) OVER w)\n          OR\n            (value < LAG(value,1) OVER w AND\n             LAG(value,1) OVER w < LAG(value,2) OVER w AND\n             LAG(value,2) OVER w < LAG(value,3) OVER w AND\n             LAG(value,3) OVER w < LAG(value,4) OVER w AND\n             LAG(value,4) OVER w < LAG(value,5) OVER w)\n          THEN TRUE ELSE FALSE\n        END AS rule3,\n\n        -- RULE 4: Fourteen consecutive points alternating up and down (Oscillation)\n        CASE\n          WHEN\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n          THEN TRUE ELSE FALSE\n        END AS rule4,\n\n        -- RULE 5: Two of three consecutive points beyond 2σ on the same side (Early warning)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          OR\n            COUNT(*) FILTER (WHERE value < mean - 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          THEN TRUE ELSE FALSE\n        END AS rule5,\n\n        -- RULE 6: Four of five consecutive points beyond 1σ on the same side (Gradual shift)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          OR\n            COUNT(*) FILTER (WHERE value < mean - std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          THEN TRUE ELSE FALSE\n        END AS rule6,\n\n        -- RULE 7: Fifteen consecutive points within 1σ of the mean (Stratification)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) < std)\n            OVER (ORDER BY rn ROWS BETWEEN 14 PRECEDING AND CURRENT ROW) = 15\n          THEN TRUE ELSE FALSE\n        END AS rule7,\n\n        -- RULE 8: Eight consecutive points beyond 1σ on either side, none within 1σ (Mixture)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) > std)\n            OVER (ORDER BY rn ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) = 8\n          THEN TRUE ELSE FALSE\n        END AS rule8\n\n    FROM ordered\n    WINDOW w AS (ORDER BY rn)\n),\n\nfinal AS (\n    SELECT\n        *,\n        (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n    FROM rules\n)\n\nSELECT\n    time,\n    value,\n    mean,\n    upper_2_5sigma,\n    lower_2_5sigma,\n\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n\n    CASE\n        WHEN any_violation THEN CONCAT_WS(' | ',\n            CASE WHEN rule1 THEN 'Rule 1: Beyond 3σ (Extreme outlier)' END,\n            CASE WHEN rule2 THEN 'Rule 2: 9 same side (Shift detected)' END,\n            CASE WHEN rule3 THEN 'Rule 3: 6 trend (Drift detected)' END,\n            CASE WHEN rule4 THEN 'Rule 4: 14 alternating (Oscillation)' END,\n            CASE WHEN rule5 THEN 'Rule 5: 2 of 3 beyond 2σ (Early warning)' END,\n            CASE WHEN rule6 THEN 'Rule 6: 4 of 5 beyond 1σ (Gradual shift)' END,\n            CASE WHEN rule7 THEN 'Rule 7: 15 within 1σ (Stratification)' END,\n            CASE WHEN rule8 THEN 'Rule 8: 8 beyond 1σ both sides (Mixture)' END\n        )\n        ELSE ''\n    END AS rule_description\n\nFROM final\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time AS \"time\",\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma,\n  anomaly_point\nFROM shuttle_station_overall_view\nWHERE $__timeFilter(time)\nORDER BY time;",
+          "refId": "C",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawSql": "",
+          "refId": "E",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "SHUTTLE STATION CYCLE TIME",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rule_description"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisColorMode",
+                "value": "text"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "new_glue_db",
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'shuttle_idle_time'\n  AND station_name = 'shuttle_station'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "DROP VIEW IF EXISTS public.shuttle_station_shuttle_idle_time_view;\n\nCREATE VIEW public.shuttle_station_shuttle_idle_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time,\n        pm.value,\n        bm.mean,\n        bm.std_dev AS std,\n        bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,\n        bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name\n     AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'shuttle_station'\n      AND pm.metric_name = 'shuttle_idle_time'\n),\n\nrules AS (\n    SELECT\n        *,\n\n        -- RULE 1: One point beyond 3σ (Extreme outlier)\n        (ABS(value - mean) > 3 * std) AS rule1,\n\n        -- RULE 2: Nine or more consecutive points on the same side of the mean (Shift)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          OR\n            COUNT(*) FILTER (WHERE value < mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          THEN TRUE ELSE FALSE\n        END AS rule2,\n\n        -- RULE 3: Six consecutive points steadily increasing or decreasing (Drift/Trend)\n        CASE\n          WHEN\n            (value > LAG(value,1) OVER w AND\n             LAG(value,1) OVER w > LAG(value,2) OVER w AND\n             LAG(value,2) OVER w > LAG(value,3) OVER w AND\n             LAG(value,3) OVER w > LAG(value,4) OVER w AND\n             LAG(value,4) OVER w > LAG(value,5) OVER w)\n          OR\n            (value < LAG(value,1) OVER w AND\n             LAG(value,1) OVER w < LAG(value,2) OVER w AND\n             LAG(value,2) OVER w < LAG(value,3) OVER w AND\n             LAG(value,3) OVER w < LAG(value,4) OVER w AND\n             LAG(value,4) OVER w < LAG(value,5) OVER w)\n          THEN TRUE ELSE FALSE\n        END AS rule3,\n\n        -- RULE 4: Fourteen consecutive points alternating up and down (Oscillation)\n        CASE\n          WHEN\n            -- Check alternating pattern over last 14 points using sign of differences\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n          THEN TRUE ELSE FALSE\n        END AS rule4,\n\n        -- RULE 5: Two of three consecutive points beyond 2σ on the same side (Early warning)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          OR\n            COUNT(*) FILTER (WHERE value < mean - 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          THEN TRUE ELSE FALSE\n        END AS rule5,\n\n        -- RULE 6: Four of five consecutive points beyond 1σ on the same side\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          OR\n            COUNT(*) FILTER (WHERE value < mean - std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          THEN TRUE ELSE FALSE\n        END AS rule6,\n\n        -- RULE 7: Fifteen consecutive points within 1σ of the mean (Stratification / reduced variation)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) < std)\n            OVER (ORDER BY rn ROWS BETWEEN 14 PRECEDING AND CURRENT ROW) = 15\n          THEN TRUE ELSE FALSE\n        END AS rule7,\n\n        -- RULE 8: Eight consecutive points beyond 1σ on either side, none within 1σ (Mixture / bimodal)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) > std)\n            OVER (ORDER BY rn ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) = 8\n          THEN TRUE ELSE FALSE\n        END AS rule8\n\n    FROM ordered\n    WINDOW w AS (ORDER BY rn)\n),\n\nfinal AS (\n    SELECT\n        *,\n        (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n    FROM rules\n)\n\nSELECT\n    time,\n    value,\n    mean,\n    upper_2_5sigma,\n    lower_2_5sigma,\n\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n\n    CASE\n        WHEN any_violation THEN CONCAT_WS(' | ',\n            CASE WHEN rule1 THEN 'Rule 1: Beyond 3σ (Extreme outlier)' END,\n            CASE WHEN rule2 THEN 'Rule 2: 9 same side (Shift detected)' END,\n            CASE WHEN rule3 THEN 'Rule 3: 6 trend (Drift detected)' END,\n            CASE WHEN rule4 THEN 'Rule 4: 14 alternating (Oscillation)' END,\n            CASE WHEN rule5 THEN 'Rule 5: 2 of 3 beyond 2σ (Early warning)' END,\n            CASE WHEN rule6 THEN 'Rule 6: 4 of 5 beyond 1σ (Gradual shift)' END,\n            CASE WHEN rule7 THEN 'Rule 7: 15 within 1σ (Stratification)' END,\n            CASE WHEN rule8 THEN 'Rule 8: 8 beyond 1σ both sides (Mixture)' END\n        )\n        ELSE ''\n    END AS rule_description\n\nFROM final\nORDER BY time;",
+          "refId": "E",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time AS \"time\",\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma,\n  anomaly_point\nFROM shuttle_station_shuttle_idle_time_view\nWHERE $__timeFilter(time)\nORDER BY time;",
+          "refId": "F",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  'Nelson Rule Violation' AS title,\n  rule_description AS text\nFROM shuttle_station_shuttle_idle_time_view\nWHERE rule_description <> ''\n  AND $__timeFilter(time)\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "SHUTTLE IDLE TIME",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rule_description"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisColorMode",
+                "value": "text"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "new_glue_db",
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'shuttle_pre_scan_time'\n  AND station_name = 'shuttle_station'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "DROP VIEW IF EXISTS public.shuttle_station_shuttle_pre_scan_time_view;\n\nCREATE VIEW public.shuttle_station_shuttle_pre_scan_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time,\n        pm.value,\n        bm.mean,\n        bm.std_dev AS std,\n        bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,\n        bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name\n     AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'shuttle_station'\n      AND pm.metric_name = 'shuttle_pre_scan_time'\n),\n\nrules AS (\n    SELECT\n        *,\n        -- RULE 1\n        (ABS(value - mean) > 3 * std) AS rule1,\n\n        -- RULE 2\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          OR\n            COUNT(*) FILTER (WHERE value < mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          THEN TRUE ELSE FALSE\n        END AS rule2,\n\n        -- RULE 3\n        CASE\n          WHEN\n            (value > LAG(value,1) OVER w AND\n             LAG(value,1) OVER w > LAG(value,2) OVER w AND\n             LAG(value,2) OVER w > LAG(value,3) OVER w AND\n             LAG(value,3) OVER w > LAG(value,4) OVER w AND\n             LAG(value,4) OVER w > LAG(value,5) OVER w)\n          OR\n            (value < LAG(value,1) OVER w AND\n             LAG(value,1) OVER w < LAG(value,2) OVER w AND\n             LAG(value,2) OVER w < LAG(value,3) OVER w AND\n             LAG(value,3) OVER w < LAG(value,4) OVER w AND\n             LAG(value,4) OVER w < LAG(value,5) OVER w)\n          THEN TRUE ELSE FALSE\n        END AS rule3,\n\n        -- RULE 5\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          OR\n            COUNT(*) FILTER (WHERE value < mean - 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          THEN TRUE ELSE FALSE\n        END AS rule5\n\n    FROM ordered\n    WINDOW w AS (ORDER BY rn)\n),\n\nfinal AS (\n    SELECT\n        *,\n        (rule1 OR rule2 OR rule3 OR rule5) AS any_violation\n    FROM rules\n)\n\nSELECT\n    time,\n    value,\n    mean,\n    upper_2_5sigma,\n    lower_2_5sigma,\n\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n\n    CASE\n        WHEN any_violation THEN CONCAT_WS(' | ',\n            CASE WHEN rule1 THEN 'Rule 1: Beyond 3σ (Extreme outlier)' END,\n            CASE WHEN rule2 THEN 'Rule 2: 9 same side (Shift detected)' END,\n            CASE WHEN rule3 THEN 'Rule 3: 6 trend (Drift detected)' END,\n            CASE WHEN rule5 THEN 'Rule 5: 2 of 3 beyond 2σ' END\n        )\n        ELSE ''\n    END AS rule_description\n\nFROM final\nORDER BY time;",
+          "refId": "E",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time AS \"time\",\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma,\n  anomaly_point\nFROM shuttle_station_shuttle_pre_scan_time_view\nWHERE $__timeFilter(time)\nORDER BY time;",
+          "refId": "F",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  'Nelson Rule Violation' AS title,\n  rule_description AS text\nFROM shuttle_station_shuttle_pre_scan_time_view\nWHERE rule_description <> ''\n  AND $__timeFilter(time)\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT Distinct(metric_name,station_name)\nFrom process_metrics \nWhere station_name = 'shuttle_station';",
+          "refId": "C",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "SHUTTLE PRE SCAN TIME",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rule_description"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisColorMode",
+                "value": "text"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "new_glue_db",
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT timestamp AS time,value FROM process_metrics WHERE metric_name = 'shuttle_carrier_motion_time' AND station_name = 'shuttle_station' AND $__timeFilter(timestamp) ORDER BY timestamp;",
+          "refId": "A"
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "DROP VIEW IF EXISTS public.shuttle_station_shuttle_carrier_motion_time_view; CREATE VIEW public.shuttle_station_shuttle_carrier_motion_time_view AS WITH ordered AS ( SELECT pm.timestamp AS time,pm.value,bm.mean,bm.std_dev AS std,bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn FROM public.process_metrics pm JOIN public.baseline_metrics bm ON bm.station_name = pm.station_name AND bm.metric_name = pm.metric_name WHERE pm.station_name = 'shuttle_station' AND pm.metric_name = 'shuttle_carrier_motion_time'), rules AS ( SELECT *, (ABS(value - mean) > 3 * std) AS rule1, CASE WHEN COUNT(*) FILTER (WHERE value > mean) OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9 OR COUNT(*) FILTER (WHERE value < mean) OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9 THEN TRUE ELSE FALSE END AS rule2, CASE WHEN (value > LAG(value,1) OVER w AND LAG(value,1) OVER w > LAG(value,2) OVER w AND LAG(value,2) OVER w > LAG(value,3) OVER w AND LAG(value,3) OVER w > LAG(value,4) OVER w AND LAG(value,4) OVER w > LAG(value,5) OVER w) OR (value < LAG(value,1) OVER w AND LAG(value,1) OVER w < LAG(value,2) OVER w AND LAG(value,2) OVER w < LAG(value,3) OVER w AND LAG(value,3) OVER w < LAG(value,4) OVER w AND LAG(value,4) OVER w < LAG(value,5) OVER w) THEN TRUE ELSE FALSE END AS rule3, CASE WHEN COUNT(*) FILTER (WHERE value > mean + 2*std) OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2 OR COUNT(*) FILTER (WHERE value < mean - 2*std) OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2 THEN TRUE ELSE FALSE END AS rule5 FROM ordered WINDOW w AS (ORDER BY rn)), final AS ( SELECT *, (rule1 OR rule2 OR rule3 OR rule5) AS any_violation FROM rules ) SELECT time,value,mean,upper_2_5sigma,lower_2_5sigma, CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point, CASE WHEN any_violation THEN CONCAT_WS(' | ', CASE WHEN rule1 THEN 'Rule 1: Beyond 3σ (Extreme outlier)' END, CASE WHEN rule2 THEN 'Rule 2: 9 same side (Shift detected)' END, CASE WHEN rule3 THEN 'Rule 3: 6 trend (Drift detected)' END, CASE WHEN rule5 THEN 'Rule 5: 2 of 3 beyond 2σ' END ) ELSE '' END AS rule_description FROM final ORDER BY time;",
+          "refId": "E"
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT time AS \"time\",mean,upper_2_5sigma,lower_2_5sigma,anomaly_point FROM shuttle_station_shuttle_carrier_motion_time_view WHERE $__timeFilter(time) ORDER BY time;",
+          "refId": "F"
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT time,'Nelson Rule Violation' AS title,rule_description AS text FROM shuttle_station_shuttle_carrier_motion_time_view WHERE rule_description <> '' AND $__timeFilter(time) ORDER BY time;",
+          "refId": "B"
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT Distinct(metric_name,station_name) From process_metrics Where station_name = 'shuttle_station';",
+          "refId": "C"
+        }
+      ],
+      "title": "SHUTTLE CARRIER MOTION TIME",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rule_description"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisColorMode",
+                "value": "text"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "new_glue_db",
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'shuttle_post_scan_delay'\n  AND station_name = 'shuttle_station'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "DROP VIEW IF EXISTS public.shuttle_station_shuttle_post_scan_delay_view;\n\nCREATE VIEW public.shuttle_station_shuttle_post_scan_delay_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time,\n        pm.value,\n        bm.mean,\n        bm.std_dev AS std,\n        bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,\n        bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name\n     AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'shuttle_station'\n      AND pm.metric_name = 'shuttle_post_scan_delay'\n),\n\nrules AS (\n    SELECT\n        *,\n\n        -- RULE 1: One point beyond 3σ (Extreme outlier)\n        (ABS(value - mean) > 3 * std) AS rule1,\n\n        -- RULE 2: Nine or more consecutive points on the same side of the mean (Shift)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          OR\n            COUNT(*) FILTER (WHERE value < mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          THEN TRUE ELSE FALSE\n        END AS rule2,\n\n        -- RULE 3: Six consecutive points steadily increasing or decreasing (Drift/Trend)\n        CASE\n          WHEN\n            (value > LAG(value,1) OVER w AND\n             LAG(value,1) OVER w > LAG(value,2) OVER w AND\n             LAG(value,2) OVER w > LAG(value,3) OVER w AND\n             LAG(value,3) OVER w > LAG(value,4) OVER w AND\n             LAG(value,4) OVER w > LAG(value,5) OVER w)\n          OR\n            (value < LAG(value,1) OVER w AND\n             LAG(value,1) OVER w < LAG(value,2) OVER w AND\n             LAG(value,2) OVER w < LAG(value,3) OVER w AND\n             LAG(value,3) OVER w < LAG(value,4) OVER w AND\n             LAG(value,4) OVER w < LAG(value,5) OVER w)\n          THEN TRUE ELSE FALSE\n        END AS rule3,\n\n        -- RULE 4: Fourteen consecutive points alternating up and down (Oscillation)\n        CASE\n          WHEN\n            -- Check alternating pattern over last 14 points using sign of differences\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n          THEN TRUE ELSE FALSE\n        END AS rule4,\n\n        -- RULE 5: Two of three consecutive points beyond 2σ on the same side (Early warning)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          OR\n            COUNT(*) FILTER (WHERE value < mean - 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          THEN TRUE ELSE FALSE\n        END AS rule5,\n\n        -- RULE 6: Four of five consecutive points beyond 1σ on the same side\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          OR\n            COUNT(*) FILTER (WHERE value < mean - std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          THEN TRUE ELSE FALSE\n        END AS rule6,\n\n        -- RULE 7: Fifteen consecutive points within 1σ of the mean (Stratification / reduced variation)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) < std)\n            OVER (ORDER BY rn ROWS BETWEEN 14 PRECEDING AND CURRENT ROW) = 15\n          THEN TRUE ELSE FALSE\n        END AS rule7,\n\n        -- RULE 8: Eight consecutive points beyond 1σ on either side, none within 1σ (Mixture / bimodal)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) > std)\n            OVER (ORDER BY rn ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) = 8\n          THEN TRUE ELSE FALSE\n        END AS rule8\n\n    FROM ordered\n    WINDOW w AS (ORDER BY rn)\n),\n\nfinal AS (\n    SELECT\n        *,\n        (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n    FROM rules\n)\n\nSELECT\n    time,\n    value,\n    mean,\n    upper_2_5sigma,\n    lower_2_5sigma,\n\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n\n    CASE\n        WHEN any_violation THEN CONCAT_WS(' | ',\n            CASE WHEN rule1 THEN 'Rule 1: Beyond 3σ (Extreme outlier)' END,\n            CASE WHEN rule2 THEN 'Rule 2: 9 same side (Shift detected)' END,\n            CASE WHEN rule3 THEN 'Rule 3: 6 trend (Drift detected)' END,\n            CASE WHEN rule4 THEN 'Rule 4: 14 alternating (Oscillation)' END,\n            CASE WHEN rule5 THEN 'Rule 5: 2 of 3 beyond 2σ (Early warning)' END,\n            CASE WHEN rule6 THEN 'Rule 6: 4 of 5 beyond 1σ (Gradual shift)' END,\n            CASE WHEN rule7 THEN 'Rule 7: 15 within 1σ (Stratification)' END,\n            CASE WHEN rule8 THEN 'Rule 8: 8 beyond 1σ both sides (Mixture)' END\n        )\n        ELSE ''\n    END AS rule_description\n\nFROM final\nORDER BY time;",
+          "refId": "E",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time AS \"time\",\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma,\n  anomaly_point\nFROM shuttle_station_shuttle_post_scan_delay_view\nWHERE $__timeFilter(time)\nORDER BY time;",
+          "refId": "F",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time::timestamptz AS \"time\",\n  rule_description AS \"text\"\nFROM shuttle_station_shuttle_post_scan_delay_view\nWHERE rule_description <> ''\n  AND $__timeFilter(time)\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT DISTINCT metric_name\nFROM shuttle_station_shuttle_post_scan_delay_view;",
+          "refId": "C",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "SHUTTLE POST SCAN DELAY",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rule_description"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisColorMode",
+                "value": "text"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 29
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "new_glue_db",
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'shuttle_stopper_lowering_time'\n  AND station_name = 'shuttle_station'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "DROP VIEW IF EXISTS public.shuttle_station_shuttle_stopper_lowering_time_view;\n\nCREATE VIEW public.shuttle_station_shuttle_stopper_lowering_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time,\n        pm.value,\n        bm.mean,\n        bm.std_dev AS std,\n        bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,\n        bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name\n     AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'shuttle_station'\n      AND pm.metric_name = 'shuttle_stopper_lowering_time'\n),\n\nrules AS (\n    SELECT\n        *,\n\n        -- RULE 1: One point beyond 3σ (Extreme outlier)\n        (ABS(value - mean) > 3 * std) AS rule1,\n\n        -- RULE 2: Nine or more consecutive points on the same side of the mean (Shift)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          OR\n            COUNT(*) FILTER (WHERE value < mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          THEN TRUE ELSE FALSE\n        END AS rule2,\n\n        -- RULE 3: Six consecutive points steadily increasing or decreasing (Drift/Trend)\n        CASE\n          WHEN\n            (value > LAG(value,1) OVER w AND\n             LAG(value,1) OVER w > LAG(value,2) OVER w AND\n             LAG(value,2) OVER w > LAG(value,3) OVER w AND\n             LAG(value,3) OVER w > LAG(value,4) OVER w AND\n             LAG(value,4) OVER w > LAG(value,5) OVER w)\n          OR\n            (value < LAG(value,1) OVER w AND\n             LAG(value,1) OVER w < LAG(value,2) OVER w AND\n             LAG(value,2) OVER w < LAG(value,3) OVER w AND\n             LAG(value,3) OVER w < LAG(value,4) OVER w AND\n             LAG(value,4) OVER w < LAG(value,5) OVER w)\n          THEN TRUE ELSE FALSE\n        END AS rule3,\n\n        -- RULE 4: Fourteen consecutive points alternating up and down (Oscillation)\n        CASE\n          WHEN\n            -- Check alternating pattern over last 14 points using sign of differences\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n          THEN TRUE ELSE FALSE\n        END AS rule4,\n\n        -- RULE 5: Two of three consecutive points beyond 2σ on the same side (Early warning)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          OR\n            COUNT(*) FILTER (WHERE value < mean - 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          THEN TRUE ELSE FALSE\n        END AS rule5,\n\n        -- RULE 6: Four of five consecutive points beyond 1σ on the same side\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          OR\n            COUNT(*) FILTER (WHERE value < mean - std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          THEN TRUE ELSE FALSE\n        END AS rule6,\n\n        -- RULE 7: Fifteen consecutive points within 1σ of the mean (Stratification / reduced variation)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) < std)\n            OVER (ORDER BY rn ROWS BETWEEN 14 PRECEDING AND CURRENT ROW) = 15\n          THEN TRUE ELSE FALSE\n        END AS rule7,\n\n        -- RULE 8: Eight consecutive points beyond 1σ on either side, none within 1σ (Mixture / bimodal)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) > std)\n            OVER (ORDER BY rn ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) = 8\n          THEN TRUE ELSE FALSE\n        END AS rule8\n\n    FROM ordered\n    WINDOW w AS (ORDER BY rn)\n),\n\nfinal AS (\n    SELECT\n        *,\n        (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n    FROM rules\n)\n\nSELECT\n    time,\n    value,\n    mean,\n    upper_2_5sigma,\n    lower_2_5sigma,\n\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n\n    CASE\n        WHEN any_violation THEN CONCAT_WS(' | ',\n            CASE WHEN rule1 THEN 'Rule 1: Beyond 3σ (Extreme outlier)' END,\n            CASE WHEN rule2 THEN 'Rule 2: 9 same side (Shift detected)' END,\n            CASE WHEN rule3 THEN 'Rule 3: 6 trend (Drift detected)' END,\n            CASE WHEN rule4 THEN 'Rule 4: 14 alternating (Oscillation)' END,\n            CASE WHEN rule5 THEN 'Rule 5: 2 of 3 beyond 2σ (Early warning)' END,\n            CASE WHEN rule6 THEN 'Rule 6: 4 of 5 beyond 1σ (Gradual shift)' END,\n            CASE WHEN rule7 THEN 'Rule 7: 15 within 1σ (Stratification)' END,\n            CASE WHEN rule8 THEN 'Rule 8: 8 beyond 1σ both sides (Mixture)' END\n        )\n        ELSE ''\n    END AS rule_description\n\nFROM final\nORDER BY time;",
+          "refId": "E",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time AS \"time\",\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma,\n  anomaly_point\nFROM shuttle_station_shuttle_stopper_lowering_time_view\nWHERE $__timeFilter(time)\nORDER BY time;",
+          "refId": "F",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  'Nelson Rule Violation' AS title,\n  rule_description AS text\nFROM shuttle_station_shuttle_stopper_lowering_time_view\nWHERE rule_description <> ''\n  AND $__timeFilter(time)\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "SHUTTLE STOPPER LOWERING TIME",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rule_description"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisColorMode",
+                "value": "text"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 37
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "new_glue_db",
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'shuttle_stopper_rising_time'\n  AND station_name = 'shuttle_station'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "DROP VIEW IF EXISTS public.shuttle_station_shuttle_stopper_rising_time_view;\n\nCREATE VIEW public.shuttle_station_shuttle_stopper_rising_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time,\n        pm.value,\n        bm.mean,\n        bm.std_dev AS std,\n        bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,\n        bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name\n     AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'shuttle_station'\n      AND pm.metric_name = 'shuttle_stopper_rising_time'\n),\n\nrules AS (\n    SELECT\n        *,\n\n        -- RULE 1: One point beyond 3σ (Extreme outlier)\n        (ABS(value - mean) > 3 * std) AS rule1,\n\n        -- RULE 2: Nine or more consecutive points on the same side of the mean (Shift)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          OR\n            COUNT(*) FILTER (WHERE value < mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          THEN TRUE ELSE FALSE\n        END AS rule2,\n\n        -- RULE 3: Six consecutive points steadily increasing or decreasing (Drift/Trend)\n        CASE\n          WHEN\n            (value > LAG(value,1) OVER w AND\n             LAG(value,1) OVER w > LAG(value,2) OVER w AND\n             LAG(value,2) OVER w > LAG(value,3) OVER w AND\n             LAG(value,3) OVER w > LAG(value,4) OVER w AND\n             LAG(value,4) OVER w > LAG(value,5) OVER w)\n          OR\n            (value < LAG(value,1) OVER w AND\n             LAG(value,1) OVER w < LAG(value,2) OVER w AND\n             LAG(value,2) OVER w < LAG(value,3) OVER w AND\n             LAG(value,3) OVER w < LAG(value,4) OVER w AND\n             LAG(value,4) OVER w < LAG(value,5) OVER w)\n          THEN TRUE ELSE FALSE\n        END AS rule3,\n\n        -- RULE 4: Fourteen consecutive points alternating up and down (Oscillation)\n        CASE\n          WHEN\n            -- Check alternating pattern over last 14 points using sign of differences\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n          THEN TRUE ELSE FALSE\n        END AS rule4,\n\n        -- RULE 5: Two of three consecutive points beyond 2σ on the same side (Early warning)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          OR\n            COUNT(*) FILTER (WHERE value < mean - 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          THEN TRUE ELSE FALSE\n        END AS rule5,\n\n        -- RULE 6: Four of five consecutive points beyond 1σ on the same side\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          OR\n            COUNT(*) FILTER (WHERE value < mean - std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          THEN TRUE ELSE FALSE\n        END AS rule6,\n\n        -- RULE 7: Fifteen consecutive points within 1σ of the mean (Stratification / reduced variation)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) < std)\n            OVER (ORDER BY rn ROWS BETWEEN 14 PRECEDING AND CURRENT ROW) = 15\n          THEN TRUE ELSE FALSE\n        END AS rule7,\n\n        -- RULE 8: Eight consecutive points beyond 1σ on either side, none within 1σ (Mixture / bimodal)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) > std)\n            OVER (ORDER BY rn ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) = 8\n          THEN TRUE ELSE FALSE\n        END AS rule8\n\n    FROM ordered\n    WINDOW w AS (ORDER BY rn)\n),\n\nfinal AS (\n    SELECT\n        *,\n        (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n    FROM rules\n)\n\nSELECT\n    time,\n    value,\n    mean,\n    upper_2_5sigma,\n    lower_2_5sigma,\n\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n\n    CASE\n        WHEN any_violation THEN CONCAT_WS(' | ',\n            CASE WHEN rule1 THEN 'Rule 1: Beyond 3σ (Extreme outlier)' END,\n            CASE WHEN rule2 THEN 'Rule 2: 9 same side (Shift detected)' END,\n            CASE WHEN rule3 THEN 'Rule 3: 6 trend (Drift detected)' END,\n            CASE WHEN rule4 THEN 'Rule 4: 14 alternating (Oscillation)' END,\n            CASE WHEN rule5 THEN 'Rule 5: 2 of 3 beyond 2σ (Early warning)' END,\n            CASE WHEN rule6 THEN 'Rule 6: 4 of 5 beyond 1σ (Gradual shift)' END,\n            CASE WHEN rule7 THEN 'Rule 7: 15 within 1σ (Stratification)' END,\n            CASE WHEN rule8 THEN 'Rule 8: 8 beyond 1σ both sides (Mixture)' END\n        )\n        ELSE ''\n    END AS rule_description\n\nFROM final\nORDER BY time;",
+          "refId": "E",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time AS \"time\",\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma,\n  anomaly_point\nFROM shuttle_station_shuttle_stopper_rising_time_view\nWHERE $__timeFilter(time)\nORDER BY time;",
+          "refId": "F",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  'Nelson Rule Violation' AS title,\n  rule_description AS text\nFROM shuttle_station_shuttle_stopper_rising_time_view\nWHERE rule_description <> ''\n  AND $__timeFilter(time)\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "SHUTTLE STOPPER RISING TIME",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rule_description"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisColorMode",
+                "value": "text"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 45
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "new_glue_db",
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'shuttle_scan_success_time'\n  AND station_name = 'shuttle_station'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "DROP VIEW IF EXISTS public.shuttle_station_shuttle_scan_success_time_view;\n\nCREATE VIEW public.shuttle_station_shuttle_scan_success_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time,\n        pm.value,\n        bm.mean,\n        bm.std_dev AS std,\n        bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,\n        bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name\n     AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'shuttle_station'\n      AND pm.metric_name = 'shuttle_scan_success_time'\n),\n\nrules AS (\n    SELECT\n        *,\n\n        -- RULE 1: One point beyond 3σ (Extreme outlier)\n        (ABS(value - mean) > 3 * std) AS rule1,\n\n        -- RULE 2: Nine or more consecutive points on the same side of the mean (Shift)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          OR\n            COUNT(*) FILTER (WHERE value < mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          THEN TRUE ELSE FALSE\n        END AS rule2,\n\n        -- RULE 3: Six consecutive points steadily increasing or decreasing (Drift/Trend)\n        CASE\n          WHEN\n            (value > LAG(value,1) OVER w AND\n             LAG(value,1) OVER w > LAG(value,2) OVER w AND\n             LAG(value,2) OVER w > LAG(value,3) OVER w AND\n             LAG(value,3) OVER w > LAG(value,4) OVER w AND\n             LAG(value,4) OVER w > LAG(value,5) OVER w)\n          OR\n            (value < LAG(value,1) OVER w AND\n             LAG(value,1) OVER w < LAG(value,2) OVER w AND\n             LAG(value,2) OVER w < LAG(value,3) OVER w AND\n             LAG(value,3) OVER w < LAG(value,4) OVER w AND\n             LAG(value,4) OVER w < LAG(value,5) OVER w)\n          THEN TRUE ELSE FALSE\n        END AS rule3,\n\n        -- RULE 4: Fourteen consecutive points alternating up and down (Oscillation)\n        CASE\n          WHEN\n            -- Check alternating pattern over last 14 points using sign of differences\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n          THEN TRUE ELSE FALSE\n        END AS rule4,\n\n        -- RULE 5: Two of three consecutive points beyond 2σ on the same side (Early warning)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          OR\n            COUNT(*) FILTER (WHERE value < mean - 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          THEN TRUE ELSE FALSE\n        END AS rule5,\n\n        -- RULE 6: Four of five consecutive points beyond 1σ on the same side\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          OR\n            COUNT(*) FILTER (WHERE value < mean - std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          THEN TRUE ELSE FALSE\n        END AS rule6,\n\n        -- RULE 7: Fifteen consecutive points within 1σ of the mean (Stratification / reduced variation)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) < std)\n            OVER (ORDER BY rn ROWS BETWEEN 14 PRECEDING AND CURRENT ROW) = 15\n          THEN TRUE ELSE FALSE\n        END AS rule7,\n\n        -- RULE 8: Eight consecutive points beyond 1σ on either side, none within 1σ (Mixture / bimodal)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) > std)\n            OVER (ORDER BY rn ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) = 8\n          THEN TRUE ELSE FALSE\n        END AS rule8\n\n    FROM ordered\n    WINDOW w AS (ORDER BY rn)\n),\n\nfinal AS (\n    SELECT\n        *,\n        (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n    FROM rules\n)\n\nSELECT\n    time,\n    value,\n    mean,\n    upper_2_5sigma,\n    lower_2_5sigma,\n\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n\n    CASE\n        WHEN any_violation THEN CONCAT_WS(' | ',\n            CASE WHEN rule1 THEN 'Rule 1: Beyond 3σ (Extreme outlier)' END,\n            CASE WHEN rule2 THEN 'Rule 2: 9 same side (Shift detected)' END,\n            CASE WHEN rule3 THEN 'Rule 3: 6 trend (Drift detected)' END,\n            CASE WHEN rule4 THEN 'Rule 4: 14 alternating (Oscillation)' END,\n            CASE WHEN rule5 THEN 'Rule 5: 2 of 3 beyond 2σ (Early warning)' END,\n            CASE WHEN rule6 THEN 'Rule 6: 4 of 5 beyond 1σ (Gradual shift)' END,\n            CASE WHEN rule7 THEN 'Rule 7: 15 within 1σ (Stratification)' END,\n            CASE WHEN rule8 THEN 'Rule 8: 8 beyond 1σ both sides (Mixture)' END\n        )\n        ELSE ''\n    END AS rule_description\n\nFROM final\nORDER BY time;",
+          "refId": "E",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time AS \"time\",\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma,\n  anomaly_point\nFROM shuttle_station_shuttle_scan_success_time_view\nWHERE $__timeFilter(time)\nORDER BY time;",
+          "refId": "F",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  'Nelson Rule Violation' AS title,\n  rule_description AS text\nFROM shuttle_station_shuttle_scan_success_time_view\nWHERE rule_description <> ''\n  AND $__timeFilter(time)\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "SHUTTLE SCAN SUCCESS TIME",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rule_description"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.axisColorMode",
+                "value": "text"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 53
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "new_glue_db",
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'shuttle_carrier_motion_time'\n  AND station_name = 'shuttle_station'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "DROP VIEW IF EXISTS public.shuttle_station_shuttle_carrier_motion_time_view;\n\nCREATE VIEW public.shuttle_station_shuttle_carrier_motion_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time,\n        pm.value,\n        bm.mean,\n        bm.std_dev AS std,\n        bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,\n        bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name\n     AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'shuttle_station'\n      AND pm.metric_name = 'shuttle_carrier_motion_time'\n),\n\nrules AS (\n    SELECT\n        *,\n\n        -- RULE 1: One point beyond 3σ (Extreme outlier)\n        (ABS(value - mean) > 3 * std) AS rule1,\n\n        -- RULE 2: Nine or more consecutive points on the same side of the mean (Shift)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          OR\n            COUNT(*) FILTER (WHERE value < mean)\n            OVER (ORDER BY rn ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) = 9\n          THEN TRUE ELSE FALSE\n        END AS rule2,\n\n        -- RULE 3: Six consecutive points steadily increasing or decreasing (Drift/Trend)\n        CASE\n          WHEN\n            (value > LAG(value,1) OVER w AND\n             LAG(value,1) OVER w > LAG(value,2) OVER w AND\n             LAG(value,2) OVER w > LAG(value,3) OVER w AND\n             LAG(value,3) OVER w > LAG(value,4) OVER w AND\n             LAG(value,4) OVER w > LAG(value,5) OVER w)\n          OR\n            (value < LAG(value,1) OVER w AND\n             LAG(value,1) OVER w < LAG(value,2) OVER w AND\n             LAG(value,2) OVER w < LAG(value,3) OVER w AND\n             LAG(value,3) OVER w < LAG(value,4) OVER w AND\n             LAG(value,4) OVER w < LAG(value,5) OVER w)\n          THEN TRUE ELSE FALSE\n        END AS rule3,\n\n        -- RULE 4: Fourteen consecutive points alternating up and down (Oscillation)\n        CASE\n          WHEN\n            -- Check alternating pattern over last 14 points using sign of differences\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n          THEN TRUE ELSE FALSE\n        END AS rule4,\n\n        -- RULE 5: Two of three consecutive points beyond 2σ on the same side (Early warning)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          OR\n            COUNT(*) FILTER (WHERE value < mean - 2*std)\n            OVER (ORDER BY rn ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) >= 2\n          THEN TRUE ELSE FALSE\n        END AS rule5,\n\n        -- RULE 6: Four of five consecutive points beyond 1σ on the same side\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE value > mean + std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          OR\n            COUNT(*) FILTER (WHERE value < mean - std)\n            OVER (ORDER BY rn ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) >= 4\n          THEN TRUE ELSE FALSE\n        END AS rule6,\n\n        -- RULE 7: Fifteen consecutive points within 1σ of the mean (Stratification / reduced variation)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) < std)\n            OVER (ORDER BY rn ROWS BETWEEN 14 PRECEDING AND CURRENT ROW) = 15\n          THEN TRUE ELSE FALSE\n        END AS rule7,\n\n        -- RULE 8: Eight consecutive points beyond 1σ on either side, none within 1σ (Mixture / bimodal)\n        CASE\n          WHEN\n            COUNT(*) FILTER (WHERE ABS(value - mean) > std)\n            OVER (ORDER BY rn ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) = 8\n          THEN TRUE ELSE FALSE\n        END AS rule8\n\n    FROM ordered\n    WINDOW w AS (ORDER BY rn)\n),\n\nfinal AS (\n    SELECT\n        *,\n        (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n    FROM rules\n)\n\nSELECT\n    time,\n    value,\n    mean,\n    upper_2_5sigma,\n    lower_2_5sigma,\n\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n\n    CASE\n        WHEN any_violation THEN CONCAT_WS(' | ',\n            CASE WHEN rule1 THEN 'Rule 1: Beyond 3σ (Extreme outlier)' END,\n            CASE WHEN rule2 THEN 'Rule 2: 9 same side (Shift detected)' END,\n            CASE WHEN rule3 THEN 'Rule 3: 6 trend (Drift detected)' END,\n            CASE WHEN rule4 THEN 'Rule 4: 14 alternating (Oscillation)' END,\n            CASE WHEN rule5 THEN 'Rule 5: 2 of 3 beyond 2σ (Early warning)' END,\n            CASE WHEN rule6 THEN 'Rule 6: 4 of 5 beyond 1σ (Gradual shift)' END,\n            CASE WHEN rule7 THEN 'Rule 7: 15 within 1σ (Stratification)' END,\n            CASE WHEN rule8 THEN 'Rule 8: 8 beyond 1σ both sides (Mixture)' END\n        )\n        ELSE ''\n    END AS rule_description\n\nFROM final\nORDER BY time;",
+          "refId": "E",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time AS \"time\",\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma,\n  anomaly_point\nFROM shuttle_station_shuttle_carrier_motion_time_view\nWHERE $__timeFilter(time)\nORDER BY time;",
+          "refId": "F",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  'Nelson Rule Violation' AS title,\n  rule_description AS text\nFROM shuttle_station_shuttle_carrier_motion_time_view\nWHERE rule_description <> ''\n  AND $__timeFilter(time)\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "SHUTTLE CARRIER MOTION TIME",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "refresh": "5s",
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "2026-01-23T22:04:42.908Z",
+    "to": "2026-01-23T23:10:57.614Z"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "SHUTTLE STATION",
+  "uid": "adg255c",
+  "version": 1
+}

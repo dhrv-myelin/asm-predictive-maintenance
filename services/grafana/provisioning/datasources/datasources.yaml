@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: PostgreSQL
+    type: postgres
+    uid: bfc3wenp44lxcc
+    url: postgres:5432
+    user: postgres
+    secureJsonData:
+      password: postgres
+    jsonData:
+      database: glue-dispenser-db
+      sslmode: disable
+      postgresVersion: 1600
+    isDefault: true

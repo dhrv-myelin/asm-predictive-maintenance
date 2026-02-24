@@ -90,10 +90,12 @@ class Model:
         window_df: DataFrame (seq_len, num_features + timestamp)
         """
 
-        # Drop timestamp + target if present
-        X = window_df.drop(
-            columns=["timestamp", self.target_name], errors="ignore"
-        ).to_numpy()
+        # # Drop timestamp + target if present
+        # X = window_df.drop(
+        #     columns=["timestamp", self.target_name], errors="ignore"
+        # ).to_numpy()
+
+        X = window_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
 
         if self.model_type == "tabular":
             # Flatten entire window into one row
@@ -143,12 +145,15 @@ class TorchBackend:
             print("✅ Model loaded and set to eval mode")
 
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=config.get("lr", 1e-3)
+
+        train_cfg = config.get("train_params", {})
+        lr = train_cfg.get("learning_rate", 1e-3)
+        self.optimizer = torch.optim.AdamW(
+            self.model.parameters(), lr=lr, weight_decay=1e-4
         )
 
         mlflow.pytorch.autolog()
-
+        
     def train(self, X, y):
 
         print("Starting training...")
@@ -177,8 +182,8 @@ class TorchBackend:
         X_val, y_val = X[train_end:val_end], y[train_end:val_end]
         X_test, y_test = X[val_end:], y[val_end:]
 
-        epochs = self.config.get("epochs", 200)
-        lr = self.config.get("lr", 1e-3)
+        epochs = self.config.get("num_epochs", 200)
+        lr = self.config.get("learning_rate", 1e-3)
 
         # ---------------------------------------------------------
         # MLflow Run
@@ -187,7 +192,7 @@ class TorchBackend:
         with mlflow.start_run():
 
             # Log hyperparameters
-            mlflow.log_param("epochs", epochs)
+            mlflow.log_param("num_epochs", epochs)
             mlflow.log_param("learning_rate", lr)
             mlflow.log_param("model_name", self.config["method"])
 
@@ -200,9 +205,9 @@ class TorchBackend:
                 train_loss = self.criterion(pred, y_train)
 
                 train_loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                 self.optimizer.step()
 
-                # Validation
                 self.model.eval()
                 with torch.no_grad():
                     _, pred_val = self.model(X_val)
@@ -210,12 +215,12 @@ class TorchBackend:
 
                 # Log metrics per epoch
                 mlflow.log_metric("train_loss", train_loss.item(), step=epoch)
-                mlflow.log_metric("val_loss", val_loss.item(), step=epoch)
+                mlflow.log_metric("val_loss",   val_loss.item(),   step=epoch)
 
                 print(
                     f"Epoch {epoch+1}/{epochs} "
                     f"| Train Loss: {train_loss.item():.6f} "
-                    f"| Val Loss: {val_loss.item():.6f}"
+                    f"| Val Loss:   {val_loss.item():.6f}"
                 )
 
         # -----------------------------------------------------
@@ -266,11 +271,8 @@ class SklearnBackend:
     def predict(self):
         pass
 
-    pass
-
 
 if __name__ == "__main__":
-
     pass
 
     # from data_handler import DataHandler

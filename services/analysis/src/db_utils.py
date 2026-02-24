@@ -21,6 +21,7 @@ class DBUtils:
             }).fetchall()
 
         if not rows:
+            print(f"[ERROR] No data found between {start_timestamp} and {end_timestamp}")
             return []
 
         return rows
@@ -29,6 +30,21 @@ class DBUtils:
     def insert_results(self, last_timestamp, values, station_name, metric_name, model_name):
 
         curr_ts = last_timestamp
+
+
+        # for i, v in enumerate(values):
+        #     curr_ts = curr_ts + timedelta(seconds=v)
+        #     print("[DEBUG] Current timestamp in window:", curr_ts)
+        #     if i == len(values) - 1:
+        #         print("[DEBUG] Writing timestamp in window:", curr_ts)
+        #         self._write_db(
+        #             actual_timestamp = last_timestamp,
+        #             predicted_timestamp = curr_ts,
+        #             predicted_value = v,
+        #             station_name = station_name,
+        #             metric_name = metric_name,
+        #             model_name = model_name
+        #         )
 
         for v in values:
             curr_ts = curr_ts + timedelta(seconds=v)

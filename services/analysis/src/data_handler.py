@@ -135,6 +135,9 @@ class DataHandler:
         # 'timestamp' is always tracked internally for L1/L2 even if not in
         # required_features (used for queue ordering); it is removed from the
         # final output if absent from required_features.
+        self._end_keys = self._end_keys + (
+            ["timestamp"] if "timestamp" not in self._end_keys else []
+        )
         self._l1_internal_keys = self._l1_keys + (
             ["timestamp"] if "timestamp" not in self._l1_keys else []
         )
@@ -220,6 +223,7 @@ class DataHandler:
             if self._active_end.get(nmn, -1) == -1:
                 self._active_end[nmn] = val
                 # print(f"[DEBUG] Updated active_end: {self._active_end}")
+            self._active_end["timestamp"] = ts
             if self._end_keys and self._is_complete(self._active_end):
                 self._end_queue.append(copy.copy(self._active_end))
                 self._active_end = _build_template(self._end_keys)
@@ -266,9 +270,10 @@ class DataHandler:
         those dicts are treated as always-satisfied (empty dict).
         """
         while True:
-            fmt_ready = bool(self._fmt_queue) or not self._fmt_keys
-            end_ready = bool(self._end_queue) or not self._end_keys
-            line_ready = bool(self._l1_queue) or bool(self._l2_queue)
+            fmt_ready  = bool(self._fmt_queue) or not self._fmt_keys
+            end_ready  = bool(self._end_queue) or not self._end_keys
+            line_has_keys = bool(self._l1_keys) or bool(self._l2_keys)
+            line_ready = (bool(self._l1_queue) or bool(self._l2_queue)) or not line_has_keys
 
             if not (fmt_ready and end_ready and line_ready):
                 break
@@ -276,15 +281,17 @@ class DataHandler:
             fmt_part = self._fmt_queue.popleft() if self._fmt_keys else {}
             end_part = self._end_queue.popleft() if self._end_keys else {}
 
-            # Choose oldest line entry
-            if self._l1_queue and self._l2_queue:
-                ts1 = self._l1_queue[0].get("timestamp", pd.NaT)
-                ts2 = self._l2_queue[0].get("timestamp", pd.NaT)
-                use_l1 = ts1 <= ts2
+            # Only attempt to pop a line entry if there are line keys at all
+            if line_has_keys:
+                if self._l1_queue and self._l2_queue:
+                    ts1 = self._l1_queue[0].get("timestamp", pd.NaT)
+                    ts2 = self._l2_queue[0].get("timestamp", pd.NaT)
+                    use_l1 = ts1 <= ts2
+                else:
+                    use_l1 = bool(self._l1_queue)
+                line_part = self._l1_queue.popleft() if use_l1 else self._l2_queue.popleft()
             else:
-                use_l1 = bool(self._l1_queue)
-
-            line_part = self._l1_queue.popleft() if use_l1 else self._l2_queue.popleft()
+                line_part = {}
 
             merged = {**fmt_part, **line_part, **end_part}
 
@@ -373,11 +380,10 @@ class DataHandler:
 
             if out is None:
                 break
-
             X_df, y_df = out   # DataFrames
-
+            # TODO: Differentiate between univariate and multivariate.  Drop target column based on need
             # ---- convert to numpy sequences ----
-            X_seq = X_df.drop(columns=["timestamp",self.target_name]).to_numpy()
+            X_seq = X_df.drop(columns=["timestamp"]).to_numpy()
             y_val = y_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
 
             # if prediction_window > 1 → take last step target
@@ -387,17 +393,21 @@ class DataHandler:
             X_list.append(X_seq)
             Y_list.append(y_val)
 
-            # advance window
+            # advance by stride from the LAST window's start, not first
             curr_first_timestamp = X_df.iloc[0]["timestamp"]
+            print(f"[DEBUG] Advancing to timestamp: {curr_first_timestamp}")
+
+        print(f"[DEBUG] Total windows built: {len(X_list)}")
 
         if not X_list:
             return None, None
 
-        X_train = np.stack(X_list)   # (N, seq_len, num_features)
-        Y_train = np.stack(Y_list)   # (N, num_targets)
+        X_train = np.stack(X_list)  # (N, seq_len, num_features)
+        Y_train = np.stack(Y_list)  # (N, prediction_window)
+
+        print(f"[DEBUG] X_train shape: {X_train.shape}, Y_train shape: {Y_train.shape}")
 
         return X_train, Y_train
-
 
 
 if __name__ == "__main__":

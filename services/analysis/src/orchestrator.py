@@ -1,3 +1,4 @@
+from matplotlib.pylab import rint
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from data_handler import DataHandler
@@ -10,6 +11,7 @@ import os
 import logging
 import threading
 from datetime import datetime, timezone
+from sklearn.preprocessing import RobustScaler
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -50,6 +52,7 @@ def loop(poller, data_handlers, models, db_util):
 
                     # inference
                     preds = model.real_time_inference(window)
+                    preds = [preds[-1]]
 
                     # write
                     last_ts = window.iloc[-1]["timestamp"]
@@ -88,9 +91,12 @@ def inference_loop(data_handler, model, db_util):
 
         # inference
         preds = model.real_time_inference(X)
+        preds = [preds[-1]]
+        # print("================= Length Of Predictions:", len(preds))
 
         # write results
         last_ts = X.iloc[-1]['timestamp']
+        print("[DEBUG] Last timestamp in window:", last_ts)
         db_util.insert_results(
             last_timestamp=last_ts,
             values= preds, #  [0.0] * X.shape[0]
@@ -106,7 +112,7 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
     rows = db_util.fetch_data(start_ts, end_ts)
 
     if not rows:
-        print(f"[ERROR] No data found between {start_ts} and {end_ts}")
+        # print(f"[ERROR] No data found between {start_ts} and {end_ts}")
         return
 
     def start(target_func):
@@ -133,7 +139,7 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
 if __name__ == "__main__":
 
     TRAIN = False
-    BACKUP_LOGS = False
+    BACKUP_LOGS = True
     start_ts = datetime(2026, 1, 23, 22, 6, 0)
     end_ts = datetime(2026, 1, 23, 23, 10, 35)
 
@@ -217,9 +223,11 @@ if __name__ == "__main__":
             handler.ingest(rows)
             model = models[name]
             XY = handler.fetch_train_data()
-            # print("[DEBUG] Train data : \n", XY)
+            print("[DEBUG] Train data : \n", XY)
             if XY:
                 X, y = XY
+                print("[DEBUG] Train X shape:", X.shape)
+                print("[DEBUG] Train y shape:", y.shape)
                 models[name].train(X, y)
 
     elif BACKUP_LOGS:

@@ -20,7 +20,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: glue-dispenser-db
     volumes:
-      - ./postgres/glue-dispenser-db.sql:/docker-entrypoint-initdb.d/glue-dispenser-db.sql
+      - /home/tarunk/OneDrive/ASM/asm-predictive-maintenance/data/glue-dispenser-db.sql:/docker-entrypoint-initdb.d/glue-dispenser-db.sql
     ports:
       - "5432:5432"
 
@@ -33,7 +33,7 @@ services:
       - "3000:3000"
     volumes:
       - ./services/grafana/provisioning:/etc/grafana/provisioning
-      - ./services/grafana/provisioning/dashboards:/var/lib/grafana/dashboards
+      - ./services/grafana/dashboards:/var/lib/grafana/dashboards
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin

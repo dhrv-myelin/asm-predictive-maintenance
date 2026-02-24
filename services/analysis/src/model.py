@@ -245,6 +245,7 @@ class TorchBackend:
     def predict(self, X):
 
         self.model.eval()
+        # print(f"[DEBUG] Predicting on X : {X}")
 
         X = torch.tensor(X, dtype=torch.float32).to(self.device)
 

@@ -23,6 +23,7 @@ _ALL_FMT_BARE_KEYS: set[str] = {
     "shuttle_stopper_lowering_time",
     "shuttle_pallet_release_time",
     "shuttle_stopper_rising_time",
+    "shuttle_station__shuttle_idle_time",
 }
 
 # All known end/summary keys
@@ -40,9 +41,14 @@ _ALL_END_KEYS: set[str] = {
 # All known L1 keys (excluding 'timestamp')
 _ALL_L1_KEYS: set[str] = {
     "l1_buffer_a__buffer_holding_time",
-    "l1_buffer_a__buffer_stopper_lowering_time",
+    "l1_buffer_a__buffer_idle_time",
     "l1_buffer_a__buffer_pallet_release_time",
+    "l1_buffer_a__buffer_stopper_lowering_time",
     "l1_buffer_a__buffer_stopper_rising_time",
+    "l1_buffer_b__buffer_holding_and_pre_stopper_down_time",
+    "l1_buffer_b__buffer_idle_time",
+    "l1_buffer_b__buffer_pallet_release_and_pre_stopper_up_time",
+    "l1_dispenser__machine_idle_time",
     "l1_dispenser__dispenser_entry_unclamp_time",
     "l1_dispenser__dispenser_delay_post_entry_unclamp",
     "l1_dispenser__dispenser_pallet_lifting_1_time",
@@ -61,6 +67,7 @@ _ALL_L1_KEYS: set[str] = {
     "l1_dispenser__dispenser_stopper_lowering",
     "l1_dispenser__dispenser_pallet_releasing",
     "l1_dispenser__dispenser_stopper_rasing",
+    "l1_inspection__inspection_idle_time",
     "l1_inspection__inspection_lifter_rising_time",
     "l1_inspection__inspection_gantry_positioning_time",
     "l1_inspection__inspection_core_vision_system_time",
@@ -71,6 +78,13 @@ _ALL_L1_KEYS: set[str] = {
 
 # All known L2 keys (excluding 'timestamp')
 _ALL_L2_KEYS: set[str] = {
+    "l2_buffer_a__buffer_holding_and_pre_stopper_down_time",
+    "l2_buffer_a__buffer_idle_time",
+    "l2_buffer_a__buffer_pallet_release_and_pre_stopper_up_time",
+    "l2_buffer_b__buffer_holding_and_pre_stopper_down_time",
+    "l2_buffer_b__buffer_idle_time",
+    "l2_buffer_b__buffer_pallet_release_and_pre_stopper_up_time",
+    "l2_dispenser__machine_idle_time",
     "l2_dispenser__dispenser_entry_unclamp_time",
     "l2_dispenser__dispenser_delay_post_entry_unclamp",
     "l2_dispenser__dispenser_pallet_lifting_1_time",
@@ -89,6 +103,7 @@ _ALL_L2_KEYS: set[str] = {
     "l2_dispenser__dispenser_stopper_lowering",
     "l2_dispenser__dispenser_pallet_releasing",
     "l2_dispenser__dispenser_stopper_rasing",
+    "l2_inspection__inspection_idle_time",
     "l2_inspection__inspection_lifter_rising_time",
     "l2_inspection__inspection_gantry_positioning_time",
     "l2_inspection__inspection_core_vision_system_time",
@@ -238,7 +253,7 @@ class DataHandler:
                 # print(f"[DEBUG] Updated active_l1: {self._active_l1}")
             self._active_l1["timestamp"] = ts       # always keep latest ts
             if self._l1_keys and self._is_complete(self._active_l1):
-                print("[DEBUG] Completed L1 dict: ", self._active_l1)
+                # print("[DEBUG] Completed L1 dict: ", self._active_l1)
                 self._l1_queue.append(copy.copy(self._active_l1))
                 self._active_l1 = _build_template(self._l1_internal_keys)
                 self._try_flush()
@@ -305,6 +320,7 @@ class DataHandler:
 
             # Replace stray sentinels with NA
             row_df = row_df.replace(-1, pd.NA)
+            # row_df = row_df.fillna(-1)
             print("[DEBUG] Completed one cycle, appending to DataHandler df")
             self.df = (
                 pd.concat([self.df, row_df], ignore_index=True)
@@ -390,8 +406,13 @@ class DataHandler:
             if y_val.ndim > 1:
                 y_val = y_val[-1]
 
+            # print(f"[DEBUG] X_seq: {X_seq}")
+            # print(f"[DEBUG] y_val: {y_val}")
             X_list.append(X_seq)
             Y_list.append(y_val)
+            
+            # if len(X_list)>5:
+            #     exit(0)
 
             # advance by stride from the LAST window's start, not first
             curr_first_timestamp = X_df.iloc[0]["timestamp"]

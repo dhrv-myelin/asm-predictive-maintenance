@@ -45,11 +45,17 @@ target:
         # - shuttle_stopper_lowering_time
         # - shuttle_pallet_release_time
         # - shuttle_stopper_rising_time
+        # - shuttle_station__shuttle_idle_time
         - system__cycle_time
         # - l1_buffer_a__buffer_holding_time
-        # - l1_buffer_a__buffer_stopper_lowering_time
+        # - l1_buffer_a__buffer_idle_time
         # - l1_buffer_a__buffer_pallet_release_time
+        # - l1_buffer_a__buffer_stopper_lowering_time
         # - l1_buffer_a__buffer_stopper_rising_time
+        # - l1_buffer_b__buffer_holding_and_pre_stopper_down_time
+        # - l1_buffer_b__buffer_idle_time
+        # - l1_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
+        # - l1_dispenser__machine_idle_time
         # - l1_dispenser__dispenser_entry_unclamp_time
         # - l1_dispenser__dispenser_delay_post_entry_unclamp
         # - l1_dispenser__dispenser_pallet_lifting_1_time
@@ -68,12 +74,20 @@ target:
         # - l1_dispenser__dispenser_stopper_lowering
         # - l1_dispenser__dispenser_pallet_releasing
         # - l1_dispenser__dispenser_stopper_rasing
+        # - l1_inspection__inspection_idle_time
         # - l1_inspection__inspection_lifter_rising_time
         # - l1_inspection__inspection_gantry_positioning_time
         # - l1_inspection__inspection_core_vision_system_time
         # - l1_inspection__inspection_post_vision_check_delay
         # - l1_inspection__inspection_lifter_lowering_time
         # - l1_inspection__inspection_pallet_releasing_time
+        # - l2_buffer_a__buffer_holding_and_pre_stopper_down_time
+        # - l2_buffer_a__buffer_idle_time
+        # - l2_buffer_a__buffer_pallet_release_and_pre_stopper_up_time
+        # - l2_buffer_b__buffer_holding_and_pre_stopper_down_time
+        # - l2_buffer_b__buffer_idle_time
+        # - l2_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
+        # - l2_dispenser__machine_idle_time
         # - l2_dispenser__dispenser_entry_unclamp_time
         # - l2_dispenser__dispenser_delay_post_entry_unclamp
         # - l2_dispenser__dispenser_pallet_lifting_1_time
@@ -92,6 +106,7 @@ target:
         # - l2_dispenser__dispenser_stopper_lowering
         # - l2_dispenser__dispenser_pallet_releasing
         # - l2_dispenser__dispenser_stopper_rasing
+        # - l2_inspection__inspection_idle_time
         # - l2_inspection__inspection_lifter_rising_time
         # - l2_inspection__inspection_gantry_positioning_time
         # - l2_inspection__inspection_core_vision_system_time
@@ -101,20 +116,21 @@ target:
         - timestamp
   
 
-      history_window: 10
+      history_window: 3
       stride: 1
-      prediction_window: 7
+      prediction_window: 1
 
       mode: offline
-      load_path: "/home/tarunk/mlartifacts/204707883063158890/models/m-d86e5e37223a4650a0884d47e04b373e/artifacts/data/model.pth"
+      # load_path: "/home/tarunk/mlartifacts/204707883063158890/models/m-d86e5e37223a4650a0884d47e04b373e/artifacts/data/model.pth"
+      load_path: "/home/tarunk/OneDrive/ASM/asm-predictive-maintenance/services/analysis/mlartifacts/866592688175462789/models/m-fc74fb752e2f435495a2fc29650666a5/artifacts/data/model.pth"
       arch:
         
         #place holders for mamba_ts class init not in arch already
         input_size: 1 #HACK: should do len(required_features) - 2 (because timestamp and target feature are in required_features)
-        forecast_horizon: 7
+        forecast_horizon: 1
 
 
-        seq_len: 15
+        seq_len: 3
         hidden_dim: 32
         d_state: 16
         d_conv: 4

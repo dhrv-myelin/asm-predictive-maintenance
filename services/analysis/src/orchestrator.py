@@ -75,7 +75,6 @@ def loop(poller, data_handlers, models, db_util):
 
 def inference_loop(data_handler, model, db_util):
     curr_first_timestamp = None
-
     while True:
         X = data_handler.fetch_next_window(curr_first_timestamp, for_training=False)
 
@@ -88,7 +87,7 @@ def inference_loop(data_handler, model, db_util):
 
         print("✅ Window shape:", X.shape)
         # print(X)
-
+        # print("[DEBUG] Window:\n", X)
         # inference
         preds = model.real_time_inference(X)
         preds = [preds[-1]]
@@ -139,7 +138,7 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
 if __name__ == "__main__":
 
     TRAIN = False
-    BACKUP_LOGS = True
+    BACKUP_LOGS = False
     start_ts = datetime(2026, 1, 23, 22, 6, 0)
     end_ts = datetime(2026, 1, 23, 23, 10, 35)
 

@@ -5,7 +5,6 @@ NOW WITH DIRECT TIMESCALEDB STREAMING (NO CSV)
 """
 import argparse
 from html import parser
-from html import parser
 import json
 import yaml
 import time
@@ -15,19 +14,24 @@ import statistics
 from datetime import datetime
 from collections import defaultdict
 from sqlalchemy import text
-from datetime import datetime, timedelta, timezone
-
-# Import our modules
-from inventory import SystemInventory
-from log_parser import LogParser
-from engine import LogicEngine
-from viz_adapter import VizAdapter
-from utils.tag_resolver import TagResolver
-from shared.db.database import engine as db_engine
+from datetime import datetime, timedelta
+from src.inventory import SystemInventory
+from src.log_parser import LogParser
+from src.engine import LogicEngine
+from src.viz_adapter import VizAdapter
+from src.utils.tag_resolver import TagResolver
+from src.database import engine as db_engine
 import statistics
-
-from utils.data_fetcher import RawFileConsumer, VectorBufferConsumer
-
+# Import our modules
+#from inventory import SystemInventory
+#from log_parser import LogParser
+#from engine import LogicEngine
+#from viz_adapter import VizAdapter
+#from utils.tag_resolver import TagResolver
+#from db_manager import TimescaleDBManager
+#from src.inventory import SystemInventory
+#from src.db_manager import TimescaleDBManager
+from src.engine import LogicEngine
 def load_yaml(path):
     with open(path, 'r') as f:
         return yaml.safe_load(f)
@@ -38,7 +42,6 @@ def load_json(path):
     with open(path, 'r') as f:
         return json.load(f)
     
-STREAMING = False
 
 
 def run_record_mode(baseline_file, baseline_hours):
@@ -47,8 +50,8 @@ def run_record_mode(baseline_file, baseline_hours):
     """
 
     print("\n--- RECORD MODE: Generating Baseline ---")
-    from db.models import BaselineMetric
-    from database import SessionLocal
+    from shared.src.db.models import BaselineMetric
+    from shared.src.database import SessionLocal
 
     if db_engine is None:
         print("Database engine not initialized.")
@@ -203,7 +206,7 @@ def main():
     parser = argparse.ArgumentParser(description="Industrial Log Analytics Engine")
     parser.add_argument('--mode', choices=['record', 'monitor'], required=True)
     parser.add_argument('--input', default='data/machine_logs.txt')
-    parser.add_argument('--once', action='store_true', help='Process file to the end and exit')
+    parser.add_argument('--live', action='store_true')
     parser.add_argument('--viz', action='store_true')
     parser.add_argument('--patterns', default='config/log_patterns/prod_patterns.yaml')
     parser.add_argument('--no-db', action='store_true', help='Disable database (fallback to CSV)')
@@ -270,18 +273,12 @@ def main():
 
     log_parser = LogParser(args.patterns)
 
-    is_live_mode = not args.once
-    if "vector_buffer" in args.input:
-        consumer = VectorBufferConsumer(args.input, live=is_live_mode)
-    else:
-        consumer = RawFileConsumer(args.input, live=is_live_mode)
-
     # 7. Run the Loop
     print(f"\n=== Starting Engine ===")
     print(f"Input: {args.input}")
     print(f"Mode: {args.mode.upper()}")
     print("Storage: TimescaleDB")
-    if is_live_mode:
+    if args.live:
         print(">> LIVE MODE ACTIVE (Press Ctrl+C to stop)")
     print("=" * 50 + "\n")
 
@@ -290,50 +287,26 @@ def main():
     last_log_timestamp = None  # Track the last log timestamp as datetime object
     
     try:
-        for cleaned_line in consumer.stream():
-            for timestamp, event in log_parser.process_line(cleaned_line):
-                # Track the last timestamp from the log file
-                # Convert Unix timestamp to datetime object if needed
-                if isinstance(timestamp, (int, float)):
-                    last_log_timestamp = datetime.fromtimestamp(timestamp)
-                else:
-                    last_log_timestamp = timestamp
-                
-                # Normal engine processing
-                engine.process_event(timestamp, event)
-                
-                # ERROR AND WARN LOGGING
-                if event.get("level") in ["ERROR", "WARN"] and db_manager and db_manager.enabled:
-                    raw_line = event.get("raw_line", "")
-                    parts = raw_line.split(' ', 4)
-                    
-                    if len(parts) >= 5:
-                        log_timestamp = parts[0] + " " + parts[1]
-                        severity = parts[3]
-                        
-                        rest = parts[4].split(' - ', 1)
-                        service_name = rest[0].strip() if len(rest) > 0 else ""
-                        log_message = rest[1].strip() if len(rest) > 1 else ""
-                        
-                        station_name = event.get("target", "")
-                        thread_id = parts[2].strip('[]') if len(parts) > 2 else ""
-                        extra = f"thread_id={thread_id}"
-                        
-                        # Convert timestamp string to datetime
-                        try:
-                            dt = datetime.strptime(log_timestamp, "%Y-%m-%d %H:%M:%S,%f")
-                        except:
-                            dt = datetime.now()
-                        
-                        db_manager.insert_error(
-                            dt, station_name, severity, service_name, log_message, extra
-                        )
-                
-                line_count += 1
-                if line_count % 5000 == 0:
-                    elapsed = time.time() - start_time
-                    rate = line_count / elapsed
-                    print(f"Processed {line_count} events... ({int(rate)} ev/s)")
+        for timestamp, event in log_parser.parse_file(args.input, live_mode=args.live):
+            # Track the last timestamp from the log file
+            # Convert Unix timestamp to datetime object if needed
+            print("PARSED EVENT:", event)
+            if isinstance(timestamp, (int, float)):
+                last_log_timestamp = datetime.fromtimestamp(timestamp)
+            else:
+                last_log_timestamp = timestamp
+            
+            # Normal engine processing
+            engine.process_event(timestamp, event)
+            
+            # ERROR AND WARN LOGGING
+            
+            
+            line_count += 1
+            if line_count % 5000 == 0:
+                elapsed = time.time() - start_time
+                rate = line_count / elapsed
+                print(f"Processed {line_count} events... ({int(rate)} ev/s)")
 
     except KeyboardInterrupt:
         print("\n\n=== Stopping by User Request ===")

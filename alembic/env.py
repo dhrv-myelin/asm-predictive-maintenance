@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import os
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT))
@@ -29,8 +30,8 @@ if config.config_file_name is not None:
 #target_metadata = Base.metadata
 
 from shared.db.base import Base
-import shared.db.models  # <-- THIS registers tables
-from shared.db import Base 
+# import shared.db.models  # <-- THIS registers tables
+# from shared.db import Base 
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -62,6 +63,14 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+# def run_migrations_online() -> None:
+#     # 1. Get the URL from the Docker environment variable
+#     database_url = os.getenv("DATABASE_URL")
+    
+#     # 2. If it exists, override the alembic.ini setting
+#     if database_url:
+#         config.set_main_option("sqlalchemy.url", database_url)
+
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
@@ -70,6 +79,11 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    database_url = os.getenv("DATABASE_URL")
+    
+    # 2. If it exists, override the alembic.ini setting
+    if database_url:
+        config.set_main_option("sqlalchemy.url", database_url)
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

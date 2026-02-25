@@ -138,7 +138,7 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
 if __name__ == "__main__":
 
     TRAIN = False
-    BACKUP_LOGS = False
+    BACKUP_LOGS = True
     start_ts = datetime(2026, 1, 23, 22, 6, 0)
     end_ts = datetime(2026, 1, 23, 23, 10, 35)
 

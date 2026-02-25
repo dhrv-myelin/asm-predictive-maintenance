@@ -302,32 +302,6 @@ def main():
                 # Normal engine processing
                 engine.process_event(timestamp, event)
                 
-                # ERROR AND WARN LOGGING
-                if event.get("level") in ["ERROR", "WARN"] and db_manager and db_manager.enabled:
-                    raw_line = event.get("raw_line", "")
-                    parts = raw_line.split(' ', 4)
-                    
-                    if len(parts) >= 5:
-                        log_timestamp = parts[0] + " " + parts[1]
-                        severity = parts[3]
-                        
-                        rest = parts[4].split(' - ', 1)
-                        service_name = rest[0].strip() if len(rest) > 0 else ""
-                        log_message = rest[1].strip() if len(rest) > 1 else ""
-                        
-                        station_name = event.get("target", "")
-                        thread_id = parts[2].strip('[]') if len(parts) > 2 else ""
-                        extra = f"thread_id={thread_id}"
-                        
-                        # Convert timestamp string to datetime
-                        try:
-                            dt = datetime.strptime(log_timestamp, "%Y-%m-%d %H:%M:%S,%f")
-                        except:
-                            dt = datetime.now()
-                        
-                        db_manager.insert_error(
-                            dt, station_name, severity, service_name, log_message, extra
-                        )
                 
                 line_count += 1
                 if line_count % 5000 == 0:

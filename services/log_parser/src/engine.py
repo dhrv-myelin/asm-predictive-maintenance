@@ -5,70 +5,23 @@ The Brain. Manages state transitions, inferences, and metric generation.
 import csv
 import time
 from datetime import datetime, timezone
-from db.models import ProcessMetric, ErrorLog
-from database import SessionLocal
-from db.models import ProcessMetric
-from db.models import ErrorLog
+from shared.db.models import ProcessMetric, ErrorLog
+from shared.db.database import SessionLocal
+from shared.db.models import ProcessMetric
+from shared.db.models import ErrorLog
 class LogicEngine:
     def __init__(self, inventory, output_file="data/process_metrics.csv", 
-                visualizer=None, tag_resolver=None, db_manager=None):
+                visualizer=None, tag_resolver=None):
         self.inventory = inventory
         self.output_file = output_file
         self.viz = visualizer
         self.tag_resolver = tag_resolver
-        self.db_manager = db_manager
         
         self.throughput_count = 0
         
         # Virtual state map
         self.virtual_state_map = {cid: {} for cid in self.inventory}
 
-        # DEBUG: Check database status
-        print("\n[ENGINE INIT DEBUG]")
-        print(f"  db_manager passed: {db_manager is not None}")
-        if db_manager:
-            print(f"  db_manager.enabled: {db_manager.enabled}")
-            print(f"  db_manager.engine: {db_manager.engine is not None}")
-        else:
-            print(f"  db_manager is None!")
-
-        # Initialize CSV as fallback (only if DB is disabled)
-        if not db_manager or not db_manager.enabled:
-            self._init_output_file()
-            print("⚠ Running in CSV fallback mode")
-        else:
-            print("✓ Running in DATABASE STREAMING mode")
-            # Load baseline metrics from process_baseline.json into database
-            self._load_baseline_metrics()
-
-    def _init_output_file(self):
-        """Creates the file with header if it doesn't exist."""
-        try:
-            with open(self.output_file, 'x', newline='') as f:
-                writer = csv.writer(f)
-                # TALL FORMAT: Easy for Pivot Tables & SQL
-                writer.writerow(["timestamp", "station_name", "metric_name", "value", "unit", "state_context"])
-        except FileExistsError:
-            pass # Append mode is fine
-    
-    def _load_baseline_metrics(self):
-        """
-        Load baseline metrics from process_baseline.json into the database.
-        This is called during engine initialization if database is enabled.
-        """
-        if not self.db_manager or not self.db_manager.enabled:
-            print("[ENGINE] ⚠ Skipping baseline load - database not enabled")
-            return
-        
-        baseline_file = "data/process_baseline.json"
-        print(f"\n[ENGINE] Loading baseline metrics from {baseline_file}...")
-        
-        success = self.db_manager.load_baseline_from_json(baseline_file)
-        
-        if success:
-            print(f"[ENGINE] ✓ Baseline metrics loaded successfully")
-        else:
-            print(f"[ENGINE] ⚠ Failed to load baseline metrics (file may not exist yet)")
     def _stream_error(self, timestamp, event):
         try:
             ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
@@ -89,7 +42,10 @@ class LogicEngine:
     def process_event(self, timestamp, event):
         payload = event.get('payload', {})
         target_id = event.get('target')
-        
+        if event["type"] == "ERROR_LOG":
+            print("ENGINE SAW ERROR_LOG")
+            self._stream_error(timestamp, event)
+            return        
         if event['type'] == "SYSTEM_RESET":
             self._reset_system()
             return 

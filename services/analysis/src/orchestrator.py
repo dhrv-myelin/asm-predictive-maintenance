@@ -75,7 +75,6 @@ def loop(poller, data_handlers, models, db_util):
 
 def inference_loop(data_handler, model, db_util):
     curr_first_timestamp = None
-
     while True:
         X = data_handler.fetch_next_window(curr_first_timestamp, for_training=False)
 
@@ -88,7 +87,7 @@ def inference_loop(data_handler, model, db_util):
 
         print("✅ Window shape:", X.shape)
         # print(X)
-
+        # print("[DEBUG] Window:\n", X)
         # inference
         preds = model.real_time_inference(X)
         preds = [preds[-1]]

@@ -9,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 from datetime import datetime
 
 # --- SETTINGS ---
-INPUT_PATH = "../data/raw_logs/machine_logs.txt"   # Path to source(s)
+INPUT_PATH = "../data/raw_logs/machine_logs_156_cycles.txt"   # Path to source(s)
 OUTPUT_FILE = "../data/App.log"    # File for Vector/LogParser to watch
 MAX_BYTES = 10 * 1024 * 1024    # 10MB rotation trigger
 BACKUP_COUNT = 3               # Keep 3 old files

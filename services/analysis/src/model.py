@@ -1,19 +1,28 @@
 import numpy as np
 import mlflow
-import mlflow.pytorch
+import mlflow.pytorch  # type: ignorew.pytorch
+
+# import mlfloimport mlflow
+import mlflow.sklearn  # type: ignorew.sklearn
 import torch
 import torch.nn as nn
-import yaml
+from sklearn.metrics import mean_squared_error
 
 
 from models.mamba import Mamba_TS
+from models.isolation_health import IsolationForestHealth
+from models.xgboost_window_forecaster import XGBWindowForecaster
 
 # ============================================================
 # Main Wrapper
 # ============================================================
 
 models = {
+    # torch models
     "mamba": Mamba_TS,
+    # sklearn models
+    "health_score": IsolationForestHealth,
+    "xgboost_forecast": XGBWindowForecaster,
 }
 
 
@@ -90,12 +99,11 @@ class Model:
         window_df: DataFrame (seq_len, num_features + timestamp)
         """
 
-        # # Drop timestamp + target if present
-        # X = window_df.drop(
-        #     columns=["timestamp", self.target_name], errors="ignore"
-        # ).to_numpy()
-
-        X = window_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
+        # Drop timestamp + target if present
+        X = window_df.drop(
+            columns=["timestamp", self.target_name], errors="ignore"
+        ).to_numpy()
+        # X = window_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
 
         if self.model_type == "tabular":
             # Flatten entire window into one row
@@ -131,29 +139,13 @@ class TorchBackend:
 
         self.model.to(self.device)
 
-        # ✅ ADD THIS BLOCK HERE
-        if config.get("load_path"):
-            print(f"🔄 Loading model from {config['load_path']}")
-
-            self.model = torch.load(
-                config["load_path"], map_location=self.device, weights_only=False
-            )
-
-            self.model.to(self.device)
-            self.model.eval()
-
-            print("✅ Model loaded and set to eval mode")
-
         self.criterion = nn.MSELoss()
-
-        train_cfg = config.get("train_params", {})
-        lr = train_cfg.get("learning_rate", 1e-3)
-        self.optimizer = torch.optim.AdamW(
-            self.model.parameters(), lr=lr, weight_decay=1e-4
+        self.optimizer = torch.optim.Adam(
+            self.model.parameters(), lr=config.get("lr", 1e-3)
         )
 
         mlflow.pytorch.autolog()
-        
+
     def train(self, X, y):
 
         print("Starting training...")
@@ -205,9 +197,9 @@ class TorchBackend:
                 train_loss = self.criterion(pred, y_train)
 
                 train_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                 self.optimizer.step()
 
+                # Validation
                 self.model.eval()
                 with torch.no_grad():
                     _, pred_val = self.model(X_val)
@@ -215,12 +207,12 @@ class TorchBackend:
 
                 # Log metrics per epoch
                 mlflow.log_metric("train_loss", train_loss.item(), step=epoch)
-                mlflow.log_metric("val_loss",   val_loss.item(),   step=epoch)
+                mlflow.log_metric("val_loss", val_loss.item(), step=epoch)
 
                 print(
                     f"Epoch {epoch+1}/{epochs} "
                     f"| Train Loss: {train_loss.item():.6f} "
-                    f"| Val Loss:   {val_loss.item():.6f}"
+                    f"| Val Loss: {val_loss.item():.6f}"
                 )
 
         # -----------------------------------------------------
@@ -244,7 +236,18 @@ class TorchBackend:
 
     def predict(self, X):
 
-        self.model.eval()
+        # load path from config yaml
+        if self.config.get("load_path"):
+            print(f"🔄 Loading model from {self.config['load_path']}")
+
+            self.model = torch.load(
+                self.config["load_path"], map_location=self.device, weights_only=False
+            )
+
+            self.model.to(self.device)
+            self.model.eval()
+
+            print("✅ Model loaded and set to eval mode")
 
         X = torch.tensor(X, dtype=torch.float32).to(self.device)
 
@@ -259,43 +262,81 @@ class TorchBackend:
 # ============================================================
 
 
-# TODO:
 class SklearnBackend:
 
-    def __init__(self, config) -> None:
-        pass
+    def __init__(self, config):
 
-    def train(self):
-        pass
+        self.config = config
 
-    def predict(self):
-        pass
+        if config["method"] not in models:
+            raise ValueError(f"Unknown sklearn model: {config['method']}")
 
+        # Initialize sklearn model with arch params
+        self.model = models[config["method"]](**config.get("arch", {}))
 
-if __name__ == "__main__":
-    pass
+        mlflow.sklearn.autolog()
 
-    # from data_handler import DataHandler
+    # --------------------------------------------------------
+    # Training
+    # --------------------------------------------------------
 
-    # import os
+    def train(self, X, y):
 
-    # config path
-    # CONFIG_PATH = os.getcwd() + "/config/analysis_config.yaml"
+        print("Starting sklearn training...")
 
-    # def load_config(path):
+        N = X.shape[0]
 
-    # with open(path, "r") as f:
-    # data = yaml.safe_load(f)
-    # return data
+        # same split logic as torch backend
+        train_ratio = 0.7
+        val_ratio = 0.15
+        test_ratio = 0.15
 
-    # data_handler = DataHandler
+        train_end = int(N * train_ratio)
+        val_end = train_end + int(N * val_ratio)
 
-    # config = load_config(CONFIG_PATH)
+        X_train, y_train = X[:train_end], y[:train_end]
+        X_val, y_val = X[train_end:val_end], y[train_end:val_end]
+        X_test, y_test = X[val_end:], y[val_end:]
 
-    # model = Model(
-    #     data_handler=data_handler,
-    #     model="mamba",
-    #     # model_name="xgboost",
-    #     config=config,
-    #     target_name="system__cycle_time",
-    # )
+        with mlflow.start_run():
+
+            mlflow.log_param("model_name", self.config["method"])
+            mlflow.log_params(self.config.get("arch", {}))
+
+            # Fit model
+            self.model.fit(X_train, y_train)
+
+            # Validation
+            y_val_pred = self.model.predict(X_val)
+            val_loss = mean_squared_error(y_val, y_val_pred)
+
+            mlflow.log_metric("val_loss", val_loss)
+
+            print(f"Validation Loss: {val_loss:.6f}")
+
+            # Test
+            y_test_pred = self.model.predict(X_test)
+            test_loss = mean_squared_error(y_test, y_test_pred)
+
+            mlflow.log_metric("test_loss", test_loss)
+
+            print(f"Final Test Loss: {test_loss:.6f}")
+
+            # Log model artifact
+            mlflow.sklearn.log_model(self.model, "model")
+
+    # --------------------------------------------------------
+    # Inference
+    # --------------------------------------------------------
+
+    def predict(self, X):
+
+        # Optional model loading
+        if self.config.get("load_path"):
+            print(f"🔄 Loading sklearn model from {self.config['load_path']}")
+            self.model = mlflow.sklearn.load_model(self.config["load_path"])
+            print("✅ Model loaded")
+
+        preds = self.model.predict(X)
+
+        return preds

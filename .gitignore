@@ -21,4 +21,5 @@ services/log_parser/data
 # Log, system state snapshots, captured time series data
 data/*
 
-
+services/analysis/mlruns
+services/analysis/mlartifacts

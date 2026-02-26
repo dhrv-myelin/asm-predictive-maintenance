@@ -5,10 +5,10 @@ The Brain. Manages state transitions, inferences, and metric generation.
 import csv
 import time
 from datetime import datetime, timezone
-from db.models import ProcessMetric, ErrorLog
-from database import SessionLocal
-from db.models import ProcessMetric
-from db.models import ErrorLog
+from shared.db.models import ProcessMetric, ErrorLog
+from shared.db.database import SessionLocal
+from shared.db.models import ProcessMetric
+from shared.db.models import ErrorLog
 class LogicEngine:
     def __init__(self, inventory, output_file="data/process_metrics.csv", 
                 visualizer=None, tag_resolver=None):

@@ -215,19 +215,19 @@ target:
         #INFO: this is for dataloader.
 
         #FIX: need to see if history window means anyting for this model
-      history_window: 3
+      history_window: 1
       stride: 1
-      prediction_window: 4
+      prediction_window: 1
       mode: offline
 
       #INFO: these are filled in health score class init
 
       arch:
+        smoothing_window: 5 # was 20 — too large relative to dataset size
         n_estimators: 100
         contamination: "auto"
         drift_percentile: 5
         breakdown_sensitivity: 3.0
-        smoothing_window: 20
         random_state: 42
 
         #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
@@ -236,7 +236,7 @@ target:
         max_depth: 6
         learning_rate: 0.05
 
-      analysis_types: [forecast]
+      analysis_types: [score]
 
     #=================================================================================
     - method: xgboost_forecast

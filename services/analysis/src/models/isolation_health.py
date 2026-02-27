@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.base import BaseEstimator
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import IsolationForest
 
@@ -12,11 +13,14 @@ class IsolationForestHealth(BaseEstimator):
     and centroid distance.
 
     fit(X)     -> learn healthy behavior
-    predict(X) -> return health score per row (0–100)
+    predict(X) -> return health score per row (0-100)
+
+    NaN handling: median imputation is applied before all fitting and
+    prediction so that missing sensor readings don't propagate through
+    to the scores.
     """
 
     def __init__(
-        # TODO: find actual good values for what goes into the models.
         self,
         n_estimators=100,
         contamination="auto",
@@ -32,6 +36,8 @@ class IsolationForestHealth(BaseEstimator):
         self.smoothing_window = smoothing_window
         self.random_state = random_state
 
+        # Impute missing sensor values with per-feature median before scaling
+        self.imputer = SimpleImputer(strategy="median")
         self.scaler = StandardScaler()
         self.iso = IsolationForest(
             n_estimators=self.n_estimators,
@@ -47,26 +53,31 @@ class IsolationForestHealth(BaseEstimator):
         """
         X: (N, num_features)
         Assumed to be healthy training data.
+        y is ignored (unsupervised), accepted for sklearn API compatibility.
         """
+        X = np.array(X, dtype=float)
 
-        X_scaled = self.scaler.fit_transform(X)
+        nan_count = np.sum(np.isnan(X))
+        if nan_count > 0:
+            print(
+                f"  [IsolationForestHealth] Imputing {nan_count} NaN values in training data"
+            )
 
-        # Train isolation forest
+        X_imputed = self.imputer.fit_transform(X)
+        X_scaled = self.scaler.fit_transform(X_imputed)
+
         self.iso.fit(X_scaled)
 
-        # Store training anomaly score distribution
-        self.train_scores = self.iso.decision_function(X_scaled)
-        self.score_mean = np.mean(self.train_scores)
-        self.score_std = max(np.std(self.train_scores), 1e-6)
+        # Store training anomaly score distribution for z-score normalisation
+        self.train_scores_ = self.iso.decision_function(X_scaled)
+        self.score_mean_ = np.mean(self.train_scores_)
+        self.score_std_ = max(np.std(self.train_scores_), 1e-6)
 
-        # Compute healthy centroid
-        self.centroid = np.mean(X_scaled, axis=0)
-
-        # Compute distance thresholds
-        distances = np.linalg.norm(X_scaled - self.centroid, axis=1)
-
-        self.d_anchor = np.percentile(distances, 100 - self.drift_percentile)
-        self.d_limit = self.d_anchor * self.breakdown_sensitivity
+        # Healthy centroid and distance thresholds
+        self.centroid_ = np.mean(X_scaled, axis=0)
+        distances = np.linalg.norm(X_scaled - self.centroid_, axis=1)
+        self.d_anchor_ = np.percentile(distances, 100 - self.drift_percentile)
+        self.d_limit_ = self.d_anchor_ * self.breakdown_sensitivity
 
         return self
 
@@ -79,41 +90,59 @@ class IsolationForestHealth(BaseEstimator):
         X: (M, num_features)
 
         Returns:
-            health_scores (M,)
+            health_scores (M,) in range [0, 100]
         """
+        X = np.array(X, dtype=float)
 
-        X_scaled = self.scaler.transform(X)
+        nan_count = np.sum(np.isnan(X))
+        if nan_count > 0:
+            print(
+                f"  [IsolationForestHealth] Imputing {nan_count} NaN values in prediction data"
+            )
 
-        # Distance-based health
-        distances = np.linalg.norm(X_scaled - self.centroid, axis=1)
+        X_imputed = self.imputer.transform(X)
+        X_scaled = self.scaler.transform(X_imputed)
 
+        # Distance-based component
+        distances = np.linalg.norm(X_scaled - self.centroid_, axis=1)
         h_dist = np.where(
-            distances <= self.d_anchor,
+            distances <= self.d_anchor_,
             100.0,
             np.clip(
-                100
-                - ((distances - self.d_anchor) / (self.d_limit - self.d_anchor + 1e-6))
-                * 100,
-                0,
-                100,
+                100.0
+                - (
+                    (distances - self.d_anchor_)
+                    / (self.d_limit_ - self.d_anchor_ + 1e-6)
+                )
+                * 100.0,
+                0.0,
+                100.0,
             ),
         )
 
-        # Pattern-based health
-        scores = self.iso.decision_function(X_scaled)
+        # IsolationForest pattern-based component
+        iso_scores = self.iso.decision_function(X_scaled)
+        z_scores = (self.score_mean_ - iso_scores) / self.score_std_
+        h_iso = np.clip(100.0 - (z_scores * 15.0), 0.0, 100.0)
 
-        z_scores = (self.score_mean - scores) / self.score_std
-        h_iso = np.clip(100 - (z_scores * 15), 0, 100)
+        raw_health = (h_dist + h_iso) / 2.0
 
-        raw_health = (h_dist + h_iso) / 2
-
-        # Rolling smoothing (manual)
-        if self.smoothing_window > 1:
-            smooth = np.convolve(
-                raw_health,
-                np.ones(self.smoothing_window) / self.smoothing_window,
-                mode="same",
+        # Rolling average smoothing with edge-safe padding
+        w = self.smoothing_window
+        if w > 1 and len(raw_health) >= w:
+            kernel = np.ones(w) / w
+            valid = np.convolve(raw_health, kernel, mode="valid")
+            # valid has length = len(raw_health) - w + 1
+            # Pad edges with the nearest valid value to restore original length
+            pad_left = w // 2
+            pad_right = w - 1 - pad_left
+            smooth = np.concatenate(
+                [
+                    np.full(pad_left, valid[0]),
+                    valid,
+                    np.full(pad_right, valid[-1]),
+                ]
             )
-            return smooth
+            return smooth[: len(raw_health)]
 
         return raw_health

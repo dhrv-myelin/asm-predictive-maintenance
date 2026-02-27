@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from xgboost import XGBRegressor
 
+
 class XGBWindowForecaster(BaseEstimator, RegressorMixin):
     """
     Multivariate time-series forecaster using window flattening.
@@ -10,7 +11,7 @@ class XGBWindowForecaster(BaseEstimator, RegressorMixin):
         past window_length timesteps -> target at t + predict_horizon
 
     fit(X, y)
-    predict(window)
+    predict(X)
     """
 
     def __init__(
@@ -39,7 +40,7 @@ class XGBWindowForecaster(BaseEstimator, RegressorMixin):
         )
 
     # --------------------------------------------------
-    # BUILD WINDOWED TRAINING DATA
+    # BUILD WINDOWED TRAINING DATA (used for raw timeseries input)
     # --------------------------------------------------
 
     def _build_training_matrix(self, X, y):
@@ -51,7 +52,6 @@ class XGBWindowForecaster(BaseEstimator, RegressorMixin):
             X_train (samples, window_length * num_features)
             y_train (samples,)
         """
-
         n = len(X)
         X_rows = []
         y_vals = []
@@ -73,17 +73,15 @@ class XGBWindowForecaster(BaseEstimator, RegressorMixin):
 
     def fit(self, X, y):
         """
-        X: (N, num_features)
-        y: (N,)
+        X: (N, window_length * num_features)  <- pre-flattened by SklearnBackend
+        y: (N,)  or  (N, 1)
         """
+        y = np.array(y).ravel()
 
-        X_train, y_train = self._build_training_matrix(X, y)
+        if len(X) < 2:
+            raise ValueError("Not enough data to fit the model.")
 
-        if len(X_train) < 2:
-            raise ValueError("Not enough data to build windowed samples.")
-
-        self.model.fit(X_train, y_train)
-
+        self.model.fit(X, y)
         return self
 
     # --------------------------------------------------
@@ -93,17 +91,18 @@ class XGBWindowForecaster(BaseEstimator, RegressorMixin):
     def predict(self, X):
         """
         X expected shape:
-            (window_length, num_features)
+            (n_samples, window_length * num_features)  <- batch from SklearnBackend
+            OR
+            (window_length, num_features)              <- real-time single window
 
         Returns:
-            (1,) prediction for t + predict_horizon
+            (n_samples,) predictions
         """
+        X = np.array(X)
 
-        if X.shape[0] != self.window_length:
-            raise ValueError(
-                f"Expected {self.window_length} rows for prediction window."
-            )
+        # Real-time single window: (window_length, num_features) -> flatten
+        if X.ndim == 2 and X.shape[0] == self.window_length:
+            X = X.flatten().reshape(1, -1)
 
-        X_flat = X.flatten().reshape(1, -1)
-
-        return self.model.predict(X_flat)
+        # Batch: (n_samples, flat_features) — pass through directly
+        return self.model.predict(X)

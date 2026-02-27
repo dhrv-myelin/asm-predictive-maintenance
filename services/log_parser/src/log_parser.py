@@ -53,7 +53,7 @@ class LogParser:
         except ValueError:
             return
 
-        if ' ERROR ' in line_text:
+        if '] ERROR ' in line_text:
             yield epoch, {
                 "type": "ERROR_LOG",
                 "target": None,
@@ -64,7 +64,7 @@ class LogParser:
                 "raw_line": line_text
             }
             return
-        elif ' WARN ' in line_text:
+        elif '] WARN  ' in line_text:
             yield epoch, {
                 "type": "WARN_LOG",
                 "target": None,

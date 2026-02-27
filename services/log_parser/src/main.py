@@ -25,6 +25,8 @@ from viz_adapter import VizAdapter
 from utils.tag_resolver import TagResolver
 from shared.db.database import engine as db_engine
 import statistics
+from shared.db.models import BaselineMetric
+from shared.db.database import SessionLocal
 
 from utils.data_fetcher import RawFileConsumer, VectorBufferConsumer
 
@@ -47,8 +49,6 @@ def run_record_mode(baseline_file, baseline_hours):
     """
 
     print("\n--- RECORD MODE: Generating Baseline ---")
-    from db.models import BaselineMetric
-    from database import SessionLocal
 
     if db_engine is None:
         print("Database engine not initialized.")

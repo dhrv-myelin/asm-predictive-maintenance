@@ -39,13 +39,11 @@ class LogicEngine:
 
         except Exception as e:
             print(f"[DB ERROR - ERROR_LOG] {e}")
+            
     def process_event(self, timestamp, event):
         payload = event.get('payload', {})
         target_id = event.get('target')
-        if event["type"] == "ERROR_LOG":
-            print("ENGINE SAW ERROR_LOG")
-            self._stream_error(timestamp, event)
-            return        
+
         if event['type'] == "SYSTEM_RESET":
             self._reset_system()
             return 

@@ -10,8 +10,8 @@ from sklearn.metrics import mean_squared_error
 
 
 from models.mamba import Mamba_TS
-from models.isolation_health import IsolationForestHealth
-from models.xgboost_window_forecaster import XGBWindowForecaster
+# from models.isolation_health import IsolationForestHealth
+# from models.xgboost_window_forecaster import XGBWindowForecaster
 
 # ============================================================
 # Main Wrapper
@@ -21,8 +21,8 @@ models = {
     # torch models
     "mamba": Mamba_TS,
     # sklearn models
-    "health_score": IsolationForestHealth,
-    "xgboost_forecast": XGBWindowForecaster,
+    # "health_score": IsolationForestHealth,
+    # "xgboost_forecast": XGBWindowForecaster,
 }
 
 

@@ -2,24 +2,14 @@
 ```
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
-
-# Run Command 
+# Running Locally
+## 1. Setup Alembic
 In root (~/asm-predictive-maintenance/):
 
 ```
 uv add alembic 
 uv run alembic upgrade head 
 ```
-
-# Starting Log Parser Service
-```
-cd services/log_parser
-uv run python src/main.py --mode record --input data/vector_buffer.jsonl
-```
-
-Use --no-db for output to a .csv instead of the DB. 
-Use --once for a static log file dump instead of a continuously streaming one
-
 # Running complete streaming Pipeline:
 
 Pre-Requisite : Have Vector streaming logs from the windows laptop
@@ -28,26 +18,44 @@ Pre-Requisite : Have Vector streaming logs from the windows laptop
 ```
 docker compose up -d
 ```
+## 2. Log Parser Service
 
-## 2. MLFLow Serve:
 ```
-mlflow server --port 5000
+cd services/log_parser
+uv run python src/main.py --mode record --input <data_log_file_path>
+```
+Use --input data/vector_buffer.jsonl for live inference streaming from windows.
+Use --no-db for output to a .csv instead of the DB. 
+Use --once for a static log file dump instead of a continuously streaming one
+
+# Using Docker
+
+## 1. Setup Postgres, MLFlow and Grafana
+
+```
+cd <path_to_project_folder>/asm-predictive-maintenance
+docker compose up --build -d
+```
+
+## 2. Set PYTHON PATH:
+```
+export PYTHONPATH=<path_to_project_folder>/asm-predictive-maintenance:$PYTHONPATH
 ```
 
 ## 3. LogParser:
 ```
-cd asm-predictive-maintenance/services/log_parser
-uv run python src/main.py --mode record --input data/vector_buffer.jsonl
+cd services/log_parser
+uv run python src/main.py --mode record --input <data_log_file_path> --once
 ```
 
 ## 4. Analysis Engine:
 ```
 cd asm-predictive-maintenance/services/analysis
-python src/orchestrator.py
+uv run python src/orchestrator.py
 ```
 
 ## 5. Grafana:
+On the browser, open :
 ```
-cd grafana_configs_predictive/grafana_configs
-docker compose up -d
+localhost:3000
 ```

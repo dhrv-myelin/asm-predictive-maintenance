@@ -59,8 +59,8 @@ patterns:
     target_id: "shuttle_station"
     value_mapping:
       destination:
-        "-1172483": "l1_buffer_a"
-        "-106483": "l2_buffer_a"
+        "-523064": "l1_buffer_a"
+        "15936": "l2_buffer_a"
 
   - name: "Stopper Lowering Trigger"
     regex: "Shuttle Stopper Down: DOWN command issued"
@@ -197,7 +197,7 @@ patterns:
   # Transition: Pallet lifting (entry)
   - name: "Dispenser Pallet Lifting Start"
     # Matches: "Axis 9: MoveAbs started → 19000" or "Axis 10: MoveAbs started → 68687"
-    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>93452|60982)"
+    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>68687|76737)"
     event_type: "PALLET_ZPOS_1_START"
     value_mapping:
       target:
@@ -245,7 +245,7 @@ patterns:
   # Transition: Positioning (gantry movement to dispense position)
   - name: "Dispenser Positioning Start"
     # Matches: "Axis 10: MoveAbs started → 556737"
-    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>691257|681411)"
+    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>561687|556737)"
     event_type: "COMBINED_POSITIONING_START"
     value_mapping:
       target:
@@ -266,7 +266,7 @@ patterns:
   # Transition: Unpositioning (return from dispense position)
   - name: "Dispenser Pallet Unpositioning Start"
     # Matches: "Axis 9: MoveAbs started → 68687"
-    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>93452|60982)"
+    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>68687|76737)"
     event_type: "PALLET_ZPOS_1_START"
     value_mapping:
       target:
@@ -295,7 +295,7 @@ patterns:
   # Transition: Pallet lowering (exit)
   - name: "Dispenser Pallet Lowering Start"
     # Matches: "Axis 9: MoveAbs started → 19000"
-    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>17352|3022)"
+    regex: "Axis (?P<target>9|10): MoveAbs started → (?P<position>19000|17000)"
     event_type: "PALLET_ZPOS_0_START"
     value_mapping:
       target:

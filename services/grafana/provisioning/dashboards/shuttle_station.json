@@ -24,7 +24,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "ffeambjfco9vkf"
         },
-        "enable": true,
+        "enable": false,
         "filter": {
           "exclude": false,
           "ids": [
@@ -1962,6 +1962,7 @@
           },
           "editorMode": "code",
           "format": "table",
+          "hide": true,
           "rawQuery": true,
           "rawSql": "SELECT\n  timestamp AS time,\n  STDDEV_SAMP(value) OVER (\n    ORDER BY timestamp\n    RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW\n  ) AS rolling_std\nFROM process_metrics\nWHERE\n  metric_name = 'shuttle_pallet_release_time'\n  AND station_name = 'shuttle_station'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;",
           "refId": "G",
@@ -3940,13 +3941,13 @@
     ]
   },
   "time": {
-    "from": "2026-01-23T22:31:56.542Z",
-    "to": "2026-01-23T22:37:01.703Z"
+    "from": "2026-01-23T22:02:37.978Z",
+    "to": "2026-01-23T23:12:18.400Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "SHUTTLE STATION",
   "uid": "19bc1e5a",
-  "version": 15,
+  "version": 17,
   "weekStart": ""
 }

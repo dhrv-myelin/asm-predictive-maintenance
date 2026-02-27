@@ -41,20 +41,20 @@ services:
   #   depends_on:
   #     - postgres
 
-#   grafana:
-#     image: grafana/grafana:12.3.2
-#     container_name: grafana
-#     depends_on:
-#       - postgres
-#     ports:
-#       - "3000:3000"
-#     volumes:
-#       - ./grafana/provisioning:/etc/grafana/provisioning
-#       - ./grafana/dashboards:/var/lib/grafana/dashboards
-#     environment:
-#       - GF_SECURITY_ADMIN_USER=admin
-#       - GF_SECURITY_ADMIN_PASSWORD=admin
-#     restart: unless-stopped
+  grafana:
+    image: grafana/grafana:12.3.2
+    container_name: grafana
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./services/grafana/provisioning:/etc/grafana/provisioning
+      - ./services/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: unless-stopped
 
-# volumes:
-#   postgres_data:
+volumes:
+  postgres_data:

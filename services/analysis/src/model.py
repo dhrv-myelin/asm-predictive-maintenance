@@ -13,8 +13,8 @@ from sklearn.metrics import mean_squared_error
 
 matplotlib.use("Agg")
 
-from models.mamba import Mamba_TS
 from models.isolation_health import IsolationForestHealth
+from models.mamba import Mamba_TS
 from models.xgboost_window_forecaster import XGBWindowForecaster
 
 # ============================================================
@@ -60,9 +60,9 @@ class Model:
         self.backend = self._init_backend()
 
     def _init_backend(self):
-        if self.model_type == "sequence":
+        if self.model_type == "torch":
             return TorchBackend(self.config, self.device)
-        elif self.model_type == "tabular":
+        elif self.model_type == "sklearn":
             return SklearnBackend(self.config)
         raise ValueError(f"Unsupported model_type: {self.model_type}")
 
@@ -131,14 +131,22 @@ class TorchBackend:
         self.config = config
         self.model = models[config["method"]](**config.get("arch", {}))
         self.model.to(self.device)
+
+        # INFO: training params from config are added in here
+        self.train_cfg = self.config.get("train_params", {})
+
         self.criterion = nn.MSELoss()
         self.optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=config.get("lr", 1e-3)
+            self.model.parameters(), lr=self.train_cfg.get("learning_rate", 1e-3)
         )
         mlflow.pytorch.autolog()
 
     def train(self, X, y):
         print("Starting training...")
+
+        train_split = self.train_cfg.get("train_split", 0.7)
+        val_split = self.train_cfg.get("train_split", 0.2)
+        test_split = self.train_cfg.get("train_split", 0.1)
 
         X = torch.tensor(X, dtype=torch.float32).to(self.device)
         y = torch.tensor(y, dtype=torch.float32).to(self.device)

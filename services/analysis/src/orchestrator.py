@@ -253,11 +253,11 @@ def main():
                 target_name=target,
             )
 
-            if args.load_path:
-                logger.info("📂 Loading model weights from: %s", args.load_path)
-                model.load(
-                    args.load_path
-                )  # assumes your Model class has a load() method
+            # if args.load_path:
+            #     logger.info("📂 Loading model weights from: %s", args.load_path)
+            #     model.load(
+            #         args.load_path
+            #     )  # assumes your Model class has a load() method
 
             data_handlers[key] = handler
             models[key] = model

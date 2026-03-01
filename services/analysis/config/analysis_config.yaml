@@ -30,124 +30,10 @@ global:
 # ---------------------------------------------------------------------------
 target:
   # ── SYSTEM ────────────────────────────────────────────────────────────────
-
   system__cycle_time:
+    #=================================================================================
     - method: mamba
-      model_type: sequence # to differ whether to use smth like torch or sklearn
-      required_features:
-        # - system__count
-        - shuttle_pre_scan_time
-        # - shuttle_scan_success_time
-        # - shuttle_post_scan_delay
-        # - shuttle_carrier_motion_time
-        # - shuttle_stopper_lowering_time
-        # - shuttle_pallet_release_time
-        # - shuttle_stopper_rising_time
-        # - shuttle_station__shuttle_idle_time
-        - system__cycle_time
-        # - l1_buffer_a__buffer_holding_time
-        # - l1_buffer_a__buffer_idle_time
-        # - l1_buffer_a__buffer_pallet_release_time
-        # - l1_buffer_a__buffer_stopper_lowering_time
-        # - l1_buffer_a__buffer_stopper_rising_time
-        # - l1_buffer_b__buffer_holding_and_pre_stopper_down_time
-        # - l1_buffer_b__buffer_idle_time
-        # - l1_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
-        # - l1_dispenser__machine_idle_time
-        # - l1_dispenser__dispenser_entry_unclamp_time
-        # - l1_dispenser__dispenser_delay_post_entry_unclamp
-        # - l1_dispenser__dispenser_pallet_lifting_1_time
-        # - l1_dispenser__dispenser_entry_clamping_time
-        # - l1_dispenser__dispenser_delay_post_clamping
-        # - l1_dispenser__dispenser_pallet_stopper_releasing_time
-        # - l1_dispenser__dispenser_delay_pre_gantry_positioning
-        # - l1_dispenser__dispenser_gantry_positioning_time
-        # - l1_dispenser__dispenser_dispensing_time
-        # - l1_dispenser__dispenser_pallet_unpositioning_time
-        # - l1_dispenser__dispenser_pallet_stopper_locking_time
-        # - l1_dispenser__dispenser_pre_exit_unclamping
-        # - l1_dispenser__dispenser_exit_unclamping
-        # - l1_dispenser__dispenser_post_exit_unclamp
-        # - l1_dispenser__dispenser_pallet_lowering_1
-        # - l1_dispenser__dispenser_stopper_lowering
-        # - l1_dispenser__dispenser_pallet_releasing
-        # - l1_dispenser__dispenser_stopper_rasing
-        # - l1_inspection__inspection_idle_time
-        # - l1_inspection__inspection_lifter_rising_time
-        # - l1_inspection__inspection_gantry_positioning_time
-        # - l1_inspection__inspection_core_vision_system_time
-        # - l1_inspection__inspection_post_vision_check_delay
-        # - l1_inspection__inspection_lifter_lowering_time
-        # - l1_inspection__inspection_pallet_releasing_time
-        # - l2_buffer_a__buffer_holding_and_pre_stopper_down_time
-        # - l2_buffer_a__buffer_idle_time
-        # - l2_buffer_a__buffer_pallet_release_and_pre_stopper_up_time
-        # - l2_buffer_b__buffer_holding_and_pre_stopper_down_time
-        # - l2_buffer_b__buffer_idle_time
-        # - l2_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
-        # - l2_dispenser__machine_idle_time
-        # - l2_dispenser__dispenser_entry_unclamp_time
-        # - l2_dispenser__dispenser_delay_post_entry_unclamp
-        # - l2_dispenser__dispenser_pallet_lifting_1_time
-        # - l2_dispenser__dispenser_entry_clamping_time
-        # - l2_dispenser__dispenser_delay_post_clamping
-        # - l2_dispenser__dispenser_pallet_stopper_releasing_time
-        # - l2_dispenser__dispenser_delay_pre_gantry_positioning
-        # - l2_dispenser__dispenser_gantry_positioning_time
-        # - l2_dispenser__dispenser_dispensing_time
-        # - l2_dispenser__dispenser_pallet_unpositioning_time
-        # - l2_dispenser__dispenser_pallet_stopper_locking_time
-        # - l2_dispenser__dispenser_pre_exit_unclamping
-        # - l2_dispenser__dispenser_exit_unclamping
-        # - l2_dispenser__dispenser_post_exit_unclamp
-        # - l2_dispenser__dispenser_pallet_lowering_1
-        # - l2_dispenser__dispenser_stopper_lowering
-        # - l2_dispenser__dispenser_pallet_releasing
-        # - l2_dispenser__dispenser_stopper_rasing
-        # - l2_inspection__inspection_idle_time
-        # - l2_inspection__inspection_lifter_rising_time
-        # - l2_inspection__inspection_gantry_positioning_time
-        # - l2_inspection__inspection_core_vision_system_time
-        # - l2_inspection__inspection_post_vision_check_delay
-        # - l2_inspection__inspection_lifter_lowering_time
-        # - l2_inspection__inspection_pallet_releasing_time
-        - timestamp
-
-      history_window: 3
-      stride: 1
-      prediction_window: 1
-
-      mode: offline
-      # load_path: "/home/tarunk/mlartifacts/204707883063158890/models/m-d86e5e37223a4650a0884d47e04b373e/artifacts/data/model.pth"
-      load_path: "/home/tarunk/OneDrive/ASM/asm-predictive-maintenance/services/analysis/mlartifacts/866592688175462789/models/m-fc74fb752e2f435495a2fc29650666a5/artifacts/data/model.pth"
-      arch:
-        #place holders for mamba_ts class init not in arch already
-        # TODO: Make input_size and seq_len for a single variable
-
-        input_size: 2 #HACK: should do len(required_features) - 2 (because timestamp and target feature are in required_features)
-        forecast_horizon: 1
-
-        seq_len: 2
-        hidden_dim: 32
-        d_state: 16
-        d_conv: 4
-        num_layers: 3
-
-        #HACK: these two should ideally be removed, as i feed tis into init for the model class
-        # loss_weight_recon: 0.3
-        # device: auto
-
-      train_params:
-        num_epochs: 150
-        val_split: 0.2
-        learning_rate: 0.002366405267469074
-        dropout: 0.28334955521309035
-
-      analysis_types: [forecast]
-
-    # ───────────── TABULAR METHOD ─────────────
-    - method: health_score
-      model_type: tabular
+      model_type: torch #changed to either torch or sklearn for ease
       required_features:
         - system__count
         - shuttle_pre_scan_time
@@ -157,11 +43,17 @@ target:
         - shuttle_stopper_lowering_time
         - shuttle_pallet_release_time
         - shuttle_stopper_rising_time
+        - shuttle_station__shuttle_idle_time
         - system__cycle_time
         - l1_buffer_a__buffer_holding_time
-        - l1_buffer_a__buffer_stopper_lowering_time
+        - l1_buffer_a__buffer_idle_time
         - l1_buffer_a__buffer_pallet_release_time
+        - l1_buffer_a__buffer_stopper_lowering_time
         - l1_buffer_a__buffer_stopper_rising_time
+        - l1_buffer_b__buffer_holding_and_pre_stopper_down_time
+        - l1_buffer_b__buffer_idle_time
+        - l1_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
+        - l1_dispenser__machine_idle_time
         - l1_dispenser__dispenser_entry_unclamp_time
         - l1_dispenser__dispenser_delay_post_entry_unclamp
         - l1_dispenser__dispenser_pallet_lifting_1_time
@@ -180,12 +72,20 @@ target:
         - l1_dispenser__dispenser_stopper_lowering
         - l1_dispenser__dispenser_pallet_releasing
         - l1_dispenser__dispenser_stopper_rasing
+        - l1_inspection__inspection_idle_time
         - l1_inspection__inspection_lifter_rising_time
         - l1_inspection__inspection_gantry_positioning_time
         - l1_inspection__inspection_core_vision_system_time
         - l1_inspection__inspection_post_vision_check_delay
         - l1_inspection__inspection_lifter_lowering_time
         - l1_inspection__inspection_pallet_releasing_time
+        - l2_buffer_a__buffer_holding_and_pre_stopper_down_time
+        - l2_buffer_a__buffer_idle_time
+        - l2_buffer_a__buffer_pallet_release_and_pre_stopper_up_time
+        - l2_buffer_b__buffer_holding_and_pre_stopper_down_time
+        - l2_buffer_b__buffer_idle_time
+        - l2_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
+        - l2_dispenser__machine_idle_time
         - l2_dispenser__dispenser_entry_unclamp_time
         - l2_dispenser__dispenser_delay_post_entry_unclamp
         - l2_dispenser__dispenser_pallet_lifting_1_time
@@ -204,6 +104,7 @@ target:
         - l2_dispenser__dispenser_stopper_lowering
         - l2_dispenser__dispenser_pallet_releasing
         - l2_dispenser__dispenser_stopper_rasing
+        - l2_inspection__inspection_idle_time
         - l2_inspection__inspection_lifter_rising_time
         - l2_inspection__inspection_gantry_positioning_time
         - l2_inspection__inspection_core_vision_system_time
@@ -212,35 +113,43 @@ target:
         - l2_inspection__inspection_pallet_releasing_time
         - timestamp
 
-        #INFO: this is for dataloader.
-
-        #FIX: need to see if history window means anyting for this model
-      history_window: 1
+      history_window: 6
       stride: 1
-      prediction_window: 1
-      mode: offline
+      prediction_window: 7
 
-      #INFO: these are filled in health score class init
+      #TODO: make mlfow dockerized
+      # load_path: "/home/tarunk/mlartifacts/204707883063158890/models/m-d86e5e37223a4650a0884d47e04b373e/artifacts/data/model.pth"
+      load_path: "/home/tarunk/OneDrive/ASM/asm-predictive-maintenance/services/analysis/mlartifacts/866592688175462789/models/m-fc74fb752e2f435495a2fc29650666a5/artifacts/data/model.pth"
 
       arch:
-        smoothing_window: 5 # was 20 — too large relative to dataset size
-        n_estimators: 100
-        contamination: "auto"
-        drift_percentile: 5
-        breakdown_sensitivity: 3.0
-        random_state: 42
+        #place holders for mamba_ts class init not in arch already
+        # TODO: Make input_size and seq_len for a single variable
+        input_size: 2 #HACK: should do len(required_features) - 2 (because timestamp and target feature are in required_features)
+        forecast_horizon: 1
+        seq_len: 2
+        hidden_dim: 32
+        d_state: 16
+        d_conv: 4
+        num_layers: 3
 
-        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
+        #HACK: these two should ideally be removed, as i feed tis into init for the model class
+        # loss_weight_recon: 0.3
+        # device: auto
+
       train_params:
-        n_estimators: 300
-        max_depth: 6
-        learning_rate: 0.05
+        num_epochs: 150
+        learning_rate: 0.002366405267469074
+        dropout: 0.28334955521309035
 
-      analysis_types: [score]
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
+
+      analysis_types: [forecast]
 
     #=================================================================================
     - method: xgboost_forecast
-      model_type: tabular
+      model_type: sklearn
       required_features:
         - system__count
         - shuttle_pre_scan_time
@@ -329,194 +238,379 @@ target:
         max_depth: 6
         learning_rate: 0.05
 
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
       analysis_types: [forecast]
 
-#==========================================================================================================
-#   metric: cycle_time
-#   target_column: system__cycle_time
-#
-#   anomaly:
-#     method: western_electric
-#     we_rules: [1, 2, 3, 4]
-#   health_rul:
-#     failure_threshold_multiplier: 1.3
-#
-# - station: system
-#   metric: total_time
-#   target_column: system__total_time
-#   analysis_types: [forecast, anomaly]
-#   required_features:
-#     - system__total_time
-#     - system__cycle_time
-#     - shuttle_scan_success_time
-#   anomaly:
-#     method: zscore
-#     zscore_threshold: 3.0
-#
-# - station: system
-#   metric: rolling_uph
-#   target_column: system__rolling_uph
-#   analysis_types: [forecast, health_score]
-#   required_features:
-#     - system__rolling_uph
-#     - system__cycle_time
-#     - system__yield
-#   mamba:
-#     seq_len: 10
-#     hidden_dim: 64
-#     d_state: 8
-#
-# - station: system
-#   metric: yield
-#   target_column: system__yield
-#   analysis_types: [forecast, anomaly, health_score]
-#   required_features:
-#     - system__yield
-#     - system__ng_pallets
-#     - system__total_pallets
-#     - l1_inspection__inspection_core_vision_system_time
-#     - l2_inspection__inspection_core_vision_system_time
-#   anomaly:
-#     method: western_electric
-#     we_rules: [1, 2]
-#
-# # ── SHUTTLE STATION ────────────────────────────────────────────────────────
+    #=================================================================================
 
-# - station: shuttle_station
-#   metric: shuttle_scan_success_time
-#   target_column: shuttle_scan_success_time
-#   analysis_types: [forecast, anomaly, health_score, rul]
-#   required_features:
-#     - shuttle_scan_success_time
-#     - shuttle_pre_scan_time
-#     - shuttle_post_scan_delay
-#     - system__count
-#   anomaly:
-#     method: isolation_forest
-#     if_contamination: 0.05
-#   health_rul:
-#     failure_threshold_multiplier: 2.0
+  # ── BUFFER ────────────────────────────────────────────────────────────────
+  l1_buffer_a__health_score:
+    #=================================================================================
+    - method: health_score
+      model_type: sklearn
+      required_features:
+        #INFO: there are some extra in process logic sheet. i have only copied what was from mamba to make sure
+        - l1_buffer_a__buffer_holding_time
+        - l1_buffer_a__buffer_stopper_lowering_time
+        - l1_buffer_a__buffer_pallet_release_time
+        - l1_buffer_a__buffer_stopper_rising_time
 
-# - station: shuttle_station
-#   metric: shuttle_carrier_motion_time
-#   target_column: shuttle_carrier_motion_time
-#   analysis_types: [forecast, anomaly, rul]
-#   required_features:
-#     - shuttle_carrier_motion_time
-#     - shuttle_stopper_lowering_time
-#     - shuttle_pallet_release_time
-#     - shuttle_stopper_rising_time
-#   anomaly:
-#     method: zscore
-#     zscore_threshold: 2.5
+        #INFO: this is for dataloader.
+      history_window: 1
+      stride: 1
+      prediction_window: 1
+      mode: offline
 
-# - station: shuttle_station
-#   metric: shuttle_pre_scan_time
-#   target_column: shuttle_pre_scan_time
-#   analysis_types: [anomaly]
-#   required_features:
-#     - shuttle_pre_scan_time
-#     - shuttle_scan_success_time
-#   anomaly:
-#     method: zscore
-#     zscore_threshold: 2.5
-#     zscore_window: 30
+      #INFO: these are filled in health score class init
+      arch:
+        smoothing_window: 5 # was 20 — too large relative to dataset size
+        n_estimators: 100
+        contamination: "auto"
+        drift_percentile: 5
+        breakdown_sensitivity: 3.0
+        random_state: 42
 
-# # ── L1 DISPENSER ──────────────────────────────────────────────────────────
+        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
+      train_params:
+        n_estimators: 300
+        max_depth: 6
+        learning_rate: 0.05
 
-# - station: l1_dispenser
-#   metric: dispensing_time
-#   target_column: l1_dispenser__dispenser_dispensing_time
-#   analysis_types: [forecast, anomaly, health_score, rul]
-#   required_features:
-#     - l1_dispenser__dispenser_dispensing_time
-#     - l1_dispenser__dispenser_gantry_positioning_time
-#     - l1_dispenser__dispenser_pallet_lifting_1_time
-#     - l1_dispenser__dispenser_entry_clamping_time
-#     - system__cycle_time
-#   anomaly:
-#     method: western_electric
-#     we_rules: [1, 2, 3, 4]
-#   health_rul:
-#     failure_threshold_multiplier: 1.8
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
 
-# - station: l1_dispenser
-#   metric: gantry_positioning_time
-#   target_column: l1_dispenser__dispenser_gantry_positioning_time
-#   analysis_types: [forecast, anomaly, rul]
-#   required_features:
-#     - l1_dispenser__dispenser_gantry_positioning_time
-#     - l1_dispenser__dispenser_delay_pre_gantry_positioning
-#     - l1_dispenser__dispenser_dispensing_time
-#   anomaly:
-#     method: zscore
-#     zscore_threshold: 3.0
+      analysis_types: [score]
+    #=================================================================================
 
-# # ── L1 INSPECTION ─────────────────────────────────────────────────────────
+  # ── BUFFER ────────────────────────────────────────────────────────────────
+  l1_buffer_b__health_score:
+    #=================================================================================
+    - method: health_score
+      model_type: sklearn
+      required_features:
+        #INFO: there are some extra in process logic sheet. i have only copied what was from mamba to make sure
+        - l1_buffer_b__buffer_holding_time
+        - l1_buffer_b__buffer_stopper_lowering_time
+        - l1_buffer_b__buffer_pallet_release_time
+        - l1_buffer_b__buffer_stopper_rising_time
 
-# - station: l1_inspection
-#   metric: core_vision_system_time
-#   target_column: l1_inspection__inspection_core_vision_system_time
-#   analysis_types: [forecast, anomaly, health_score, rul]
-#   required_features:
-#     - l1_inspection__inspection_core_vision_system_time
-#     - l1_inspection__inspection_gantry_positioning_time
-#     - l1_inspection__inspection_lifter_rising_time
-#     - l1_inspection__inspection_post_vision_check_delay
-#     - system__yield
-#   anomaly:
-#     method: isolation_forest
-#     if_contamination: 0.05
-#   health_rul:
-#     failure_threshold_multiplier: 2.0
+        #INFO: this is for dataloader.
 
-# # ── L2 DISPENSER ──────────────────────────────────────────────────────────
+      history_window: 1
+      stride: 1
+      prediction_window: 1
+      mode: offline
 
-# - station: l2_dispenser
-#   metric: dispensing_time
-#   target_column: l2_dispenser__dispenser_dispensing_time
-#   analysis_types: [forecast, anomaly, health_score, rul]
-#   required_features:
-#     - l2_dispenser__dispenser_dispensing_time
-#     - l2_dispenser__dispenser_gantry_positioning_time
-#     - l2_dispenser__dispenser_pallet_lifting_1_time
-#     - l2_dispenser__dispenser_entry_clamping_time
-#     - system__cycle_time
-#   anomaly:
-#     method: western_electric
-#     we_rules: [1, 2, 3, 4]
-#   health_rul:
-#     failure_threshold_multiplier: 1.8
+      #INFO: these are filled in health score class init
 
-# # ── L2 INSPECTION ─────────────────────────────────────────────────────────
+      arch:
+        smoothing_window: 5 # was 20 — too large relative to dataset size
+        n_estimators: 100
+        contamination: "auto"
+        drift_percentile: 5
+        breakdown_sensitivity: 3.0
+        random_state: 42
 
-# - station: l2_inspection
-#   metric: core_vision_system_time
-#   target_column: l2_inspection__inspection_core_vision_system_time
-#   analysis_types: [forecast, anomaly, health_score, rul]
-#   required_features:
-#     - l2_inspection__inspection_core_vision_system_time
-#     - l2_inspection__inspection_gantry_positioning_time
-#     - l2_inspection__inspection_lifter_rising_time
-#     - l2_inspection__inspection_post_vision_check_delay
-#     - system__yield
-#   anomaly:
-#     method: isolation_forest
-#     if_contamination: 0.05
-#   health_rul:
-#     failure_threshold_multiplier: 2.0
+        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
+      train_params:
+        n_estimators: 300
+        max_depth: 6
+        learning_rate: 0.05
 
-# # ── L1 BUFFER ─────────────────────────────────────────────────────────────
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
 
-# - station: l1_buffer_a
-#   metric: buffer_holding_time
-#   target_column: l1_buffer_a__buffer_holding_time
-#   analysis_types: [anomaly, health_score]
-#   required_features:
-#     - l1_buffer_a__buffer_holding_time
-#     - l1_buffer_a__buffer_stopper_lowering_time
-#     - l1_buffer_a__buffer_pallet_release_time
-#   anomaly:
-#     method: zscore
-#     zscore_threshold: 3.0
+      analysis_types: [score]
+    #=================================================================================
 
+  # ── BUFFER ────────────────────────────────────────────────────────────────
+  l2_buffer_a__health_score:
+    - method: health_score
+      model_type: sklearn
+      required_features:
+        #INFO: there are some extra in process logic sheet. i have only copied what was from mamba to make sure
+        - l2_buffer_a__buffer_holding_time
+        - l2_buffer_a__buffer_stopper_lowering_time
+        - l2_buffer_a__buffer_pallet_release_time
+        - l2_buffer_a__buffer_stopper_rising_time
+
+        #INFO: this is for dataloader.
+
+        #FIX: need to see if history window means anyting for this model
+      history_window: 1
+      stride: 1
+      prediction_window: 1
+      mode: offline
+
+      #INFO: these are filled in health score class init
+
+      arch:
+        smoothing_window: 5 # was 20 — too large relative to dataset size
+        n_estimators: 100
+        contamination: "auto"
+        drift_percentile: 5
+        breakdown_sensitivity: 3.0
+        random_state: 42
+
+        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
+      train_params:
+        n_estimators: 300
+        max_depth: 6
+        learning_rate: 0.05
+
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
+
+      analysis_types: [score]
+    #=================================================================================
+
+  # ── SHUTTLE STATION ────────────────────────────────────────────────────────────────
+  shuttle_station__health_score:
+    #=================================================================================
+    - method: health_score
+      model_type: sklearn
+      required_features:
+        - shuttle_pre_scan_time
+        - shuttle_scan_success_time
+        - shuttle_post_scan_delay
+        - shuttle_carrier_motion_time
+        - shuttle_stopper_lowering_time
+        - shuttle_pallet_release_time
+        - shuttle_stopper_rising_time
+        - shuttle_station__shuttle_idle_time
+
+        #INFO: this is for dataloader.
+
+        #FIX: need to see if history window means anyting for this model
+      history_window: 1
+      stride: 1
+      prediction_window: 1
+      mode: offline
+
+      #INFO: these are filled in health score class init
+
+      arch:
+        smoothing_window: 5 # was 20 — too large relative to dataset size
+        n_estimators: 100
+        contamination: "auto"
+        drift_percentile: 5
+        breakdown_sensitivity: 3.0
+        random_state: 42
+
+        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
+      train_params:
+        n_estimators: 300
+        max_depth: 6
+        learning_rate: 0.05
+
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
+
+      analysis_types: [score]
+    #=================================================================================
+
+  # ── DISPENSER ────────────────────────────────────────────────────────────────
+  l1_dispenser_standard__health_score:
+    #=================================================================================
+    - method: health_score
+      model_type: sklearn
+     required_features:
+        - l1_dispenser__dispenser_entry_unclamp_time
+        - l1_dispenser__dispenser_delay_post_entry_unclamp
+        - l1_dispenser__dispenser_pallet_lifting_1_time
+        - l1_dispenser__dispenser_entry_clamping_time
+        - l1_dispenser__dispenser_delay_post_clamping
+        - l1_dispenser__dispenser_pallet_stopper_releasing_time
+        - l1_dispenser__dispenser_delay_pre_gantry_positioning
+        - l1_dispenser__dispenser_gantry_positioning_time
+        - l1_dispenser__dispenser_dispensing_time
+        - l1_dispenser__dispenser_pallet_unpositioning_time
+        - l1_dispenser__dispenser_pallet_stopper_locking_time
+        - l1_dispenser__dispenser_pre_exit_unclamping
+        - l1_dispenser__dispenser_exit_unclamping
+        - l1_dispenser__dispenser_post_exit_unclamp
+        - l1_dispenser__dispenser_pallet_lowering_1
+        - l1_dispenser__dispenser_stopper_lowering
+        - l1_dispenser__dispenser_pallet_releasing
+        - l1_dispenser__dispenser_stopper_rasing
+
+        #INFO: this is for dataloader.
+
+        #FIX: need to see if history window means anyting for this model
+      history_window: 1
+      stride: 1
+      prediction_window: 1
+      mode: offline
+
+      #INFO: these are filled in health score class init
+
+      arch:
+        smoothing_window: 5 # was 20 — too large relative to dataset size
+        n_estimators: 100
+        contamination: "auto"
+        drift_percentile: 5
+        breakdown_sensitivity: 3.0
+        random_state: 42
+
+        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
+      train_params:
+        n_estimators: 300
+        max_depth: 6
+        learning_rate: 0.05
+
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
+
+      analysis_types: [score]
+    #=================================================================================
+
+  # ── DISPENSER ────────────────────────────────────────────────────────────────
+  l2_dispenser_standard__health_score:
+    #=================================================================================
+    - method: health_score
+      model_type: sklearn
+      required_features:
+        - l2_dispenser__dispenser_entry_unclamp_time
+        - l2_dispenser__dispenser_delay_post_entry_unclamp
+        - l2_dispenser__dispenser_pallet_lifting_1_time
+        - l2_dispenser__dispenser_entry_clamping_time
+        - l2_dispenser__dispenser_delay_post_clamping
+        - l2_dispenser__dispenser_pallet_stopper_releasing_time
+        - l2_dispenser__dispenser_delay_pre_gantry_positioning
+        - l2_dispenser__dispenser_gantry_positioning_time
+        - l2_dispenser__dispenser_dispensing_time
+        - l2_dispenser__dispenser_pallet_unpositioning_time
+        - l2_dispenser__dispenser_pallet_stopper_locking_time
+        - l2_dispenser__dispenser_pre_exit_unclamping
+        - l2_dispenser__dispenser_exit_unclamping
+        - l2_dispenser__dispenser_post_exit_unclamp
+        - l2_dispenser__dispenser_pallet_lowering_1
+        - l2_dispenser__dispenser_stopper_lowering
+        - l2_dispenser__dispenser_pallet_releasing
+        - l2_dispenser__dispenser_stopper_rasing
+
+        #INFO: this is for dataloader.
+
+        #FIX: need to see if history window means anyting for this model
+      history_window: 1
+      stride: 1
+      prediction_window: 1
+      mode: offline
+
+      #INFO: these are filled in health score class init
+
+      arch:
+        smoothing_window: 5 # was 20 — too large relative to dataset size
+        n_estimators: 100
+        contamination: "auto"
+        drift_percentile: 5
+        breakdown_sensitivity: 3.0
+        random_state: 42
+
+        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
+      train_params:
+        n_estimators: 300
+        max_depth: 6
+        learning_rate: 0.05
+
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
+
+      analysis_types: [score]
+    #=================================================================================
+
+  # ── INSPECTION ────────────────────────────────────────────────────────────────
+  l1_inspection_standard__health_score:
+    #=================================================================================
+    - method: health_score
+      model_type: sklearn
+      required_features:
+        - l1_inspection__inspection_lifter_rising_time
+        - l1_inspection__inspection_gantry_positioning_time
+        - l1_inspection__inspection_core_vision_system_time
+        - l1_inspection__inspection_post_vision_check_delay
+        - l1_inspection__inspection_lifter_lowering_time
+        - l1_inspection__inspection_pallet_releasing_time
+
+        #INFO: this is for dataloader.
+
+        #FIX: need to see if history window means anyting for this model
+      history_window: 1
+      stride: 1
+      prediction_window: 1
+      mode: offline
+
+      #INFO: these are filled in health score class init
+
+      arch:
+        smoothing_window: 5 # was 20 — too large relative to dataset size
+        n_estimators: 100
+        contamination: "auto"
+        drift_percentile: 5
+        breakdown_sensitivity: 3.0
+        random_state: 42
+
+        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
+      train_params:
+        n_estimators: 300
+        max_depth: 6
+        learning_rate: 0.05
+
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
+
+      analysis_types: [score]
+    #=================================================================================
+
+  # ── INSPECTION ────────────────────────────────────────────────────────────────
+  l2_inspection_standard__health_score:
+    #=================================================================================
+    - method: health_score
+      model_type: sklearn
+      required_features:
+        - l2_inspection__inspection_lifter_rising_time
+        - l2_inspection__inspection_gantry_positioning_time
+        - l2_inspection__inspection_core_vision_system_time
+        - l2_inspection__inspection_post_vision_check_delay
+        - l2_inspection__inspection_lifter_lowering_time
+        - l2_inspection__inspection_pallet_releasing_time
+
+        #INFO: this is for dataloader.
+
+        #FIX: need to see if history window means anyting for this model
+      history_window: 1
+      stride: 1
+      prediction_window: 1
+      mode: offline
+
+      #INFO: these are filled in health score class init
+
+      arch:
+        smoothing_window: 5 # was 20 — too large relative to dataset size
+        n_estimators: 100
+        contamination: "auto"
+        drift_percentile: 5
+        breakdown_sensitivity: 3.0
+        random_state: 42
+
+        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
+      train_params:
+        n_estimators: 300
+        max_depth: 6
+        learning_rate: 0.05
+
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
+
+      analysis_types: [score]
+    #=================================================================================

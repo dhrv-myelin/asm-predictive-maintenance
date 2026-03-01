@@ -41,13 +41,49 @@ ROWWISE_MODELS = {"health_score"}
 # ============================================================
 
 
+# ============================================================
+# Constants
+# ============================================================
+
+SPLIT = {"train": 0.70, "val": 0.15}  # test gets the remainder
+
+
+# ============================================================
+# Helpers
+# ============================================================
+
+
+def _split(X, y=None):
+    """Split arrays into train / val / test."""
+    N = len(X)
+    train_end = int(N * SPLIT["train"])
+    val_end = train_end + int(N * SPLIT["val"])
+
+    if y is None:
+        return X[:train_end], X[train_end:val_end], X[val_end:]
+
+    return (
+        X[:train_end],
+        y[:train_end],
+        X[train_end:val_end],
+        y[train_end:val_end],
+        X[val_end:],
+        y[val_end:],
+    )
+
+
+# ============================================================
+# Model (orchestrator)
+# ============================================================
+
+
 class Model:
     """
     Universal wrapper for PyTorch and sklearn models.
 
-    Orchestrator interface:
-        train(X, y)
-        real_time_inference(window_df)
+    Public interface:
+        train(X, y)                     X: (N, seq_len, F), y: (N, num_targets)
+        real_time_inference(window_df)  -> list[float]
     """
 
     def __init__(self, data_handler, model, config, target_name):
@@ -56,67 +92,42 @@ class Model:
         self.config = config
         self.target_name = target_name
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model_type = self.config["model_type"]
+        self.model_type = config["model_type"]
         self.backend = self._init_backend()
 
     def _init_backend(self):
         if self.model_type == "torch":
             return TorchBackend(self.config, self.device)
-        elif self.model_type == "sklearn":
+        if self.model_type == "sklearn":
             return SklearnBackend(self.config)
         raise ValueError(f"Unsupported model_type: {self.model_type}")
 
-    # --------------------------------------------------------
-    # Training
-    # --------------------------------------------------------
-
     def train(self, X, y):
-        """
-        X: (N, seq_len, num_features)
-        y: (N, num_targets)
-        """
-        if self.model_type == "tabular":
-            N, seq_len, num_features = X.shape
-            method = self.config["method"]
-
-            if method in ROWWISE_MODELS:
-                # Each timestep is its own sample — unroll the seq_len dimension
-                # (N, seq_len, F) -> (N*seq_len, F)
-                X = X.reshape(N * seq_len, num_features)
-                y = np.repeat(
-                    y, seq_len, axis=0
-                )  # keep shape consistent (ignored anyway)
+        if self.model_type == "sklearn":
+            N, seq_len, F = X.shape
+            if self.config["method"] in ROWWISE_MODELS:
+                # Each timestep is its own sample: (N, seq_len, F) -> (N*seq_len, F)
+                X = X.reshape(N * seq_len, F)
+                y = np.repeat(y, seq_len, axis=0)
             else:
-                # Flatten each window into one long row
-                # (N, seq_len, F) -> (N, seq_len*F)
-                X = X.reshape(N, seq_len * num_features)
+                # Flatten each window into one row: (N, seq_len, F) -> (N, seq_len*F)
+                X = X.reshape(N, seq_len * F)
 
         self.backend.train(X, y)
 
-    # --------------------------------------------------------
-    # Real-time inference
-    # --------------------------------------------------------
-
     def real_time_inference(self, window_df):
-        """
-        window_df: DataFrame of shape (seq_len, num_features + timestamp)
-        """
+        # Drop non-feature columns
         X = window_df.drop(
             columns=["timestamp", self.target_name], errors="ignore"
         ).to_numpy()
 
-        method = self.config.get("method", "")
-
-        if self.model_type == "tabular":
-            if method in ROWWISE_MODELS:
-                pass  # pass (seq_len, F) as-is; model scores row by row
-            else:
-                X = X.reshape(1, -1)  # flatten to (1, seq_len*F)
-        elif self.model_type == "sequence":
+        if self.model_type == "sklearn" and self.config["method"] not in ROWWISE_MODELS:
+            X = X.reshape(1, -1)  # flatten to (1, seq_len*F)
+        elif self.model_type == "torch":
             X = X[np.newaxis, ...]  # add batch dim -> (1, seq_len, F)
+        # rowwise sklearn: pass (seq_len, F) as-is
 
-        preds = self.backend.predict(X)
-        return np.array(preds).flatten().tolist()
+        return np.array(self.backend.predict(X)).flatten().tolist()
 
 
 # ============================================================
@@ -127,92 +138,76 @@ class Model:
 class TorchBackend:
 
     def __init__(self, config, device):
-        self.device = device
         self.config = config
-        self.model = models[config["method"]](**config.get("arch", {}))
-        self.model.to(self.device)
+        self.device = device
+        train_params = config.get("train_params", {})
+        self.epochs = train_params.get("num_epochs", 200)
+        self.lr = train_params.get("learning_rate", 1e-3)
 
-        # INFO: training params from config are added in here
-        self.train_cfg = self.config.get("train_params", {})
-
+        self.model = models[config["method"]](**config.get("arch", {})).to(device)
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=self.train_cfg.get("learning_rate", 1e-3)
-        )
-        mlflow.pytorch.autolog()
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+
+    def _eval_loss(self, X, y):
+        """Eval-mode forward pass, returns scalar loss. Used 3x in train."""
+        self.model.eval()
+        with torch.no_grad():
+            _, pred = self.model(X)
+        return self.criterion(pred, y).item()
 
     def train(self, X, y):
-        print("Starting training...")
-
-        train_split = self.train_cfg.get("train_split", 0.7)
-        val_split = self.train_cfg.get("train_split", 0.2)
-        test_split = self.train_cfg.get("train_split", 0.1)
-
-        X = torch.tensor(X, dtype=torch.float32).to(self.device)
-        y = torch.tensor(y, dtype=torch.float32).to(self.device)
-
-        N = X.shape[0]
-        train_end = int(N * 0.7)
-        val_end = train_end + int(N * 0.15)
-
-        X_train, y_train = X[:train_end], y[:train_end]
-        X_val, y_val = X[train_end:val_end], y[train_end:val_end]
-        X_test, y_test = X[val_end:], y[val_end:]
-
-        epochs = self.config.get("num_epochs", 200)
-        lr = self.config.get("learning_rate", 1e-3)
+        # 1. Split
+        X_train, y_train, X_val, y_val, X_test, y_test = _split(
+            torch.tensor(X, dtype=torch.float32).to(self.device),
+            torch.tensor(y, dtype=torch.float32).to(self.device),
+        )
 
         with mlflow.start_run():
-            mlflow.log_param("num_epochs", epochs)
-            mlflow.log_param("learning_rate", lr)
-            mlflow.log_param("model_name", self.config["method"])
-
-            for epoch in range(epochs):
-                self.model.train()
-                self.optimizer.zero_grad()
-                recon, pred = self.model(X_train)
-                train_loss = self.criterion(pred, y_train)
-                train_loss.backward()
-                self.optimizer.step()
-
-                self.model.eval()
-                with torch.no_grad():
-                    _, pred_val = self.model(X_val)
-                    val_loss = self.criterion(pred_val, y_val)
-
-                mlflow.log_metric("train_loss", train_loss.item(), step=epoch)
-                mlflow.log_metric("val_loss", val_loss.item(), step=epoch)
-                print(
-                    f"Epoch {epoch+1}/{epochs} "
-                    f"| Train Loss: {train_loss.item():.6f} "
-                    f"| Val Loss: {val_loss.item():.6f}"
-                )
-
-            self.model.eval()
-            with torch.no_grad():
-                _, pred_test = self.model(X_test)
-                test_loss = self.criterion(pred_test, y_test)
-
-            mlflow.log_metric("test_loss", test_loss.item())
-            print(f"\nFinal Test Loss: {test_loss.item():.6f}")
-
-            _log_pred_vs_real_plot(
-                y_true=y_test.cpu().numpy().flatten(),
-                y_pred=pred_test.cpu().numpy().flatten(),
-                title=f"{self.config['method']} — Test: Predicted vs Real",
+            # 2. Log hyperparams
+            mlflow.log_params(
+                {
+                    "num_epochs": self.epochs,
+                    "learning_rate": self.lr,
+                    "model": self.config["method"],
+                }
             )
 
+            # 3. Train loop
+            for epoch in range(self.epochs):
+                self.model.train()
+                self.optimizer.zero_grad()
+                _, pred = self.model(X_train)
+                loss = self.criterion(pred, y_train)
+                loss.backward()
+                self.optimizer.step()
+
+                # 4. Validate each epoch
+                val_loss = self._eval_loss(X_val, y_val)
+                mlflow.log_metrics(
+                    {"train_loss": loss.item(), "val_loss": val_loss}, step=epoch
+                )
+                print(
+                    f"Epoch {epoch+1}/{self.epochs} | train: {loss.item():.6f} | val: {val_loss:.6f}"
+                )
+
+            # 5. Final test evaluation
+            test_loss = self._eval_loss(X_test, y_test)
+            mlflow.log_metric("test_loss", test_loss)
+            print(f"Test loss: {test_loss:.6f}")
+
+            # 6. Log model
             mlflow.pytorch.log_model(self.model, "model")
 
     def predict(self, X):
+        # Optionally load a saved checkpoint
         if self.config.get("load_path"):
             print(f"Loading model from {self.config['load_path']}")
             self.model = torch.load(
                 self.config["load_path"], map_location=self.device, weights_only=False
             )
             self.model.to(self.device)
-            self.model.eval()
 
+        self.model.eval()
         X = torch.tensor(X, dtype=torch.float32).to(self.device)
         with torch.no_grad():
             _, pred = self.model(X)
@@ -229,86 +224,47 @@ class SklearnBackend:
     def __init__(self, config):
         self.config = config
         self.is_unsupervised = config["method"] in UNSUPERVISED_MODELS
-
         if config["method"] not in models:
             raise ValueError(f"Unknown sklearn model: {config['method']}")
-
         self.model = models[config["method"]](**config.get("arch", {}))
 
-        # IMPORTANT: do NOT enable autolog for unsupervised models.
-        # autolog tries to log training labels that don't exist, produces NaN
-        # metrics, and then mlflow.sklearn.log_model tries to log those same
-        # NaN metrics again -> SQLite UNIQUE constraint crash.
-        if not self.is_unsupervised:
-            mlflow.sklearn.autolog()
-
     def train(self, X, y):
-        print("Starting sklearn training...")
+        y = np.array(y).ravel()
 
-        y = np.array(y).ravel()  # (N,1) -> (N,)
-
-        N = X.shape[0]
-        train_end = int(N * 0.7)
-        val_end = train_end + int(N * 0.15)
-
-        X_train, y_train = X[:train_end], y[:train_end]
-        X_val, y_val = X[train_end:val_end], y[train_end:val_end]
-        X_test, y_test = X[val_end:], y[val_end:]
-
-        print(
-            f"  Split -> train: {len(X_train)}, val: {len(X_val)}, test: {len(X_test)}"
-        )
+        # 1. Split
+        if self.is_unsupervised:
+            X_train, X_val, X_test = _split(X)
+            y_train, y_val, y_test = None, None, None
+        else:
+            X_train, y_train, X_val, y_val, X_test, y_test = _split(X, y)
+        print(f"Split -> train: {len(X_train)}, val: {len(X_val)}, test: {len(X_test)}")
 
         with mlflow.start_run():
-            mlflow.log_param("model_name", self.config["method"])
-            mlflow.log_params(self.config.get("arch", {}))
-
-            # Fit
-            if self.is_unsupervised:
-                self.model.fit(X_train)
-            else:
-                self.model.fit(X_train, y_train)
-
-            # Validation
-            y_val_pred = self.model.predict(X_val)
-            print(
-                f"  val_pred shape: {np.array(y_val_pred).shape}, any NaN: {np.any(np.isnan(y_val_pred))}"
+            # 2. Log params
+            mlflow.log_params(
+                {"model": self.config["method"], **self.config.get("arch", {})}
             )
 
-            if self.is_unsupervised:
-                val_mean = float(np.nanmean(y_val_pred)) if len(y_val_pred) > 0 else 0.0
-                mlflow.log_metric("val_mean_health_score", val_mean)
-                print(f"Validation mean health score: {val_mean:.2f}")
-            else:
-                val_loss = mean_squared_error(y_val, y_val_pred)
-                mlflow.log_metric("val_loss", val_loss)
-                print(f"Validation Loss: {val_loss:.6f}")
+            # 3. Fit
+            (
+                self.model.fit(X_train)
+                if self.is_unsupervised
+                else self.model.fit(X_train, y_train)
+            )
 
-            # Test
-            y_test_pred = self.model.predict(X_test)
+            # 4. Evaluate
+            for name, X_s, y_s in [("val", X_val, y_val), ("test", X_test, y_test)]:
+                pred = self.model.predict(X_s)
+                if self.is_unsupervised:
+                    metric = float(np.nanmean(pred))
+                    mlflow.log_metric(f"{name}_mean_score", metric)
+                    print(f"{name} mean score: {metric:.4f}")
+                else:
+                    loss = mean_squared_error(y_s, pred)
+                    mlflow.log_metric(f"{name}_loss", loss)
+                    print(f"{name} loss: {loss:.6f}")
 
-            if self.is_unsupervised:
-                test_mean = (
-                    float(np.nanmean(y_test_pred)) if len(y_test_pred) > 0 else 0.0
-                )
-                mlflow.log_metric("test_mean_health_score", test_mean)
-                print(f"Test mean health score: {test_mean:.2f}")
-
-                _log_health_score_plot(
-                    scores=y_test_pred,
-                    title=f"{self.config['method']} — Test Health Score",
-                )
-            else:
-                test_loss = mean_squared_error(y_test, y_test_pred)
-                mlflow.log_metric("test_loss", test_loss)
-                print(f"Final Test Loss: {test_loss:.6f}")
-
-                _log_pred_vs_real_plot(
-                    y_true=y_test,
-                    y_pred=y_test_pred,
-                    title=f"{self.config['method']} — Test: Predicted vs Real",
-                )
-
+            # 5. Log model
             mlflow.sklearn.log_model(self.model, "model")
 
     def predict(self, X):

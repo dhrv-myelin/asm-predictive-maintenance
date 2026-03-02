@@ -103,7 +103,7 @@ class Model:
             return SklearnBackend(self.config)
         raise ValueError(f"Unsupported model_type: {self.model_type}")
 
-    def train(self, X, y):
+    def train(self, X, y, timestamps=None):
         if self.model_type == "sklearn":
             N, seq_len, F = X.shape
             if self.config["method"] in UNSUPERVISED_MODELS:
@@ -111,6 +111,7 @@ class Model:
                 # Squeeze to (N, F) so IsolationForest sees flat feature rows.
                 # y is meaningless — SklearnBackend.train() will ignore it.
                 X = X.reshape(N * seq_len, F)
+                self.train_timestamps = timestamps  # ← store for later use
             elif self.config["method"] in ROWWISE_MODELS:
                 X = X.reshape(N * seq_len, F)
                 y = np.repeat(y, seq_len, axis=0)

@@ -299,14 +299,14 @@ def main():
             handler.ingest(rows)
             XY = handler.fetch_train_data()
             if XY is not None:
-                X, y = XY
+                X, y, timestamps = XY  # ← unpack timestamps too
                 if X is None:
                     logger.warning(
                         "[%s] fetch_train_data returned no windows — skipping", name
                     )
                     continue
-                # logger.info("[%s] X shape: %s | y shape: %s", name, X.shape, y.shape)
-                models[name].train(X, y)
+                else:
+                    models[name].train(X, y)
 
     elif args.mode == "backup":
         start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S")

@@ -1,4 +1,5 @@
 import os
+import joblib
 import tempfile
 
 import matplotlib
@@ -116,17 +117,15 @@ class Model:
         self.backend.train(X, y)
 
     def real_time_inference(self, window_df):
-        # Drop non-feature columns
-        X = window_df.drop(
-            columns=["timestamp", self.target_name], errors="ignore"
-        ).to_numpy()
-
+        X = window_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
+        print(
+            f"[DEBUG] Columns used for inference ({X.shape[1]}): {list(window_df.drop(columns=['timestamp'], errors='ignore').columns)}"
+        )
+        print(f"[DEBUG] X shape after drop: {X.shape}")
         if self.model_type == "sklearn" and self.config["method"] not in ROWWISE_MODELS:
             X = X.reshape(1, -1)  # flatten to (1, seq_len*F)
         elif self.model_type == "torch":
             X = X[np.newaxis, ...]  # add batch dim -> (1, seq_len, F)
-        # rowwise sklearn: pass (seq_len, F) as-is
-
         return np.array(self.backend.predict(X)).flatten().tolist()
 
 
@@ -196,7 +195,11 @@ class TorchBackend:
             print(f"Test loss: {test_loss:.6f}")
 
             # 6. Log model
-            mlflow.pytorch.log_model(self.model, "model")
+            # mlflow.pytorch.log_model(self.model, "model")
+            save_dir = f"saved_models/{self.config['method']}"
+            os.makedirs(save_dir, exist_ok=True)
+            torch.save(self.model, os.path.join(save_dir, "model.pt"))
+            mlflow.log_param("local_model_path", save_dir)
 
     def predict(self, X):
         # Optionally load a saved checkpoint
@@ -265,12 +268,18 @@ class SklearnBackend:
                     print(f"{name} loss: {loss:.6f}")
 
             # 5. Log model
-            mlflow.sklearn.log_model(self.model, "model")
+            # mlflow.sklearn.log_model(self.model, "model")
+
+            save_dir = f"saved_models/{self.config['method']}"
+            os.makedirs(save_dir, exist_ok=True)
+            joblib.dump(self.model, os.path.join(save_dir, "model.joblib"))
+            mlflow.log_param("local_model_path", save_dir)
 
     def predict(self, X):
         if self.config.get("load_path"):
             print(f"Loading sklearn model from {self.config['load_path']}")
-            self.model = mlflow.sklearn.load_model(self.config["load_path"])
+            # self.model = mlflow.sklearn.load_model(self.config["load_path"])
+            self.model = joblib.load(self.config["load_path"])
         return self.model.predict(X)
 
 

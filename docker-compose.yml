@@ -59,6 +59,7 @@ services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: mlflow
+    user: "${UID}:${GID}" # run as your host user
     ports:
       - "5000:5000"
     volumes:

@@ -64,7 +64,7 @@ def loop(poller, data_handlers, models, db_util):
                         values=preds,
                         station_name=handler.target_name.split("__")[0],
                         metric_name=handler.target_name.split("__")[1],
-                        model_name="mamba",  # model.model_name
+                        model_name=model.model_name,
                     )
 
                     # move window
@@ -278,7 +278,7 @@ def main():
             XY = handler.fetch_train_data()
             if XY:
                 X, y = XY
-                logger.info("[%s] X shape: %s | y shape: %s", name, X.shape, y.shape)
+                # logger.info("[%s] X shape: %s | y shape: %s", name, X.shape, y.shape)
                 models[name].train(X, y)
 
     elif args.mode == "backup":

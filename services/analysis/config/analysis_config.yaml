@@ -35,82 +35,82 @@ target:
     - method: mamba
       model_type: torch #changed to either torch or sklearn for ease
       required_features:
-        - system__count
-        - shuttle_pre_scan_time
-        - shuttle_scan_success_time
-        - shuttle_post_scan_delay
-        - shuttle_carrier_motion_time
-        - shuttle_stopper_lowering_time
-        - shuttle_pallet_release_time
-        - shuttle_stopper_rising_time
-        - shuttle_station__shuttle_idle_time
+        # - system__count
+        # - shuttle_pre_scan_time
+        # - shuttle_scan_success_time
+        # - shuttle_post_scan_delay
+        # - shuttle_carrier_motion_time
+        # - shuttle_stopper_lowering_time
+        # - shuttle_pallet_release_time
+        # - shuttle_stopper_rising_time
+        # - shuttle_station__shuttle_idle_time
         - system__cycle_time
-        - l1_buffer_a__buffer_holding_time
-        - l1_buffer_a__buffer_idle_time
-        - l1_buffer_a__buffer_pallet_release_time
-        - l1_buffer_a__buffer_stopper_lowering_time
-        - l1_buffer_a__buffer_stopper_rising_time
-        - l1_buffer_b__buffer_holding_and_pre_stopper_down_time
-        - l1_buffer_b__buffer_idle_time
-        - l1_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
-        - l1_dispenser__machine_idle_time
-        - l1_dispenser__dispenser_entry_unclamp_time
-        - l1_dispenser__dispenser_delay_post_entry_unclamp
-        - l1_dispenser__dispenser_pallet_lifting_1_time
-        - l1_dispenser__dispenser_entry_clamping_time
-        - l1_dispenser__dispenser_delay_post_clamping
-        - l1_dispenser__dispenser_pallet_stopper_releasing_time
-        - l1_dispenser__dispenser_delay_pre_gantry_positioning
-        - l1_dispenser__dispenser_gantry_positioning_time
-        - l1_dispenser__dispenser_dispensing_time
-        - l1_dispenser__dispenser_pallet_unpositioning_time
-        - l1_dispenser__dispenser_pallet_stopper_locking_time
-        - l1_dispenser__dispenser_pre_exit_unclamping
-        - l1_dispenser__dispenser_exit_unclamping
-        - l1_dispenser__dispenser_post_exit_unclamp
-        - l1_dispenser__dispenser_pallet_lowering_1
-        - l1_dispenser__dispenser_stopper_lowering
-        - l1_dispenser__dispenser_pallet_releasing
-        - l1_dispenser__dispenser_stopper_rasing
-        - l1_inspection__inspection_idle_time
-        - l1_inspection__inspection_lifter_rising_time
-        - l1_inspection__inspection_gantry_positioning_time
-        - l1_inspection__inspection_core_vision_system_time
-        - l1_inspection__inspection_post_vision_check_delay
-        - l1_inspection__inspection_lifter_lowering_time
-        - l1_inspection__inspection_pallet_releasing_time
-        - l2_buffer_a__buffer_holding_and_pre_stopper_down_time
-        - l2_buffer_a__buffer_idle_time
-        - l2_buffer_a__buffer_pallet_release_and_pre_stopper_up_time
-        - l2_buffer_b__buffer_holding_and_pre_stopper_down_time
-        - l2_buffer_b__buffer_idle_time
-        - l2_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
-        - l2_dispenser__machine_idle_time
-        - l2_dispenser__dispenser_entry_unclamp_time
-        - l2_dispenser__dispenser_delay_post_entry_unclamp
-        - l2_dispenser__dispenser_pallet_lifting_1_time
-        - l2_dispenser__dispenser_entry_clamping_time
-        - l2_dispenser__dispenser_delay_post_clamping
-        - l2_dispenser__dispenser_pallet_stopper_releasing_time
-        - l2_dispenser__dispenser_delay_pre_gantry_positioning
-        - l2_dispenser__dispenser_gantry_positioning_time
-        - l2_dispenser__dispenser_dispensing_time
-        - l2_dispenser__dispenser_pallet_unpositioning_time
-        - l2_dispenser__dispenser_pallet_stopper_locking_time
-        - l2_dispenser__dispenser_pre_exit_unclamping
-        - l2_dispenser__dispenser_exit_unclamping
-        - l2_dispenser__dispenser_post_exit_unclamp
-        - l2_dispenser__dispenser_pallet_lowering_1
-        - l2_dispenser__dispenser_stopper_lowering
-        - l2_dispenser__dispenser_pallet_releasing
-        - l2_dispenser__dispenser_stopper_rasing
-        - l2_inspection__inspection_idle_time
-        - l2_inspection__inspection_lifter_rising_time
-        - l2_inspection__inspection_gantry_positioning_time
-        - l2_inspection__inspection_core_vision_system_time
-        - l2_inspection__inspection_post_vision_check_delay
-        - l2_inspection__inspection_lifter_lowering_time
-        - l2_inspection__inspection_pallet_releasing_time
+        # - l1_buffer_a__buffer_holding_time
+        # - l1_buffer_a__buffer_idle_time
+        # - l1_buffer_a__buffer_pallet_release_time
+        # - l1_buffer_a__buffer_stopper_lowering_time
+        # - l1_buffer_a__buffer_stopper_rising_time
+        # - l1_buffer_b__buffer_holding_and_pre_stopper_down_time
+        # - l1_buffer_b__buffer_idle_time
+        # - l1_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
+        # - l1_dispenser__machine_idle_time
+        # - l1_dispenser__dispenser_entry_unclamp_time
+        # - l1_dispenser__dispenser_delay_post_entry_unclamp
+        # - l1_dispenser__dispenser_pallet_lifting_1_time
+        # - l1_dispenser__dispenser_entry_clamping_time
+        # - l1_dispenser__dispenser_delay_post_clamping
+        # - l1_dispenser__dispenser_pallet_stopper_releasing_time
+        # - l1_dispenser__dispenser_delay_pre_gantry_positioning
+        # - l1_dispenser__dispenser_gantry_positioning_time
+        # - l1_dispenser__dispenser_dispensing_time
+        # - l1_dispenser__dispenser_pallet_unpositioning_time
+        # - l1_dispenser__dispenser_pallet_stopper_locking_time
+        # - l1_dispenser__dispenser_pre_exit_unclamping
+        # - l1_dispenser__dispenser_exit_unclamping
+        # - l1_dispenser__dispenser_post_exit_unclamp
+        # - l1_dispenser__dispenser_pallet_lowering_1
+        # - l1_dispenser__dispenser_stopper_lowering
+        # - l1_dispenser__dispenser_pallet_releasing
+        # - l1_dispenser__dispenser_stopper_rasing
+        # - l1_inspection__inspection_idle_time
+        # - l1_inspection__inspection_lifter_rising_time
+        # - l1_inspection__inspection_gantry_positioning_time
+        # - l1_inspection__inspection_core_vision_system_time
+        # - l1_inspection__inspection_post_vision_check_delay
+        # - l1_inspection__inspection_lifter_lowering_time
+        # - l1_inspection__inspection_pallet_releasing_time
+        # - l2_buffer_a__buffer_holding_and_pre_stopper_down_time
+        # - l2_buffer_a__buffer_idle_time
+        # - l2_buffer_a__buffer_pallet_release_and_pre_stopper_up_time
+        # - l2_buffer_b__buffer_holding_and_pre_stopper_down_time
+        # - l2_buffer_b__buffer_idle_time
+        # - l2_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
+        # - l2_dispenser__machine_idle_time
+        # - l2_dispenser__dispenser_entry_unclamp_time
+        # - l2_dispenser__dispenser_delay_post_entry_unclamp
+        # - l2_dispenser__dispenser_pallet_lifting_1_time
+        # - l2_dispenser__dispenser_entry_clamping_time
+        # - l2_dispenser__dispenser_delay_post_clamping
+        # - l2_dispenser__dispenser_pallet_stopper_releasing_time
+        # - l2_dispenser__dispenser_delay_pre_gantry_positioning
+        # - l2_dispenser__dispenser_gantry_positioning_time
+        # - l2_dispenser__dispenser_dispensing_time
+        # - l2_dispenser__dispenser_pallet_unpositioning_time
+        # - l2_dispenser__dispenser_pallet_stopper_locking_time
+        # - l2_dispenser__dispenser_pre_exit_unclamping
+        # - l2_dispenser__dispenser_exit_unclamping
+        # - l2_dispenser__dispenser_post_exit_unclamp
+        # - l2_dispenser__dispenser_pallet_lowering_1
+        # - l2_dispenser__dispenser_stopper_lowering
+        # - l2_dispenser__dispenser_pallet_releasing
+        # - l2_dispenser__dispenser_stopper_rasing
+        # - l2_inspection__inspection_idle_time
+        # - l2_inspection__inspection_lifter_rising_time
+        # - l2_inspection__inspection_gantry_positioning_time
+        # - l2_inspection__inspection_core_vision_system_time
+        # - l2_inspection__inspection_post_vision_check_delay
+        # - l2_inspection__inspection_lifter_lowering_time
+        # - l2_inspection__inspection_pallet_releasing_time
         - timestamp
 
       history_window: 6
@@ -118,13 +118,12 @@ target:
       prediction_window: 7
 
       #TODO: make mlfow dockerized
-      # load_path: "/home/tarunk/mlartifacts/204707883063158890/models/m-d86e5e37223a4650a0884d47e04b373e/artifacts/data/model.pth"
-      load_path: "/home/tarunk/OneDrive/ASM/asm-predictive-maintenance/services/analysis/mlartifacts/866592688175462789/models/m-fc74fb752e2f435495a2fc29650666a5/artifacts/data/model.pth"
+      load_path: "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/mamba/model.pt"
 
       arch:
         #place holders for mamba_ts class init not in arch already
         # TODO: Make input_size and seq_len for a single variable
-        input_size: 2 #HACK: should do len(required_features) - 2 (because timestamp and target feature are in required_features)
+        input_size: 1 #HACK: should do len(required_features) - 2 (because timestamp and target feature are in required_features)
         forecast_horizon: 1
         seq_len: 2
         hidden_dim: 32
@@ -151,68 +150,71 @@ target:
     - method: xgboost_forecast
       model_type: sklearn
       required_features:
-        - system__count
-        - shuttle_pre_scan_time
-        - shuttle_scan_success_time
-        - shuttle_post_scan_delay
-        - shuttle_carrier_motion_time
-        - shuttle_stopper_lowering_time
-        - shuttle_pallet_release_time
-        - shuttle_stopper_rising_time
+        # - system__count
+        # - shuttle_pre_scan_time
+        # - shuttle_scan_success_time
+        # - shuttle_post_scan_delay
+        # - shuttle_carrier_motion_time
+        # - shuttle_stopper_lowering_time
+        # - shuttle_pallet_release_time
+        # - shuttle_stopper_rising_time
         - system__cycle_time
-        - l1_buffer_a__buffer_holding_time
-        - l1_buffer_a__buffer_stopper_lowering_time
-        - l1_buffer_a__buffer_pallet_release_time
-        - l1_buffer_a__buffer_stopper_rising_time
-        - l1_dispenser__dispenser_entry_unclamp_time
-        - l1_dispenser__dispenser_delay_post_entry_unclamp
-        - l1_dispenser__dispenser_pallet_lifting_1_time
-        - l1_dispenser__dispenser_entry_clamping_time
-        - l1_dispenser__dispenser_delay_post_clamping
-        - l1_dispenser__dispenser_pallet_stopper_releasing_time
-        - l1_dispenser__dispenser_delay_pre_gantry_positioning
-        - l1_dispenser__dispenser_gantry_positioning_time
-        - l1_dispenser__dispenser_dispensing_time
-        - l1_dispenser__dispenser_pallet_unpositioning_time
-        - l1_dispenser__dispenser_pallet_stopper_locking_time
-        - l1_dispenser__dispenser_pre_exit_unclamping
-        - l1_dispenser__dispenser_exit_unclamping
-        - l1_dispenser__dispenser_post_exit_unclamp
-        - l1_dispenser__dispenser_pallet_lowering_1
-        - l1_dispenser__dispenser_stopper_lowering
-        - l1_dispenser__dispenser_pallet_releasing
-        - l1_dispenser__dispenser_stopper_rasing
-        - l1_inspection__inspection_lifter_rising_time
-        - l1_inspection__inspection_gantry_positioning_time
-        - l1_inspection__inspection_core_vision_system_time
-        - l1_inspection__inspection_post_vision_check_delay
-        - l1_inspection__inspection_lifter_lowering_time
-        - l1_inspection__inspection_pallet_releasing_time
-        - l2_dispenser__dispenser_entry_unclamp_time
-        - l2_dispenser__dispenser_delay_post_entry_unclamp
-        - l2_dispenser__dispenser_pallet_lifting_1_time
-        - l2_dispenser__dispenser_entry_clamping_time
-        - l2_dispenser__dispenser_delay_post_clamping
-        - l2_dispenser__dispenser_pallet_stopper_releasing_time
-        - l2_dispenser__dispenser_delay_pre_gantry_positioning
-        - l2_dispenser__dispenser_gantry_positioning_time
-        - l2_dispenser__dispenser_dispensing_time
-        - l2_dispenser__dispenser_pallet_unpositioning_time
-        - l2_dispenser__dispenser_pallet_stopper_locking_time
-        - l2_dispenser__dispenser_pre_exit_unclamping
-        - l2_dispenser__dispenser_exit_unclamping
-        - l2_dispenser__dispenser_post_exit_unclamp
-        - l2_dispenser__dispenser_pallet_lowering_1
-        - l2_dispenser__dispenser_stopper_lowering
-        - l2_dispenser__dispenser_pallet_releasing
-        - l2_dispenser__dispenser_stopper_rasing
-        - l2_inspection__inspection_lifter_rising_time
-        - l2_inspection__inspection_gantry_positioning_time
-        - l2_inspection__inspection_core_vision_system_time
-        - l2_inspection__inspection_post_vision_check_delay
-        - l2_inspection__inspection_lifter_lowering_time
-        - l2_inspection__inspection_pallet_releasing_time
+        # - l1_buffer_a__buffer_holding_time
+        # - l1_buffer_a__buffer_stopper_lowering_time
+        # - l1_buffer_a__buffer_pallet_release_time
+        # - l1_buffer_a__buffer_stopper_rising_time
+        # - l1_dispenser__dispenser_entry_unclamp_time
+        # - l1_dispenser__dispenser_delay_post_entry_unclamp
+        # - l1_dispenser__dispenser_pallet_lifting_1_time
+        # - l1_dispenser__dispenser_entry_clamping_time
+        # - l1_dispenser__dispenser_delay_post_clamping
+        # - l1_dispenser__dispenser_pallet_stopper_releasing_time
+        # - l1_dispenser__dispenser_delay_pre_gantry_positioning
+        # - l1_dispenser__dispenser_gantry_positioning_time
+        # - l1_dispenser__dispenser_dispensing_time
+        # - l1_dispenser__dispenser_pallet_unpositioning_time
+        # - l1_dispenser__dispenser_pallet_stopper_locking_time
+        # - l1_dispenser__dispenser_pre_exit_unclamping
+        # - l1_dispenser__dispenser_exit_unclamping
+        # - l1_dispenser__dispenser_post_exit_unclamp
+        # - l1_dispenser__dispenser_pallet_lowering_1
+        # - l1_dispenser__dispenser_stopper_lowering
+        # - l1_dispenser__dispenser_pallet_releasing
+        # - l1_dispenser__dispenser_stopper_rasing
+        # - l1_inspection__inspection_lifter_rising_time
+        # - l1_inspection__inspection_gantry_positioning_time
+        # - l1_inspection__inspection_core_vision_system_time
+        # - l1_inspection__inspection_post_vision_check_delay
+        # - l1_inspection__inspection_lifter_lowering_time
+        # - l1_inspection__inspection_pallet_releasing_time
+        # - l2_dispenser__dispenser_entry_unclamp_time
+        # - l2_dispenser__dispenser_delay_post_entry_unclamp
+        # - l2_dispenser__dispenser_pallet_lifting_1_time
+        # - l2_dispenser__dispenser_entry_clamping_time
+        # - l2_dispenser__dispenser_delay_post_clamping
+        # - l2_dispenser__dispenser_pallet_stopper_releasing_time
+        # - l2_dispenser__dispenser_delay_pre_gantry_positioning
+        # - l2_dispenser__dispenser_gantry_positioning_time
+        # - l2_dispenser__dispenser_dispensing_time
+        # - l2_dispenser__dispenser_pallet_unpositioning_time
+        # - l2_dispenser__dispenser_pallet_stopper_locking_time
+        # - l2_dispenser__dispenser_pre_exit_unclamping
+        # - l2_dispenser__dispenser_exit_unclamping
+        # - l2_dispenser__dispenser_post_exit_unclamp
+        # - l2_dispenser__dispenser_pallet_lowering_1
+        # - l2_dispenser__dispenser_stopper_lowering
+        # - l2_dispenser__dispenser_pallet_releasing
+        # - l2_dispenser__dispenser_stopper_rasing
+        # - l2_inspection__inspection_lifter_rising_time
+        # - l2_inspection__inspection_gantry_positioning_time
+        # - l2_inspection__inspection_core_vision_system_time
+        # - l2_inspection__inspection_post_vision_check_delay
+        # - l2_inspection__inspection_lifter_lowering_time
+        # - l2_inspection__inspection_pallet_releasing_time
         - timestamp
+
+      load_path:
+        "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/xgboost_forecast/model.joblib"
 
         #INFO: this is for dataloader.
       history_window: 6
@@ -420,7 +422,7 @@ target:
     #=================================================================================
     - method: health_score
       model_type: sklearn
-     required_features:
+      -required_features:
         - l1_dispenser__dispenser_entry_unclamp_time
         - l1_dispenser__dispenser_delay_post_entry_unclamp
         - l1_dispenser__dispenser_pallet_lifting_1_time

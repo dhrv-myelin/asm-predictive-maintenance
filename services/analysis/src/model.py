@@ -103,16 +103,21 @@ class Model:
             return SklearnBackend(self.config)
         raise ValueError(f"Unsupported model_type: {self.model_type}")
 
+    # AFTER
     def train(self, X, y):
         if self.model_type == "sklearn":
-            N, seq_len, F = X.shape
-            if self.config["method"] in ROWWISE_MODELS:
-                # Each timestep is its own sample: (N, seq_len, F) -> (N*seq_len, F)
-                X = X.reshape(N * seq_len, F)
-                y = np.repeat(y, seq_len, axis=0)
+            if self.config["method"] in UNSUPERVISED_MODELS:
+                # health_score: X arrives as (N, F) flat — no windowing needed.
+                # y is meaningless; pass None so SklearnBackend.train() uses
+                # the unsupervised branch.
+                pass  # X already correct shape, y will be ignored
             else:
-                # Flatten each window into one row: (N, seq_len, F) -> (N, seq_len*F)
-                X = X.reshape(N, seq_len * F)
+                N, seq_len, F = X.shape
+                if self.config["method"] in ROWWISE_MODELS:
+                    X = X.reshape(N * seq_len, F)
+                    y = np.repeat(y, seq_len, axis=0)
+                else:
+                    X = X.reshape(N, seq_len * F)
 
         self.backend.train(X, y)
 
@@ -209,6 +214,8 @@ class TorchBackend:
                 self.config["load_path"], map_location=self.device, weights_only=False
             )
             self.model.to(self.device)
+        else:
+            raise ValueError("no model weights found")
 
         self.model.eval()
         X = torch.tensor(X, dtype=torch.float32).to(self.device)
@@ -280,6 +287,8 @@ class SklearnBackend:
             print(f"Loading sklearn model from {self.config['load_path']}")
             # self.model = mlflow.sklearn.load_model(self.config["load_path"])
             self.model = joblib.load(self.config["load_path"])
+        else:
+            raise ValueError("no model weights found")
         return self.model.predict(X)
 
 

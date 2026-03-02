@@ -104,7 +104,7 @@ def inference_loop(data_handler, model, db_util):
             values=preds,  #  [0.0] * X.shape[0]
             station_name=data_handler.target_name.split("__")[0],
             metric_name=data_handler.target_name.split("__")[1],
-            model_name="mamba",  # model.model_name
+            model_name=model.model_name,
         )
 
         time.sleep(0.5)  # pacing
@@ -242,7 +242,11 @@ def main():
             key = f"{target}:{method_config['method']}"
 
             # If --model is specified, skip everything else
-            if args.model and key != args.model:
+            if (
+                args.model
+                and key != args.model
+                and method_config["method"] != args.model
+            ):
                 continue
 
             handler = DataHandler(config=method_config, target_name=target)
@@ -275,10 +279,15 @@ def main():
 
         for name, handler in data_handlers.items():
             handler.ingest(rows)
+            # AFTER
             XY = handler.fetch_train_data()
-            if XY:
+            if XY is not None:
                 X, y = XY
-                # logger.info("[%s] X shape: %s | y shape: %s", name, X.shape, y.shape)
+                if X is None:
+                    logger.warning(
+                        "[%s] fetch_train_data returned None X — skipping train", name
+                    )
+                    continue
                 models[name].train(X, y)
 
     elif args.mode == "backup":

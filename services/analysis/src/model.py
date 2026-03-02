@@ -103,21 +103,19 @@ class Model:
             return SklearnBackend(self.config)
         raise ValueError(f"Unsupported model_type: {self.model_type}")
 
-    # AFTER
     def train(self, X, y):
         if self.model_type == "sklearn":
+            N, seq_len, F = X.shape
             if self.config["method"] in UNSUPERVISED_MODELS:
-                # health_score: X arrives as (N, F) flat — no windowing needed.
-                # y is meaningless; pass None so SklearnBackend.train() uses
-                # the unsupervised branch.
-                pass  # X already correct shape, y will be ignored
+                # Unsupervised (health_score): windows are seq_len=1 by config.
+                # Squeeze to (N, F) so IsolationForest sees flat feature rows.
+                # y is meaningless — SklearnBackend.train() will ignore it.
+                X = X.reshape(N * seq_len, F)
+            elif self.config["method"] in ROWWISE_MODELS:
+                X = X.reshape(N * seq_len, F)
+                y = np.repeat(y, seq_len, axis=0)
             else:
-                N, seq_len, F = X.shape
-                if self.config["method"] in ROWWISE_MODELS:
-                    X = X.reshape(N * seq_len, F)
-                    y = np.repeat(y, seq_len, axis=0)
-                else:
-                    X = X.reshape(N, seq_len * F)
+                X = X.reshape(N, seq_len * F)
 
         self.backend.train(X, y)
 
@@ -201,7 +199,7 @@ class TorchBackend:
 
             # 6. Log model
             # mlflow.pytorch.log_model(self.model, "model")
-            save_dir = f"saved_models/{self.config['method']}"
+            save_dir = f"saved_models/{self.config['save_name']}"
             os.makedirs(save_dir, exist_ok=True)
             torch.save(self.model, os.path.join(save_dir, "model.pt"))
             mlflow.log_param("local_model_path", save_dir)
@@ -214,8 +212,6 @@ class TorchBackend:
                 self.config["load_path"], map_location=self.device, weights_only=False
             )
             self.model.to(self.device)
-        else:
-            raise ValueError("no model weights found")
 
         self.model.eval()
         X = torch.tensor(X, dtype=torch.float32).to(self.device)
@@ -277,7 +273,7 @@ class SklearnBackend:
             # 5. Log model
             # mlflow.sklearn.log_model(self.model, "model")
 
-            save_dir = f"saved_models/{self.config['method']}"
+            save_dir = f"saved_models/{self.config['save_name']}"
             os.makedirs(save_dir, exist_ok=True)
             joblib.dump(self.model, os.path.join(save_dir, "model.joblib"))
             mlflow.log_param("local_model_path", save_dir)
@@ -287,8 +283,6 @@ class SklearnBackend:
             print(f"Loading sklearn model from {self.config['load_path']}")
             # self.model = mlflow.sklearn.load_model(self.config["load_path"])
             self.model = joblib.load(self.config["load_path"])
-        else:
-            raise ValueError("no model weights found")
         return self.model.predict(X)
 
 

@@ -130,7 +130,7 @@ class DataHandler:
         # ── config extraction ──────────────────────────────────────────
         self.required_features: list[str] = config["required_features"]
         print("Required features : ", self.required_features)
-        self.format = config.get("format", None)        # 'wide' | None
+        self.format = config.get("format", None)  # 'wide' | None
         self.history_window: int = config["history_window"]
         self.stride: int = config.get("stride", 0) or 0
         self.prediction_window: int = config["prediction_window"]
@@ -138,19 +138,21 @@ class DataHandler:
         # ── derive templates from required_features ────────────────────
         #    Each group only includes keys that appear in required_features
         #    (plus 'timestamp' for l1/l2 which is always tracked internally).
-        self._fmt_keys  = [k for k in self.required_features if k in _ALL_FMT_BARE_KEYS]
+        self._fmt_keys = [k for k in self.required_features if k in _ALL_FMT_BARE_KEYS]
         print("FMT KEYS : ", self._fmt_keys)
-        self._end_keys  = [k for k in self.required_features if k in _ALL_END_KEYS]
+        self._end_keys = [k for k in self.required_features if k in _ALL_END_KEYS]
         print("END KEYS : ", self._end_keys)
-        self._l1_keys   = [k for k in self.required_features if k in _ALL_L1_KEYS]
+        self._l1_keys = [k for k in self.required_features if k in _ALL_L1_KEYS]
         print("L1 KEYS : ", self._l1_keys)
-        self._l2_keys   = [k for k in self.required_features if k in _ALL_L2_KEYS]
+        self._l2_keys = [k for k in self.required_features if k in _ALL_L2_KEYS]
         print("L2 KEYS : ", self._l2_keys)
 
-        # 'timestamp' is always tracked internally for L1/L2 even if not in
-        # required_features (used for queue ordering); it is removed from the
-        # final output if absent from required_features.
-        self._end_keys = self._end_keys + (
+        # 'timestamp' is always tracked internally for L1/L2/end even if not
+        # in required_features (used for queue ordering). IMPORTANT: keep
+        # _end_keys as the pure feature list — _try_flush uses it to decide
+        # whether an end queue entry is required. Only _end_internal_keys
+        # (used to build _active_end) gets the timestamp appended.
+        self._end_internal_keys = self._end_keys + (
             ["timestamp"] if "timestamp" not in self._end_keys else []
         )
         self._l1_internal_keys = self._l1_keys + (
@@ -162,20 +164,20 @@ class DataHandler:
 
         # ── lookup sets ────────────────────────────────────────────────
         self._fmt_bare_set = set(self._fmt_keys)
-        self._end_set      = set(self._end_keys)
-        self._l1_set       = set(self._l1_keys)
-        self._l2_set       = set(self._l2_keys)
+        self._end_set = set(self._end_internal_keys)  # includes timestamp
+        self._l1_set = set(self._l1_keys)
+        self._l2_set = set(self._l2_keys)
 
         # ── persistent active dicts (survive across ingest() calls) ───
         self._active_fmt = _build_template(self._fmt_keys)
-        self._active_l1  = _build_template(self._l1_internal_keys)
-        self._active_l2  = _build_template(self._l2_internal_keys)
-        self._active_end = _build_template(self._end_keys)
+        self._active_l1 = _build_template(self._l1_internal_keys)
+        self._active_l2 = _build_template(self._l2_internal_keys)
+        self._active_end = _build_template(self._end_internal_keys)
 
         # ── completed-dict queues (FIFO) ───────────────────────────────
         self._fmt_queue: deque[dict] = deque()
-        self._l1_queue:  deque[dict] = deque()
-        self._l2_queue:  deque[dict] = deque()
+        self._l1_queue: deque[dict] = deque()
+        self._l2_queue: deque[dict] = deque()
         self._end_queue: deque[dict] = deque()
 
         # ── output row accumulators ────────────────────────────────────
@@ -184,6 +186,10 @@ class DataHandler:
 
         # ── final wide DataFrame (grows as cycles complete) ────────────
         self.df = pd.DataFrame(columns=self.required_features)
+
+        # Last timestamp seen across any completed cycle (used by inference_loop
+        # for models that don't store timestamp in self.df)
+        self.last_timestamp = None
 
     # ------------------------------------------------------------------
     # Public: ingest rows from the poller
@@ -199,7 +205,7 @@ class DataHandler:
             return None
 
         for r in rows:
-            ts  = pd.to_datetime(r.timestamp)
+            ts = pd.to_datetime(r.timestamp)
             nmn = f"{r.station_name}__{r.metric_name}"
             val = r.value
             self._process_one(nmn, val, ts)
@@ -212,7 +218,7 @@ class DataHandler:
 
     def _bare(self, nmn: str) -> str:
         if nmn.startswith(_SHUTTLE_STATION_PREFIX):
-            return nmn[len(_SHUTTLE_STATION_PREFIX):]
+            return nmn[len(_SHUTTLE_STATION_PREFIX) :]
         return nmn
 
     def _is_complete(self, d: dict) -> bool:
@@ -247,11 +253,9 @@ class DataHandler:
 
         # ── (c) L1 metrics ─────────────────────────────────────────────
         if nmn in self._l1_set:
-            # print(f"[DEBUG] Processing fmt metric: {nmn} with value {val} at timestamp {ts}")
             if self._active_l1.get(nmn, -1) == -1:
                 self._active_l1[nmn] = val
-                # print(f"[DEBUG] Updated active_l1: {self._active_l1}")
-            self._active_l1["timestamp"] = ts       # always keep latest ts
+            self._active_l1["timestamp"] = ts  # always keep latest ts
             if self._l1_keys and self._is_complete(self._active_l1):
                 # print("[DEBUG] Completed L1 dict: ", self._active_l1)
                 self._l1_queue.append(copy.copy(self._active_l1))
@@ -285,10 +289,12 @@ class DataHandler:
         those dicts are treated as always-satisfied (empty dict).
         """
         while True:
-            fmt_ready  = bool(self._fmt_queue) or not self._fmt_keys
-            end_ready  = bool(self._end_queue) or not self._end_keys
+            fmt_ready = bool(self._fmt_queue) or not self._fmt_keys
+            end_ready = bool(self._end_queue) or not self._end_keys
             line_has_keys = bool(self._l1_keys) or bool(self._l2_keys)
-            line_ready = (bool(self._l1_queue) or bool(self._l2_queue)) or not line_has_keys
+            line_ready = (
+                bool(self._l1_queue) or bool(self._l2_queue)
+            ) or not line_has_keys
 
             if not (fmt_ready and end_ready and line_ready):
                 break
@@ -304,11 +310,17 @@ class DataHandler:
                     use_l1 = ts1 <= ts2
                 else:
                     use_l1 = bool(self._l1_queue)
-                line_part = self._l1_queue.popleft() if use_l1 else self._l2_queue.popleft()
+                line_part = (
+                    self._l1_queue.popleft() if use_l1 else self._l2_queue.popleft()
+                )
             else:
                 line_part = {}
 
             merged = {**fmt_part, **line_part, **end_part}
+
+            # Track the latest timestamp even if not in required_features
+            if "timestamp" in merged and merged["timestamp"] is not None:
+                self.last_timestamp = merged["timestamp"]
 
             # Build a one-row DataFrame with only required_features columns
             row_df = pd.DataFrame([merged])
@@ -351,7 +363,7 @@ class DataHandler:
             start_idx = idx[0]
 
         start = start_idx + self.stride
-        end   = start + self.history_window
+        end = start + self.history_window
 
         if end > len(df):
             return None
@@ -360,12 +372,12 @@ class DataHandler:
 
         if for_training:
             y_start = end - 1
-            y_end   = y_start + self.prediction_window
+            y_end = y_start + self.prediction_window
             if y_end > len(df):
                 return None
             y = df.iloc[y_start:y_end][[self.target_name]]
             return X, y
-        
+
         print(f"[DEBUG] Found Inference Window : {X}")
 
         return X
@@ -378,45 +390,55 @@ class DataHandler:
         """
         Build training data in sequence format:
         X.shape = (N, seq_len, num_features)
-        Y.shape = (N, num_targets)
+        Y.shape = (N, num_targets), or None for unsupervised models.
+
+        Unsupervised detection: if target_name is not a column in self.df
+        (e.g. health_score targets like "l1_buffer_a__health_score" are never
+        ingested as feature columns), y is returned as None. Callers must
+        check for this and route to an unsupervised training path.
         """
         if self.df.empty:
             return None, None
+
+        # health_score: target_name is e.g. "l1_buffer_a__health_score" —
+        # never a column in df, which only holds the 4 buffer feature cols.
+        is_unsupervised = self.target_name not in self.df.columns
 
         X_list = []
         Y_list = []
 
         curr_first_timestamp = None
 
+        # For unsupervised models without a timestamp column, track position
+        # by integer index to avoid KeyError in fetch_next_window.
+        curr_idx = 0
+
         while True:
-            out = self.fetch_next_window(
-                curr_first_timestamp,
-                for_training=True
-            )
-
-            if out is None:
-                break
-            X_df, y_df = out   # DataFrames
-            # TODO: Differentiate between univariate and multivariate.  Drop target column based on need
-            # ---- convert to numpy sequences ----
-            X_seq = X_df.drop(columns=["timestamp"]).to_numpy()
-            y_val = y_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
-
-            # if prediction_window > 1 → take last step target
-            if y_val.ndim > 1:
-                y_val = y_val[-1]
-
-            # print(f"[DEBUG] X_seq: {X_seq}")
-            # print(f"[DEBUG] y_val: {y_val}")
-            X_list.append(X_seq)
-            Y_list.append(y_val)
-            
-            # if len(X_list)>5:
-            #     exit(0)
-
-            # advance by stride from the LAST window's start, not first
-            curr_first_timestamp = X_df.iloc[0]["timestamp"]
-            print(f"[DEBUG] Advancing to timestamp: {curr_first_timestamp}")
+            if is_unsupervised:
+                start = curr_idx
+                end = start + self.history_window
+                if end > len(self.df):
+                    break
+                X_df = self.df.iloc[start:end]
+                X_seq = X_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
+                X_list.append(X_seq)
+                curr_idx += self.stride
+            else:
+                out = self.fetch_next_window(
+                    curr_first_timestamp,
+                    for_training=True,
+                )
+                if out is None:
+                    break
+                X_df, y_df = out
+                X_seq = X_df.drop(columns=["timestamp"]).to_numpy()
+                y_val = y_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
+                if y_val.ndim > 1:
+                    y_val = y_val[-1]
+                X_list.append(X_seq)
+                Y_list.append(y_val)
+                curr_first_timestamp = X_df.iloc[0]["timestamp"]
+                print(f"[DEBUG] Advancing to timestamp: {curr_first_timestamp}")
 
         print(f"[DEBUG] Total windows built: {len(X_list)}")
 
@@ -424,9 +446,12 @@ class DataHandler:
             return None, None
 
         X_train = np.stack(X_list)  # (N, seq_len, num_features)
-        Y_train = np.stack(Y_list)  # (N, prediction_window)
+        Y_train = np.stack(Y_list) if Y_list else None  # None for unsupervised
 
-        print(f"[DEBUG] X_train shape: {X_train.shape}, Y_train shape: {Y_train.shape}")
+        print(
+            f"[DEBUG] X_train shape: {X_train.shape}, "
+            f"Y_train: {'None (unsupervised)' if Y_train is None else Y_train.shape}"
+        )
 
         return X_train, Y_train
 
@@ -443,7 +468,7 @@ if __name__ == "__main__":
     # DB setup
     # --------------------------------------------------
 
-    DATABASE_URL = "postgresql://postgres:<password>@localhost:5432/glue-dispenser-db"  
+    DATABASE_URL = "postgresql://postgres:<password>@localhost:5432/glue-dispenser-db"
     # ⬆️ change to your real DB URL
 
     engine = create_engine(DATABASE_URL)
@@ -451,16 +476,16 @@ if __name__ == "__main__":
 
     def session_factory():
         return SessionLocal()
-    
-    def load_config(path="../../config/analysis_config.yaml"): 
-        with open(path, "r") as f: 
-            cfg = yaml.safe_load(f) 
+
+    def load_config(path="../../config/analysis_config.yaml"):
+        with open(path, "r") as f:
+            cfg = yaml.safe_load(f)
         return cfg
 
     # --------------------------------------------------
     # Minimal config for testing
     # --------------------------------------------------
-    test_config = load_config()['target']['system__cycle_time'][0]
+    test_config = load_config()["target"]["system__cycle_time"][0]
     # print(test_config)
     # --------------------------------------------------
     # Init handler
@@ -469,17 +494,17 @@ if __name__ == "__main__":
     handler = DataHandler(
         session_factory=session_factory,
         config=test_config,
-        target_name="system__cycle_time"
+        target_name="system__cycle_time",
     )
     curr_first_timestamp = None
     while True:
         start = time.time()
         X = handler.fetch_next_window(curr_first_timestamp, for_training=False)
         # print(X)
-        print("Time taken: ", time.time()-start)
+        print("Time taken: ", time.time() - start)
         print("===================================================================")
-        curr_first_timestamp = X.iloc[0]['timestamp']
-        
+        curr_first_timestamp = X.iloc[0]["timestamp"]
+
         if X is None:
             print("❌ Not enough data for window")
             break
@@ -493,7 +518,7 @@ if __name__ == "__main__":
         # start = time.time()
         # XY = handler.fetch_next_window(curr_first_timestamp=None, for_training=True)
         # print("Time taken: ", time.time()-start)
-        
+
         # if XY is None:
         #     print("❌ Not enough data for training window")
         # else:
@@ -508,4 +533,3 @@ if __name__ == "__main__":
         # curr_first_timestamp = XY[0].iloc[0]['timestamp']
 
     # print("\n✅ DataHandler verification complete")
-

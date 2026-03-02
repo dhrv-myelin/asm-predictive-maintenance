@@ -34,6 +34,7 @@ target:
     #=================================================================================
     - method: mamba
       model_type: torch #changed to either torch or sklearn for ease
+      save_name: mamba
       required_features:
         # - system__count
         # - shuttle_pre_scan_time
@@ -149,6 +150,7 @@ target:
     #=================================================================================
     - method: xgboost_forecast
       model_type: sklearn
+      save_name: xgboost_forecast
       required_features:
         # - system__count
         # - shuttle_pre_scan_time
@@ -251,6 +253,7 @@ target:
   l1_buffer_a__health_score:
     #=================================================================================
     - method: health_score
+      save_name: l1_buffer_a__health_score
       model_type: sklearn
       required_features:
         #INFO: there are some extra in process logic sheet. i have only copied what was from mamba to make sure
@@ -295,6 +298,7 @@ target:
     #=================================================================================
     - method: health_score
       model_type: sklearn
+      save_name: l1_buffer_b__health_score
       required_features:
         #INFO: there are some extra in process logic sheet. i have only copied what was from mamba to make sure
         - l1_buffer_b__buffer_holding_time
@@ -338,6 +342,7 @@ target:
   l2_buffer_a__health_score:
     - method: health_score
       model_type: sklearn
+      save_name: l2_buffer_a__health_score
       required_features:
         #INFO: there are some extra in process logic sheet. i have only copied what was from mamba to make sure
         - l2_buffer_a__buffer_holding_time
@@ -383,6 +388,7 @@ target:
     #=================================================================================
     - method: health_score
       model_type: sklearn
+      save_name: shuttle_station__health_score
       required_features:
         - shuttle_pre_scan_time
         - shuttle_scan_success_time
@@ -431,6 +437,7 @@ target:
     #=================================================================================
     - method: health_score
       model_type: sklearn
+      save_name: l1_dispenser_standard__health_score
       -required_features:
         - l1_dispenser__dispenser_entry_unclamp_time
         - l1_dispenser__dispenser_delay_post_entry_unclamp
@@ -489,6 +496,7 @@ target:
     #=================================================================================
     - method: health_score
       model_type: sklearn
+      save_name: l2_dispenser_standard__health_score
       required_features:
         - l2_dispenser__dispenser_entry_unclamp_time
         - l2_dispenser__dispenser_delay_post_entry_unclamp
@@ -547,6 +555,7 @@ target:
     #=================================================================================
     - method: health_score
       model_type: sklearn
+      save_name: l1_inspection_standard__health_score
       required_features:
         - l1_inspection__inspection_lifter_rising_time
         - l1_inspection__inspection_gantry_positioning_time
@@ -593,6 +602,7 @@ target:
     #=================================================================================
     - method: health_score
       model_type: sklearn
+      save_name: l2_inspection_standard__health_score
       required_features:
         - l2_inspection__inspection_lifter_rising_time
         - l2_inspection__inspection_gantry_positioning_time

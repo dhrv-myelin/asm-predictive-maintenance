@@ -64,7 +64,7 @@ def loop(poller, data_handlers, models, db_util):
                         values=preds,
                         station_name=handler.target_name.split("__")[0],
                         metric_name=handler.target_name.split("__")[1],
-                        model_name=model.model_name,
+                        model_name="xgboost",  # model.model_name,
                     )
 
                     # move window
@@ -77,31 +77,48 @@ def loop(poller, data_handlers, models, db_util):
 
 
 def inference_loop(data_handler, model, db_util):
+    # Use integer index for models without a timestamp column (e.g. health_score),
+    # timestamp-based advancement for models that have it.
+    has_timestamp = "timestamp" in data_handler.df.columns
     curr_first_timestamp = None
-    while True:
-        X = data_handler.fetch_next_window(curr_first_timestamp, for_training=False)
+    curr_idx = 0
 
-        if X is None:
+    while True:
+        if has_timestamp:
+            X = data_handler.fetch_next_window(curr_first_timestamp, for_training=False)
+        else:
+            # Index-based window fetch — mirrors fetch_train_data unsupervised path
+            start = curr_idx
+            end = start + data_handler.history_window
+            if end > len(data_handler.df):
+                print("❌ No more windows")
+                break
+            X = data_handler.df.iloc[start:end]
+
+        if X is None or (hasattr(X, "empty") and X.empty):
             print("❌ Not enough data for window")
-            time.sleep(1)  # prevent CPU spin
+            time.sleep(1)
             continue
 
-        curr_first_timestamp = X.iloc[0]["timestamp"]
+        # Advance cursor
+        if has_timestamp:
+            curr_first_timestamp = X.iloc[0]["timestamp"]
+        else:
+            curr_idx += data_handler.stride
 
         print("✅ Window shape:", X.shape)
-        # print(X)
-        # print("[DEBUG] Window:\n", X)
-        # inference
         preds = model.real_time_inference(X)
         preds = [preds[-1]]
-        # print("================= Length Of Predictions:", len(preds))
 
-        # write results
-        last_ts = X.iloc[-1]["timestamp"]
+        # write results — use last row's timestamp if available, else fall back
+        # to data_handler.last_timestamp tracked during _try_flush
+        last_ts = (
+            X.iloc[-1]["timestamp"] if has_timestamp else data_handler.last_timestamp
+        )
         print("[DEBUG] Last timestamp in window:", last_ts)
         db_util.insert_results(
             last_timestamp=last_ts,
-            values=preds,  #  [0.0] * X.shape[0]
+            values=preds,
             station_name=data_handler.target_name.split("__")[0],
             metric_name=data_handler.target_name.split("__")[1],
             model_name=model.model_name,
@@ -120,6 +137,7 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
     def start(target_func):
         t = threading.Thread(target=target_func)
         t.start()
+        return t
 
     threads = []
     for name, handler in data_handlers.items():
@@ -279,15 +297,15 @@ def main():
 
         for name, handler in data_handlers.items():
             handler.ingest(rows)
-            # AFTER
             XY = handler.fetch_train_data()
             if XY is not None:
                 X, y = XY
                 if X is None:
                     logger.warning(
-                        "[%s] fetch_train_data returned None X — skipping train", name
+                        "[%s] fetch_train_data returned no windows — skipping", name
                     )
                     continue
+                # logger.info("[%s] X shape: %s | y shape: %s", name, X.shape, y.shape)
                 models[name].train(X, y)
 
     elif args.mode == "backup":

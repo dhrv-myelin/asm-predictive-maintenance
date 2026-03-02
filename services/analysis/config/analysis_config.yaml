@@ -252,7 +252,7 @@ target:
   # ── BUFFER ────────────────────────────────────────────────────────────────
   l1_buffer_a__health_score:
     #=================================================================================
-    - method: health_score
+    - method: isolation_forest
       save_name: l1_buffer_a__health_score
       model_type: sklearn
       required_features:
@@ -296,7 +296,7 @@ target:
   # ── BUFFER ────────────────────────────────────────────────────────────────
   l1_buffer_b__health_score:
     #=================================================================================
-    - method: health_score
+    - method: isolation_forest
       model_type: sklearn
       save_name: l1_buffer_b__health_score
       required_features:
@@ -340,7 +340,7 @@ target:
 
   # ── BUFFER ────────────────────────────────────────────────────────────────
   l2_buffer_a__health_score:
-    - method: health_score
+    - method: isolation_forest
       model_type: sklearn
       save_name: l2_buffer_a__health_score
       required_features:
@@ -386,7 +386,7 @@ target:
   # ── SHUTTLE STATION ────────────────────────────────────────────────────────────────
   shuttle_station__health_score:
     #=================================================================================
-    - method: health_score
+    - method: isolation_forest
       model_type: sklearn
       save_name: shuttle_station__health_score
       required_features:
@@ -433,9 +433,9 @@ target:
     #=================================================================================
 
   # ── DISPENSER ────────────────────────────────────────────────────────────────
-  l1_dispenser_standard__health_score:
+  l1_dispenser__health_score:
     #=================================================================================
-    - method: health_score
+    - method: isolation_forest
       model_type: sklearn
       save_name: l1_dispenser_standard__health_score
       -required_features:
@@ -492,9 +492,9 @@ target:
     #=================================================================================
 
   # ── DISPENSER ────────────────────────────────────────────────────────────────
-  l2_dispenser_standard__health_score:
+  l2_dispenser__health_score:
     #=================================================================================
-    - method: health_score
+    - method: isolation_forest
       model_type: sklearn
       save_name: l2_dispenser_standard__health_score
       required_features:
@@ -551,9 +551,9 @@ target:
     #=================================================================================
 
   # ── INSPECTION ────────────────────────────────────────────────────────────────
-  l1_inspection_standard__health_score:
+  l1_inspection__health_score:
     #=================================================================================
-    - method: health_score
+    - method: isolation_forest
       model_type: sklearn
       save_name: l1_inspection_standard__health_score
       required_features:
@@ -598,9 +598,9 @@ target:
     #=================================================================================
 
   # ── INSPECTION ────────────────────────────────────────────────────────────────
-  l2_inspection_standard__health_score:
+  l2_inspection__health_score:
     #=================================================================================
-    - method: health_score
+    - method: isolation_forest
       model_type: sklearn
       save_name: l2_inspection_standard__health_score
       required_features:

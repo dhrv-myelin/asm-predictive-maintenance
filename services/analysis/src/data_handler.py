@@ -406,7 +406,7 @@ class DataHandler:
 
         X_list = []
         Y_list = []
-
+        timestamps_list = []
         curr_first_timestamp = None
 
         # For unsupervised models without a timestamp column, track position
@@ -420,8 +420,15 @@ class DataHandler:
                 if end > len(self.df):
                     break
                 X_df = self.df.iloc[start:end]
+                timestamps = (
+                    X_df["timestamp"].to_numpy()
+                    if "timestamp" in X_df.columns
+                    else None
+                )  # ← capture timestamps
                 X_seq = X_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
                 X_list.append(X_seq)
+                if timestamps is not None:
+                    timestamps_list.append(timestamps)  # ← store them
                 curr_idx += self.stride
             else:
                 out = self.fetch_next_window(
@@ -453,7 +460,8 @@ class DataHandler:
             f"Y_train: {'None (unsupervised)' if Y_train is None else Y_train.shape}"
         )
 
-        return X_train, Y_train
+        timestamps_out = np.stack(timestamps_list) if timestamps_list else None
+        return X_train, Y_train, timestamps_out
 
 
 if __name__ == "__main__":

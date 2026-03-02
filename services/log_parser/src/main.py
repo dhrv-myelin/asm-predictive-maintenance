@@ -112,7 +112,8 @@ def run_record_mode(baseline_file, baseline_hours):
 
         if len(values) < 2:
             continue
-
+        
+        values = values[3:]  # Skip first 3 samples to avoid startup anomalies
         avg = statistics.mean(values)
         std = statistics.stdev(values)
         min_val = min(values)

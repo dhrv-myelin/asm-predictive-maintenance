@@ -184,13 +184,13 @@ def main():
     parser.add_argument(
         "--start",
         type=str,
-        default="2026-01-23 22:06:00",
+        default="2026-02-03 18:45:00",
         help="Start timestamp for train/backup mode (format: 'YYYY-MM-DD HH:MM:SS')",
     )
     parser.add_argument(
         "--end",
         type=str,
-        default="2026-01-23 23:10:35",
+        default="2026-02-03 19:27:35",
         help="End timestamp for train/backup mode (format: 'YYYY-MM-DD HH:MM:SS')",
     )
     parser.add_argument(

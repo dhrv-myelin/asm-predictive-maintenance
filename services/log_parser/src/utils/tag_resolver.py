@@ -1,4 +1,4 @@
-"""
+""""
 src/tag_resolver.py
 Maps hardware tags (e.g., "L1BufferAPalletPresenceSensorDI") back to Station IDs (e.g., "l1_buffer_a").
 """

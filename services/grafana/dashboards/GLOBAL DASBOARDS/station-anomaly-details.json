@@ -169,7 +169,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH station_data AS (\n\n    SELECT 'l1_buffer_a' AS station_name, *\n    FROM l1_buffer_a_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l1_buffer_b', *\n    FROM l1_buffer_b_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l2_buffer_a', *\n    FROM l2_buffer_a_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l2_buffer_b', *\n    FROM l2_buffer_b_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'shuttle_station', *\n    FROM shuttle_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l1_dispenser', *\n    FROM l1_dispenser_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l2_dispenser', *\n    FROM l2_dispenser_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l1_inspection', *\n    FROM l1_inspection_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l2_inspection', *\n    FROM l2_inspection_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n)\n\nSELECT\n    station_name,\n    value,\n    mean,\n    upper_2_5sigma AS ucl,\n    lower_2_5sigma AS lcl,\n    CASE\n        WHEN any_violation THEN 'ANOMALY'\n        ELSE 'NORMAL'\n    END AS status,\n    violated_rules\nFROM station_data\nORDER BY value DESC;",
+          "rawSql": "WITH station_data AS (\n\n    SELECT 'l1_buffer_a' AS station_name, *\n    FROM l1_buffer_a_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l1_buffer_b', *\n    FROM l1_buffer_b_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l2_buffer_a', *\n    FROM l2_buffer_a_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l2_buffer_b', *\n    FROM l2_buffer_b_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'shuttle_station', *\n    FROM shuttle_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l1_dispenser', *\n    FROM l1_dispenser_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l2_dispenser', *\n    FROM l2_dispenser_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '0 seconds'\n\n    UNION ALL\n    SELECT 'l1_inspection', *\n    FROM l1_inspection_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n\n    UNION ALL\n    SELECT 'l2_inspection', *\n    FROM l2_inspection_cycle_nelson_view\n    WHERE time BETWEEN\n          '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n      AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n)\n\nSELECT\n    station_name,\n    value,\n    time,\n    mean,\n    upper_2_5sigma AS ucl,\n    lower_2_5sigma AS lcl,\n    CASE\n        WHEN any_violation THEN 'ANOMALY'\n        ELSE 'NORMAL'\n    END AS status,\n    violated_rules\nFROM station_data\nORDER BY value DESC;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -220,18 +220,18 @@
     "list": [
       {
         "current": {
-          "text": "",
-          "value": ""
+          "text": "2026-02-04 02:16:48",
+          "value": "2026-02-04 02:16:48"
         },
         "name": "anomaly_time",
         "options": [
           {
             "selected": true,
-            "text": "",
-            "value": ""
+            "text": "2026-02-04 02:16:48",
+            "value": "2026-02-04 02:16:48"
           }
         ],
-        "query": "",
+        "query": "2026-02-04 02:16:48",
         "type": "textbox"
       }
     ]
@@ -244,5 +244,5 @@
   "timezone": "browser",
   "title": "station-anomaly-details",
   "uid": "ad8qh8c",
-  "version": 35
+  "version": 36
 }

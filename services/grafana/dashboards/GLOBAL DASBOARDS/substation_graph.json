@@ -1,0 +1,272 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 24,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "shades"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ucl"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#808080",
+                  "mode": "shades"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lcl"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "shades"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "repeat": "metric_name",
+      "repeatDirection": "h",
+      "targets": [
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE station_name = '${station_name}'\n  AND metric_name = '${metric_name}'\n  AND timestamp BETWEEN\n        '${anomaly_time}'::timestamptz - INTERVAL '0.4 minute'\n    AND '${anomaly_time}'::timestamptz + INTERVAL '0.4 minute'\nORDER BY timestamp;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  mean,\n  upper_2_5sigma AS ucl,\n  lower_2_5sigma AS lcl\nFROM ${station_name}_${metric_name}_view\nWHERE time BETWEEN\n      '${anomaly_time}'::timestamptz - INTERVAL '0.4 minute'\n  AND '${anomaly_time}'::timestamptz + INTERVAL '0.4 minute'\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "${metric_name}",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "2026-02-04 02:16:48",
+          "value": "2026-02-04 02:16:48"
+        },
+        "name": "anomaly_time",
+        "options": [],
+        "query": "",
+        "type": "custom"
+      },
+      {
+        "current": {
+          "text": "l1_dispenser",
+          "value": "l1_dispenser"
+        },
+        "name": "station_name",
+        "options": [],
+        "query": "",
+        "type": "custom"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "definition": "SELECT DISTINCT metric_name\nFROM process_metrics\nWHERE station_name = '${station_name}'\nORDER BY metric_name;",
+        "includeAll": true,
+        "multi": true,
+        "name": "metric_name",
+        "options": [],
+        "query": "SELECT DISTINCT metric_name\nFROM process_metrics\nWHERE station_name = '${station_name}'\nORDER BY metric_name;",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "2026-02-03T20:46:36.234Z",
+    "to": "2026-02-03T20:46:58.539Z"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Substation graph ",
+  "uid": "adg2s5v",
+  "version": 12
+}

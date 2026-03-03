@@ -1,0 +1,180 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 23,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "METRIC NAME"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Substation Graph",
+                    "url": "/d/adg2s5v/substation-graph?orgId=1\n&var-station_name=${station_name}\n&var-anomaly_time=${anomaly_time}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 20,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH starts AS (\n  SELECT DISTINCT timestamp AS start_time\n  FROM process_metrics\n  WHERE station_name = '${station_name}'\n    AND metric_name IN (\n        'shuttle_pre_scan_time',\n        'buffer_holding_time',\n        'dispenser_entry_unclamp_time',\n        'inspection_lifter_rising_time'\n    )\n),\n\nends AS (\n  SELECT DISTINCT timestamp AS end_time\n  FROM process_metrics\n  WHERE station_name = '${station_name}'\n    AND metric_name IN (\n        'shuttle_stopper_rising_time',\n        'buffer_pallet_release_time',\n        'dispenser_stopper_rasing',\n        'inspection_pallet_releasing_time'\n    )\n),\n\ncycle_pair AS (\n  SELECT\n    s.start_time,\n    MIN(e.end_time) AS end_time\n  FROM starts s\n  JOIN ends e\n    ON e.end_time > s.start_time\n  WHERE s.start_time BETWEEN\n        '${anomaly_time}'::timestamptz - INTERVAL '10 seconds'\n    AND '${anomaly_time}'::timestamptz + INTERVAL '10 seconds'\n  GROUP BY s.start_time\n),\n\nmetric_data AS (\n  SELECT DISTINCT ON (p.metric_name, p.timestamp)\n         p.metric_name,\n         p.value,\n         p.unit,\n         p.timestamp\n  FROM cycle_pair cp\n  JOIN process_metrics p\n    ON p.timestamp >= cp.start_time\n   AND p.timestamp <= cp.end_time\n   AND p.station_name = '${station_name}'\n  ORDER BY p.metric_name, p.timestamp\n)\n\nSELECT *\nFROM metric_data\nORDER BY timestamp;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "New panel",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "timestamp": true,
+              "unit": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "metric_name": "METRIC NAME",
+              "value": "VALUE (SEC)"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "station_name",
+        "options": [],
+        "query": "",
+        "type": "custom"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "anomaly_time",
+        "options": [],
+        "query": "",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Station Breakdown",
+  "uid": "adlsfdp",
+  "version": 15
+}

@@ -123,7 +123,7 @@ target:
       prediction_window: 7
 
       #TODO: make mlfow dockerized
-      load_path: "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/mamba/model.pt"
+      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/mamba/model.pt"
 
       arch:
         #place holders for mamba_ts class init not in arch already
@@ -160,7 +160,7 @@ target:
         - timestamp
 
       load_path:
-        "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/xgboost_forecast/model.joblib"
+        "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/xgboost_forecast/model.joblib"
 
         #INFO: this is for dataloader.
       history_window: 6
@@ -208,7 +208,7 @@ target:
         - timestamp
 
       load_path:
-        "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/l1_buffer_a__health_score/model.joblib"
+        "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l1_buffer_a__health_score/model.joblib"
 
         #INFO: this is for dataloader.
       history_window: 1
@@ -258,7 +258,7 @@ target:
       prediction_window: 1
       mode: offline
 
-      load_path: "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/l1_buffer_b__health_score/model.joblib"
+      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l1_buffer_b__health_score/model.joblib"
 
       #INFO: these are filled in health score class init
 
@@ -303,7 +303,7 @@ target:
       prediction_window: 1
       mode: offline
 
-      load_path: "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/l2_buffer_a__health_score/model.joblib"
+      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l2_buffer_a__health_score/model.joblib"
 
       #INFO: these are filled in health score class init
 
@@ -355,7 +355,7 @@ target:
 
       #INFO: these are filled in health score class init
 
-      load_path: "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/shuttle_station__health_score/model.joblib"
+      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/shuttle_station__health_score/model.joblib"
 
       arch:
         smoothing_window: 5 # was 20 — too large relative to dataset size
@@ -412,7 +412,7 @@ target:
       prediction_window: 1
       mode: offline
 
-      load_path: "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/l1_dispenser_standard__health_score/model.joblib"
+      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l1_dispenser_standard__health_score/model.joblib"
 
       #INFO: these are filled in health score class init
 
@@ -472,7 +472,7 @@ target:
       prediction_window: 1
       mode: offline
 
-      load_path: "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/l2_dispenser_standard__health_score/model.joblib"
+      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l2_dispenser_standard__health_score/model.joblib"
 
       #INFO: these are filled in health score class init
 
@@ -520,7 +520,7 @@ target:
       prediction_window: 1
       mode: offline
 
-      load_path: "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/l1_inspection_standard__health_score/model.joblib"
+      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l1_inspection_standard__health_score/model.joblib"
 
       #INFO: these are filled in health score class init
 
@@ -570,7 +570,7 @@ target:
 
       #INFO: these are filled in health score class init
 
-      load_path: "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/saved_models/l2_inspection_standard__health_score/model.joblib"
+      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l2_inspection_standard__health_score/model.joblib"
 
       arch:
         smoothing_window: 5 # was 20 — too large relative to dataset size

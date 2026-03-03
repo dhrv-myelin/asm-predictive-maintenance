@@ -148,8 +148,8 @@
     "list": [
       {
         "current": {
-          "text": "",
-          "value": ""
+          "text": "l1_dispenser",
+          "value": "l1_dispenser"
         },
         "name": "station_name",
         "options": [],
@@ -158,8 +158,8 @@
       },
       {
         "current": {
-          "text": "",
-          "value": ""
+          "text": "2026-02-04 02:16:48",
+          "value": "2026-02-04 02:16:48"
         },
         "name": "anomaly_time",
         "options": [],

@@ -301,10 +301,9 @@ target:
       save_name: l1_buffer_b__health_score
       required_features:
         #INFO: there are some extra in process logic sheet. i have only copied what was from mamba to make sure
-        - l1_buffer_b__buffer_holding_time
-        - l1_buffer_b__buffer_stopper_lowering_time
-        - l1_buffer_b__buffer_pallet_release_time
-        - l1_buffer_b__buffer_stopper_rising_time
+        - l1_buffer_b__buffer_holding_and_pre_stopper_down_time
+        - wide-formatl1_buffer_b__buffer_idle_time
+        - l1_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
 
         #INFO: this is for dataloader.
 
@@ -345,10 +344,9 @@ target:
       save_name: l2_buffer_a__health_score
       required_features:
         #INFO: there are some extra in process logic sheet. i have only copied what was from mamba to make sure
-        - l2_buffer_a__buffer_holding_time
-        - l2_buffer_a__buffer_stopper_lowering_time
-        - l2_buffer_a__buffer_pallet_release_time
-        - l2_buffer_a__buffer_stopper_rising_time
+        - l2_buffer_a__buffer_holding_and_pre_stopper_down_time"
+        - l2_buffer_a__buffer_idle_time
+        - l2_buffer_a__buffer_pallet_release_and_pre_stopper_up_time
 
         #INFO: this is for dataloader.
 
@@ -399,9 +397,9 @@ target:
         - shuttle_stopper_rising_time
         - shuttle_station__shuttle_idle_time
 
-        #INFO: this is for dataloader.
+          #INFO: this is for dataloader.
 
-        #FIX: need to see if history window means anyting for this model
+          #FIX: need to see if history window means anyting for this model
       history_window: 1
       stride: 1
       prediction_window: 1
@@ -438,7 +436,7 @@ target:
     - method: isolation_forest
       model_type: sklearn
       save_name: l1_dispenser_standard__health_score
-      -required_features:
+      required_features:
         - l1_dispenser__dispenser_entry_unclamp_time
         - l1_dispenser__dispenser_delay_post_entry_unclamp
         - l1_dispenser__dispenser_pallet_lifting_1_time

@@ -104,6 +104,7 @@ class Model:
         raise ValueError(f"Unsupported model_type: {self.model_type}")
 
     def train(self, X, y, timestamps=None):
+
         if self.model_type == "sklearn":
             N, seq_len, F = X.shape
             if self.config["method"] in UNSUPERVISED_MODELS:
@@ -123,9 +124,9 @@ class Model:
     def real_time_inference(self, window_df):
         X = window_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
         print(
-            f"[DEBUG] Columns used for inference ({X.shape[1]}): {list(window_df.drop(columns=['timestamp'], errors='ignore').columns)}"
+            # f"[DEBUG] Columns used for inference ({X.shape[1]}): {list(window_df.drop(columns=['timestamp'], errors='ignore').columns)}"
         )
-        print(f"[DEBUG] X shape after drop: {X.shape}")
+        # print(f"[DEBUG] X shape after drop: {X.shape}")
         if self.model_type == "sklearn" and self.config["method"] not in ROWWISE_MODELS:
             X = X.reshape(1, -1)  # flatten to (1, seq_len*F)
         elif self.model_type == "torch":

@@ -64,7 +64,7 @@ def loop(poller, data_handlers, models, db_util):
                         values=preds,
                         station_name=handler.target_name.split("__")[0],
                         metric_name=handler.target_name.split("__")[1],
-                        model_name="xgboost",  # model.model_name,
+                        model_name=model.model_name,
                     )
 
                     # move window

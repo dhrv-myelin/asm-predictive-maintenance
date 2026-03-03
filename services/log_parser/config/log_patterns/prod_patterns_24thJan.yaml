@@ -417,4 +417,5 @@ patterns:
     event_type: "PALLET_ARRIVAL"
     state_resolver:
       logic_type: "filter_expected_pallet_id_state"
+      target_type: "buffer_standard"
       current_state: "IDLE"

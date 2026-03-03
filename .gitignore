@@ -24,3 +24,5 @@ data/*
 services/analysis/mlruns
 services/analysis/mlartifacts
 mlflow
+
+services/analysis/saved_models

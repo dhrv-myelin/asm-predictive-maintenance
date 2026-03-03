@@ -153,7 +153,7 @@ class LogicEngine:
         # A. Explicit Target - A routing node (like the shuttle)
         if 'destination' in payload:
             dest_id = payload['destination']
-            print(f"[DEBUG]: GET DESTINATION: Explicit target found: {dest_id}")
+            print(f"[DEBUG]: GET DESTINATION: Explicit target found: {dest_id} from current station : {station.id}")
         
         # B. Implicit Target (Buffer/Dispenser case - use Graph)
         else:

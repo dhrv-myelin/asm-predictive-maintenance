@@ -11,19 +11,17 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 # Static key-sets used to classify each new_metric_name
 # ─────────────────────────────────────────────────────────────────────────────
-_SHUTTLE_STATION_PREFIX = "shuttle_station__"
-
 # All known shuttle/fmt bare keys (regardless of required_features)
 _ALL_FMT_BARE_KEYS: set[str] = {
     "system__count",
-    "shuttle_pre_scan_time",
-    "shuttle_scan_success_time",
-    "shuttle_post_scan_delay",
-    "shuttle_carrier_motion_time",
-    "shuttle_stopper_lowering_time",
-    "shuttle_pallet_release_time",
-    "shuttle_stopper_rising_time",
-    "shuttle_station__shuttle_idle_time",
+    "shuttle_station__shuttle_pre_scan_time",
+    "shuttle_station__shuttle_scan_success_time",
+    "shuttle_station__shuttle_post_scan_delay",
+    "shuttle_station__shuttle_carrier_motion_time",
+    "shuttle_station__shuttle_stopper_lowering_time",
+    "shuttle_station__shuttle_pallet_release_time",
+    "shuttle_station__shuttle_stopper_rising_time",
+    "shuttle_station__shuttle_station__shuttle_idle_time",
 }
 
 # All known end/summary keys
@@ -215,27 +213,22 @@ class DataHandler:
     # ------------------------------------------------------------------
     # Internal: process a single (new_metric_name, value, timestamp)
     # ------------------------------------------------------------------
-
-    def _bare(self, nmn: str) -> str:
-        if nmn.startswith(_SHUTTLE_STATION_PREFIX):
-            return nmn[len(_SHUTTLE_STATION_PREFIX) :]
-        return nmn
-
     def _is_complete(self, d: dict) -> bool:
         return all(v != -1 for v in d.values())
 
     def _process_one(self, nmn: str, val, ts: pd.Timestamp) -> None:
-        bare = self._bare(nmn)
 
         # ── (a) shuttle / fmt metrics ──────────────────────────────────
-        if bare in self._fmt_bare_set:
+        if nmn in self._fmt_bare_set:
             # print(f"[DEBUG] Processing fmt metric: {nmn} with value {val} at timestamp {ts}")
-            if self._active_fmt.get(bare, -1) == -1:
-                self._active_fmt[bare] = val
+            if self._active_fmt.get(nmn, -1) == -1:
+                self._active_fmt[nmn] = val
                 # print(f"[DEBUG] Updated active_fmt: {self._active_fmt}")
             if self._fmt_keys and self._is_complete(self._active_fmt):
+                # print("[DEBUG] Completed fmt dict: ", self._active_fmt)
                 self._fmt_queue.append(copy.copy(self._active_fmt))
                 self._active_fmt = _build_template(self._fmt_keys)
+                self._try_flush()
             return
 
         # ── (b) end / summary metrics ──────────────────────────────────
@@ -398,7 +391,8 @@ class DataHandler:
         check for this and route to an unsupervised training path.
         """
         if self.df.empty:
-            return None, None
+            print("[DEBUG] DataFrame is empty, no training data available.")
+            return None, None, None
 
         # health_score: target_name is e.g. "l1_buffer_a__health_score" —
         # never a column in df, which only holds the 4 buffer feature cols.
@@ -450,7 +444,8 @@ class DataHandler:
         print(f"[DEBUG] Total windows built: {len(X_list)}")
 
         if not X_list:
-            return None, None
+            # print("[DEBUG] No training windows could be built from the data.")
+            return None, None, None
 
         X_train = np.stack(X_list)  # (N, seq_len, num_features)
         Y_train = np.stack(Y_list) if Y_list else None  # None for unsupervised

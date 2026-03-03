@@ -121,7 +121,7 @@ def inference_loop(data_handler, model, db_util):
             values=preds,
             station_name=data_handler.target_name.split("__")[0],
             metric_name=data_handler.target_name.split("__")[1],
-            model_name=model.model_name,
+            model_name=model.model_name,  
         )
 
         time.sleep(0.5)  # pacing

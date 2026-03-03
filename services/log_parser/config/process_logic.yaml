@@ -17,6 +17,13 @@ definitions:
                 type: "duration_seconds"
                 description: "Time spent in IDLE state"
             transition_stage: "arrival"
+          # - event: "AT_BARCODE"
+          #   next_state: "SCANNING"
+          #   metrics:
+          #     - name: "shuttle_idle_time"
+          #       type: "duration_seconds"
+          #       description: "Time spent in IDLE state"
+          #   transition_stage: "arrival"
           - event: "CARRIER_STARTED"
             next_state: "IDLE"
 

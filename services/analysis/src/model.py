@@ -24,17 +24,17 @@ from models.xgboost_window_forecaster import XGBWindowForecaster
 
 models = {
     "mamba": Mamba_TS,
-    "health_score": IsolationForestHealth,
+    "isolation_forest": IsolationForestHealth,
     "xgboost_forecast": XGBWindowForecaster,
 }
 
 # Unsupervised: y is ignored entirely for fit and eval
-UNSUPERVISED_MODELS = {"health_score"}
+UNSUPERVISED_MODELS = {"isolation_forest"}
 
 # Row-wise: DO NOT flatten seq_len into columns.
 # Instead unroll (N, seq_len, F) -> (N*seq_len, F) so the model
 # scores each timestep as an independent sample.
-ROWWISE_MODELS = {"health_score"}
+ROWWISE_MODELS = {"isolation_forest"}
 
 
 # ============================================================

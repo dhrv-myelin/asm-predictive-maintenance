@@ -123,7 +123,7 @@ target:
       prediction_window: 7
 
       #TODO: make mlfow dockerized
-      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/mamba/model.pt"
+      load_path: "saved_models/mamba/model.pt"
 
       arch:
         #place holders for mamba_ts class init not in arch already
@@ -160,7 +160,7 @@ target:
         - timestamp
 
       load_path:
-        "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/xgboost_forecast/model.joblib"
+        "saved_models/xgboost_forecast/model.joblib"
 
         #INFO: this is for dataloader.
       history_window: 6
@@ -208,7 +208,7 @@ target:
         - timestamp
 
       load_path:
-        "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l1_buffer_a__health_score/model.joblib"
+        "saved_models/l1_buffer_a__health_score/model.joblib"
 
         #INFO: this is for dataloader.
       history_window: 1
@@ -258,7 +258,7 @@ target:
       prediction_window: 1
       mode: offline
 
-      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l1_buffer_b__health_score/model.joblib"
+      load_path: "saved_models/l1_buffer_b__health_score/model.joblib"
 
       #INFO: these are filled in health score class init
 
@@ -303,7 +303,51 @@ target:
       prediction_window: 1
       mode: offline
 
-      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l2_buffer_a__health_score/model.joblib"
+      load_path: "saved_models/l2_buffer_a__health_score/model.joblib"
+
+      #INFO: these are filled in health score class init
+
+      arch:
+        smoothing_window: 5 # was 20 — too large relative to dataset size
+        n_estimators: 100
+        contamination: "auto"
+        drift_percentile: 5
+        breakdown_sensitivity: 3.0
+        random_state: 42
+
+        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
+      train_params:
+        n_estimators: 300
+        max_depth: 6
+        learning_rate: 0.05
+
+        train_split: 0.7,
+        val_split: 0.2,
+        test_split: 0.1,
+
+      analysis_types: [score]
+    #=================================================================================
+
+  l2_buffer_b__health_score:
+    - method: isolation_forest
+      model_type: sklearn
+      save_name: l2_buffer_b__health_score
+      required_features:
+        #INFO: there are some extra in process logic sheet. i have only copied what was from mamba to make sure
+        - l2_buffer_b__buffer_holding_and_pre_stopper_down_time"
+        - l2_buffer_b__buffer_idle_time
+        - l2_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
+        - timestamp
+
+        #INFO: this is for dataloader.
+
+        #FIX: need to see if history window means anyting for this model
+      history_window: 1
+      stride: 1
+      prediction_window: 1
+      mode: offline
+
+      load_path: "saved_models/l2_buffer_b__health_score/model.joblib"
 
       #INFO: these are filled in health score class init
 
@@ -355,7 +399,7 @@ target:
 
       #INFO: these are filled in health score class init
 
-      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/shuttle_station__health_score/model.joblib"
+      load_path: "saved_models/shuttle_station__health_score/model.joblib"
 
       arch:
         smoothing_window: 5 # was 20 — too large relative to dataset size
@@ -412,7 +456,7 @@ target:
       prediction_window: 1
       mode: offline
 
-      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l1_dispenser_standard__health_score/model.joblib"
+      load_path: "saved_models/l1_dispenser_standard__health_score/model.joblib"
 
       #INFO: these are filled in health score class init
 
@@ -472,7 +516,7 @@ target:
       prediction_window: 1
       mode: offline
 
-      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l2_dispenser_standard__health_score/model.joblib"
+      load_path: "saved_models/l2_dispenser_standard__health_score/model.joblib"
 
       #INFO: these are filled in health score class init
 
@@ -520,7 +564,7 @@ target:
       prediction_window: 1
       mode: offline
 
-      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l1_inspection_standard__health_score/model.joblib"
+      load_path: "saved_models/l1_inspection_standard__health_score/model.joblib"
 
       #INFO: these are filled in health score class init
 
@@ -570,7 +614,7 @@ target:
 
       #INFO: these are filled in health score class init
 
-      load_path: "/home/vishwasthyagaraju/gdm_integration/asm-predictive-maintenance/services/analysis/saved_models/l2_inspection_standard__health_score/model.joblib"
+      load_path: "saved_models/l2_inspection_standard__health_score/model.joblib"
 
       arch:
         smoothing_window: 5 # was 20 — too large relative to dataset size

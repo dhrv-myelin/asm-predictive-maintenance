@@ -150,6 +150,9 @@ class DataHandler:
         # _end_keys as the pure feature list — _try_flush uses it to decide
         # whether an end queue entry is required. Only _end_internal_keys
         # (used to build _active_end) gets the timestamp appended.
+        self._fmt_internal_keys = self._fmt_keys + (
+            ["timestamp"] if "timestamp" not in self._fmt_keys else []
+        )
         self._end_internal_keys = self._end_keys + (
             ["timestamp"] if "timestamp" not in self._end_keys else []
         )
@@ -167,7 +170,7 @@ class DataHandler:
         self._l2_set = set(self._l2_keys)
 
         # ── persistent active dicts (survive across ingest() calls) ───
-        self._active_fmt = _build_template(self._fmt_keys)
+        self._active_fmt = _build_template(self._fmt_internal_keys)
         self._active_l1 = _build_template(self._l1_internal_keys)
         self._active_l2 = _build_template(self._l2_internal_keys)
         self._active_end = _build_template(self._end_internal_keys)
@@ -224,10 +227,11 @@ class DataHandler:
             if self._active_fmt.get(nmn, -1) == -1:
                 self._active_fmt[nmn] = val
                 # print(f"[DEBUG] Updated active_fmt: {self._active_fmt}")
+            self._active_fmt["timestamp"] = ts  # always keep latest ts
             if self._fmt_keys and self._is_complete(self._active_fmt):
                 # print("[DEBUG] Completed fmt dict: ", self._active_fmt)
                 self._fmt_queue.append(copy.copy(self._active_fmt))
-                self._active_fmt = _build_template(self._fmt_keys)
+                self._active_fmt = _build_template(self._fmt_internal_keys)
                 self._try_flush()
             return
 

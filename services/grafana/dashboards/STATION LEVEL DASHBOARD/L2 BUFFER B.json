@@ -11,14 +11,160 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bfc3wenp44lxcc"
+        },
+        "enable": false,
+        "hide": false,
+        "iconColor": "red",
+        "name": "L2 BUFFER B CYCLE TIME",
+        "target": {
+          "dataset": "glue-dispenser-db",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    time AS time,\n    violated_rules AS text,\n    'Anomaly Detected' AS tags\nFROM l2_buffer_b_cycle_nelson_view\nWHERE $__timeFilter(time)\n  AND violated_rules IS NOT NULL\n  AND violated_rules != ''\nORDER BY time",
+          "refId": "Anno",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      },
+      {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bfc3wenp44lxcc"
+        },
+        "enable": false,
+        "hide": false,
+        "iconColor": "red",
+        "name": "BUFFER IDLE TIME",
+        "target": {
+          "dataset": "glue-dispenser-db",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    time AS time,\n    rule_description AS text,\n    'Anomaly Detected' AS tags\nFROM l2_buffer_b_buffer_idle_time_view\nWHERE $__timeFilter(time)\n  AND rule_description IS NOT NULL\n  AND rule_description != ''\nORDER BY time\n ",
+          "refId": "Anno",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      },
+      {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bfc3wenp44lxcc"
+        },
+        "enable": false,
+        "hide": false,
+        "iconColor": "red",
+        "name": "BUFFER HOLDING TIME",
+        "target": {
+          "dataset": "glue-dispenser-db",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    time AS time,\n    rule_description AS text,\n    'Anomaly Detected' AS tags\nFROM l2_buffer_b_buffer_holding_time_view\nWHERE $__timeFilter(time)\n  AND rule_description IS NOT NULL\n  AND rule_description != ''\nORDER BY time\n ",
+          "refId": "Anno",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      },
+      {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bfc3wenp44lxcc"
+        },
+        "enable": false,
+        "hide": false,
+        "iconColor": "red",
+        "name": "BUFFER PALLET RELEASE TIME",
+        "target": {
+          "dataset": "glue-dispenser-db",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    time AS time,\n    rule_description AS text,\n    'Anomaly Detected' AS tags\nFROM l2_buffer_b_buffer_pallet_release_time_view\nWHERE $__timeFilter(time)\n  AND rule_description IS NOT NULL\n  AND rule_description != ''\nORDER BY time\n ",
+          "refId": "Anno",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
       }
     ]
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 39,
+  "id": 0,
   "links": [],
   "panels": [
     {
@@ -26,16 +172,17 @@
         "type": "grafana-postgresql-datasource",
         "uid": "bfc3wenp44lxcc"
       },
-      "description": "",
+      "description": "\n",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
+            "axisBorderShow": true,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisGridShow": true,
             "axisLabel": "Duration(sec)",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -50,12 +197,15 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "never",
             "showValues": false,
             "spanNulls": false,
             "stacking": {
@@ -63,7 +213,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "dashed"
             }
           },
           "mappings": [],
@@ -73,10 +223,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -124,6 +270,13 @@
               {
                 "id": "custom.drawStyle",
                 "value": "points"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-red",
+                  "mode": "fixed"
+                }
               }
             ]
           },
@@ -143,6 +296,10 @@
               {
                 "id": "custom.showPoints",
                 "value": "never"
+              },
+              {
+                "id": "displayName",
+                "value": "Upper Band (+3σ)"
               }
             ]
           },
@@ -155,71 +312,20 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#2a2626",
+                  "fixedColor": "semi-dark-blue",
                   "mode": "shades"
                 }
               },
               {
                 "id": "custom.showPoints",
                 "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rolling_mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "shades"
-                }
               },
               {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
+                "id": "custom.fillBelowTo"
               },
               {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rolling_std"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#decaca",
-                  "mode": "shades"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
+                "id": "displayName",
+                "value": "Lower Band (-3σ)"
               }
             ]
           },
@@ -234,11 +340,173 @@
                 "value": 2
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Band (+3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Band (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rolling Mean"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(255,165,0,1)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ucl"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Upper Band (+3σ)"
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "lcl"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
           }
         ]
       },
       "gridPos": {
-        "h": 11,
+        "h": 13,
         "w": 24,
         "x": 0,
         "y": 0
@@ -269,7 +537,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH starts AS (\n  SELECT timestamp AS start_time\n  FROM process_metrics\n  WHERE station_name = 'l2_buffer_b'\n    AND metric_name = 'buffer_holding_and_pre_stopper_down_time'\n),\n\nends AS (\n  SELECT timestamp AS end_time\n  FROM process_metrics\n  WHERE station_name = 'l2_buffer_b'\n    AND metric_name = 'buffer_pallet_release_and_pre_stopper_up_time'\n),\n\ncycle_pairs AS (\n  SELECT\n    s.start_time,\n    MIN(e.end_time) AS end_time\n  FROM starts s\n  JOIN ends e\n    ON e.end_time > s.start_time\n  GROUP BY s.start_time\n),\n\ncycle_time_calc AS (\n  SELECT\n    cp.start_time AS time,\n    SUM(p.value) AS cycle_time\n  FROM cycle_pairs cp\n  JOIN process_metrics p\n    ON p.timestamp >= cp.start_time\n   AND p.timestamp <= cp.end_time\n   AND p.station_name = 'l2_buffer_b'\n   AND p.unit = 'duration_seconds'\n  AND p.metric_name != 'buffer_idle_time'\n  GROUP BY cp.start_time\n)\n\nSELECT\n  time,\n  cycle_time\nFROM cycle_time_calc\nWHERE $__timeFilter(time)\nORDER BY time;",
+          "rawSql": "WITH idle_starts AS (\n  SELECT DISTINCT timestamp AS start_time\n  FROM process_metrics\n  WHERE station_name = 'l2_buffer_b'\n    AND metric_name = 'buffer_idle_time'\n),\n \npre_scan_starts AS (\n  SELECT DISTINCT timestamp AS start_time\n  FROM process_metrics\n  WHERE station_name = 'l2_buffer_b'\n    AND metric_name = 'buffer_holding_and_pre_stopper_down_time'\n),\n \nstarts AS (\n  SELECT start_time FROM idle_starts\n  UNION\n  SELECT p.start_time\n  FROM pre_scan_starts p\n  WHERE NOT EXISTS (\n    SELECT 1 FROM idle_starts i\n    WHERE i.start_time BETWEEN p.start_time - INTERVAL '10 seconds'\n                           AND p.start_time + INTERVAL '10 seconds'\n  )\n),\n \nends AS (\n  SELECT DISTINCT timestamp AS end_time\n  FROM process_metrics\n  WHERE station_name = 'l2_buffer_b'\n    AND metric_name = 'buffer_pallet_release_and_pre_stopper_up_time'\n),\n \ncycle_pairs AS (\n  SELECT DISTINCT ON (s.start_time)\n    s.start_time,\n    e.end_time\n  FROM starts s\n  JOIN ends e\n    ON e.end_time > s.start_time\n    AND e.end_time < s.start_time + INTERVAL '60 seconds'  -- max cycle guard\n  ORDER BY s.start_time, e.end_time\n)\n \nSELECT\n  start_time AS time,\n  EXTRACT(EPOCH FROM (end_time - start_time)) AS cycle_time\nFROM cycle_pairs\nWHERE $__timeFilter(start_time)\nORDER BY start_time;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -299,38 +567,8 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  mean,\n  upper_2_5sigma AS ucl,\n  lower_2_5sigma AS lcl\nFROM l2_buffer_b_cycle_nelson_view\nWHERE $__timeFilter(time)\nORDER BY time;",
+          "rawSql": "SELECT\n  time,\n  mean,\n  upper_3sigma AS ucl,\n  lower_3sigma AS lcl\nFROM l2_buffer_b_cycle_nelson_view\nWHERE $__timeFilter(time)\nORDER BY time;",
           "refId": "C",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "dataset": "glue-dispenser-db",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "bfc3wenp44lxcc"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "CREATE OR REPLACE VIEW l2_buffer_b_cycle_nelson_view AS\nWITH starts AS (\n    SELECT timestamp AS start_time FROM process_metrics\n    WHERE station_name = 'l2_buffer_b'\n      AND metric_name = 'buffer_holding_and_pre_stopper_down_time'\n),\nends AS (\n    SELECT timestamp AS end_time FROM process_metrics\n    WHERE station_name = 'l2_buffer_b'\n      AND metric_name = 'buffer_pallet_release_and_pre_stopper_up_time'\n),\ncycle_pairs AS (\n    SELECT s.start_time, MIN(e.end_time) AS end_time\n    FROM starts s\n    JOIN ends e ON e.end_time > s.start_time\n    GROUP BY s.start_time\n),\ncycle_time_calc AS (\n    SELECT\n        cp.start_time AS time,\n        SUM(p.value) AS value\n    FROM cycle_pairs cp\n    JOIN process_metrics p\n        ON p.timestamp >= cp.start_time\n       AND p.timestamp <= cp.end_time\n       AND p.station_name = 'l2_buffer_b'\n       AND p.unit = 'duration_seconds'\n       AND p.metric_name != 'buffer_idle_time'\n    GROUP BY cp.start_time\n),\nbaseline AS (\n    SELECT SUM(mean) AS mean, SQRT(SUM(std_dev * std_dev)) AS std\n    FROM baseline_metrics\n    WHERE station_name = 'l2_buffer_b'\n      AND metric_name != 'buffer_idle_time'\n),\nordered AS (\n    SELECT\n        ct.time, ct.value,\n        b.mean, b.std,\n        b.mean + 2.5 * b.std AS upper_2_5sigma,\n        b.mean - 2.5 * b.std AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY ct.time) AS rn\n    FROM cycle_time_calc ct CROSS JOIN baseline b\n),\nrules AS (\n    SELECT *,\n        -- Rule 1: Single point beyond 3σ\n        (ABS(value - mean) > 3 * std) AS rule1_trigger,\n \n        -- Rule 2: 9 consecutive points on same side of mean\n        CASE WHEN\n            (value > mean AND LAG(value,1) OVER w > mean AND LAG(value,2) OVER w > mean\n             AND LAG(value,3) OVER w > mean AND LAG(value,4) OVER w > mean\n             AND LAG(value,5) OVER w > mean AND LAG(value,6) OVER w > mean\n             AND LAG(value,7) OVER w > mean AND LAG(value,8) OVER w > mean)\n        OR  (value < mean AND LAG(value,1) OVER w < mean AND LAG(value,2) OVER w < mean\n             AND LAG(value,3) OVER w < mean AND LAG(value,4) OVER w < mean\n             AND LAG(value,5) OVER w < mean AND LAG(value,6) OVER w < mean\n             AND LAG(value,7) OVER w < mean AND LAG(value,8) OVER w < mean)\n        THEN TRUE ELSE FALSE END AS rule2_trigger,\n \n        -- Rule 3: 6 consecutive points trending in one direction\n        CASE WHEN\n            (value > LAG(value,1) OVER w AND LAG(value,1) OVER w > LAG(value,2) OVER w\n             AND LAG(value,2) OVER w > LAG(value,3) OVER w AND LAG(value,3) OVER w > LAG(value,4) OVER w\n             AND LAG(value,4) OVER w > LAG(value,5) OVER w)\n        OR  (value < LAG(value,1) OVER w AND LAG(value,1) OVER w < LAG(value,2) OVER w\n             AND LAG(value,2) OVER w < LAG(value,3) OVER w AND LAG(value,3) OVER w < LAG(value,4) OVER w\n             AND LAG(value,4) OVER w < LAG(value,5) OVER w)\n        THEN TRUE ELSE FALSE END AS rule3_trigger,\n \n        -- Rule 4: 14 consecutive alternating points (13 comparisons, 14 points)\n        CASE WHEN\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n        THEN TRUE ELSE FALSE END AS rule4_trigger,\n \n        -- Rule 5: 2 of 3 consecutive points beyond 2σ on same side\n        CASE WHEN\n            (CASE WHEN value > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + 2*std THEN 1 ELSE 0 END) >= 2\n        OR  (CASE WHEN value < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - 2*std THEN 1 ELSE 0 END) >= 2\n        THEN TRUE ELSE FALSE END AS rule5_trigger,\n \n        -- Rule 6: 4 of 5 consecutive points beyond 1σ on same side\n        CASE WHEN\n            (CASE WHEN value > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w > mean + std THEN 1 ELSE 0 END) >= 4\n        OR  (CASE WHEN value < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w < mean - std THEN 1 ELSE 0 END) >= 4\n        THEN TRUE ELSE FALSE END AS rule6_trigger,\n \n        -- Rule 7: 15 consecutive points within 1σ of mean\n        CASE WHEN\n            ABS(value - mean) < std AND ABS(LAG(value,1) OVER w - mean) < std AND\n            ABS(LAG(value,2) OVER w - mean) < std AND ABS(LAG(value,3) OVER w - mean) < std AND\n            ABS(LAG(value,4) OVER w - mean) < std AND ABS(LAG(value,5) OVER w - mean) < std AND\n            ABS(LAG(value,6) OVER w - mean) < std AND ABS(LAG(value,7) OVER w - mean) < std AND\n            ABS(LAG(value,8) OVER w - mean) < std AND ABS(LAG(value,9) OVER w - mean) < std AND\n            ABS(LAG(value,10) OVER w - mean) < std AND ABS(LAG(value,11) OVER w - mean) < std AND\n            ABS(LAG(value,12) OVER w - mean) < std AND ABS(LAG(value,13) OVER w - mean) < std AND\n            ABS(LAG(value,14) OVER w - mean) < std\n        THEN TRUE ELSE FALSE END AS rule7_trigger,\n \n        -- Rule 8: 8 consecutive points outside 1σ on BOTH sides (bimodal)\n        CASE WHEN\n            ABS(value - mean) > std AND ABS(LAG(value,1) OVER w - mean) > std AND\n            ABS(LAG(value,2) OVER w - mean) > std AND ABS(LAG(value,3) OVER w - mean) > std AND\n            ABS(LAG(value,4) OVER w - mean) > std AND ABS(LAG(value,5) OVER w - mean) > std AND\n            ABS(LAG(value,6) OVER w - mean) > std AND ABS(LAG(value,7) OVER w - mean) > std AND\n            MAX(value) OVER (ORDER BY rn ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) > mean AND\n            MIN(value) OVER (ORDER BY rn ROWS BETWEEN 7 PRECEDING AND CURRENT ROW) < mean\n        THEN TRUE ELSE FALSE END AS rule8_trigger\n \n    FROM ordered\n    WINDOW w AS (ORDER BY rn)\n),\nbackfilled AS (\n    SELECT *,\n        rule1_trigger AS rule1,\n        -- FIX: All windows changed from FOLLOWING to PRECEDING\n        CASE WHEN MAX(CASE WHEN rule2_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN 8  PRECEDING AND CURRENT ROW) = 1 THEN TRUE ELSE FALSE END AS rule2,\n        CASE WHEN MAX(CASE WHEN rule3_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN 5  PRECEDING AND CURRENT ROW) = 1 THEN TRUE ELSE FALSE END AS rule3,\n        CASE WHEN MAX(CASE WHEN rule4_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN 12 PRECEDING AND CURRENT ROW) = 1 THEN TRUE ELSE FALSE END AS rule4,\n        CASE WHEN MAX(CASE WHEN rule5_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN 2  PRECEDING AND CURRENT ROW) = 1 THEN TRUE ELSE FALSE END AS rule5,\n        CASE WHEN MAX(CASE WHEN rule6_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN 4  PRECEDING AND CURRENT ROW) = 1 THEN TRUE ELSE FALSE END AS rule6,\n        CASE WHEN MAX(CASE WHEN rule7_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN 14 PRECEDING AND CURRENT ROW) = 1 THEN TRUE ELSE FALSE END AS rule7,\n        CASE WHEN MAX(CASE WHEN rule8_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN 7  PRECEDING AND CURRENT ROW) = 1 THEN TRUE ELSE FALSE END AS rule8\n    FROM rules\n),\nfinal AS (\n    SELECT *,\n        (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n    FROM backfilled\n)\nSELECT\n    time,\n    value,\n    mean,\n    upper_2_5sigma,\n    lower_2_5sigma,\n    any_violation,\n    rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8,\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n    CONCAT_WS(' | ',\n        CASE WHEN rule1 THEN 'Extreme Outlier Detected' END,\n        CASE WHEN rule2 THEN 'Process Shift Detected' END,\n        CASE WHEN rule3 THEN 'Process Drift Detected' END,\n        CASE WHEN rule4 THEN 'Unstable Oscillation Detected' END,\n        CASE WHEN rule5 THEN 'Early Warning: Shift Developing' END,\n        CASE WHEN rule6 THEN 'Gradual Drift Detected' END,\n        CASE WHEN rule7 THEN 'Abnormal Stability Detected' END,\n        CASE WHEN rule8 THEN 'High Variability Detected' END\n    ) AS violated_rules\nFROM final\nORDER BY time; \n ",
-          "refId": "B",
           "sql": {
             "columns": [
               {
@@ -389,7 +627,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH base AS (SELECT time, value FROM l2_buffer_b_cycle_nelson_view WHERE $__timeFilter(time))\nSELECT time,\n  AVG(value) OVER (ORDER BY time RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW) AS rolling_mean\nFROM base ORDER BY time;",
+          "rawSql": "CREATE OR REPLACE VIEW l2_buffer_b_cycle_nelson_view AS\n\nWITH idle_starts AS (\n  SELECT DISTINCT timestamp AS start_time\n  FROM process_metrics\n  WHERE station_name = 'l2_buffer_b'\n    AND metric_name = 'buffer_idle_time'\n),\n\npre_scan_starts AS (\n  SELECT DISTINCT timestamp AS start_time\n  FROM process_metrics\n  WHERE station_name = 'l2_buffer_b'\n    AND metric_name = 'buffer_holding_and_pre_stopper_down_time'\n),\n\nstarts AS (\n  SELECT start_time FROM idle_starts\n  UNION\n  SELECT p.start_time\n  FROM pre_scan_starts p\n  WHERE NOT EXISTS (\n    SELECT 1\n    FROM idle_starts i\n    WHERE i.start_time BETWEEN p.start_time - INTERVAL '10 seconds'\n                          AND p.start_time + INTERVAL '10 seconds'\n  )\n),\n\nends AS (\n  SELECT DISTINCT timestamp AS end_time\n  FROM process_metrics\n  WHERE station_name = 'l2_buffer_b'\n    AND metric_name = 'buffer_pallet_release_and_pre_stopper_up_time'\n),\n\ncycle_pairs AS (\n  SELECT DISTINCT ON (s.start_time)\n    s.start_time,\n    e.end_time\n  FROM starts s\n  JOIN ends e\n    ON e.end_time > s.start_time\n   AND e.end_time < s.start_time + INTERVAL '60 seconds'\n  ORDER BY s.start_time, e.end_time\n),\n\ncycle_time_calc AS (\n  SELECT\n    start_time AS time,\n    EXTRACT(EPOCH FROM (end_time - start_time)) AS value\n  FROM cycle_pairs\n),\n\nbaseline AS (\n  SELECT\n    SUM(mean) AS mean,\n    SQRT(SUM(std_dev * std_dev)) AS std\n  FROM baseline_metrics\n  WHERE station_name = 'l2_buffer_b'\n    AND metric_name != 'buffer_idle_time'\n),\n\nordered AS (\n  SELECT\n    ct.time,\n    ct.value,\n    b.mean,\n    b.std,\n    b.mean + (3 * b.std) AS upper_3sigma,\n    b.mean - (3 * b.std) AS lower_3sigma,\n    ROW_NUMBER() OVER (ORDER BY ct.time) AS rn\n  FROM cycle_time_calc ct\n  CROSS JOIN baseline b\n),\n\nrules AS (\n  SELECT *,\n  \n    (ABS(value - mean) > 3 * std) AS rule1_trigger,\n\n    CASE WHEN\n        (value > mean AND LAG(value,1) OVER w > mean AND LAG(value,2) OVER w > mean\n         AND LAG(value,3) OVER w > mean AND LAG(value,4) OVER w > mean\n         AND LAG(value,5) OVER w > mean AND LAG(value,6) OVER w > mean\n         AND LAG(value,7) OVER w > mean AND LAG(value,8) OVER w > mean)\n    OR  (value < mean AND LAG(value,1) OVER w < mean AND LAG(value,2) OVER w < mean\n         AND LAG(value,3) OVER w < mean AND LAG(value,4) OVER w < mean\n         AND LAG(value,5) OVER w < mean AND LAG(value,6) OVER w < mean\n         AND LAG(value,7) OVER w < mean AND LAG(value,8) OVER w < mean)\n    THEN TRUE ELSE FALSE END AS rule2_trigger,\n\n    CASE WHEN\n        (value > LAG(value,1) OVER w AND LAG(value,1) OVER w > LAG(value,2) OVER w\n         AND LAG(value,2) OVER w > LAG(value,3) OVER w AND LAG(value,3) OVER w > LAG(value,4) OVER w\n         AND LAG(value,4) OVER w > LAG(value,5) OVER w)\n    OR  (value < LAG(value,1) OVER w AND LAG(value,1) OVER w < LAG(value,2) OVER w\n         AND LAG(value,2) OVER w < LAG(value,3) OVER w AND LAG(value,3) OVER w < LAG(value,4) OVER w\n         AND LAG(value,4) OVER w < LAG(value,5) OVER w)\n    THEN TRUE ELSE FALSE END AS rule3_trigger,\n\n    FALSE AS rule4_trigger,\n\n    CASE WHEN\n        (CASE WHEN value > mean + 2*std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,1) OVER w > mean + 2*std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,2) OVER w > mean + 2*std THEN 1 ELSE 0 END) >= 2\n    OR  (CASE WHEN value < mean - 2*std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,1) OVER w < mean - 2*std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,2) OVER w < mean - 2*std THEN 1 ELSE 0 END) >= 2\n    THEN TRUE ELSE FALSE END AS rule5_trigger,\n\n    CASE WHEN\n        (CASE WHEN value > mean + std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,1) OVER w > mean + std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,2) OVER w > mean + std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,3) OVER w > mean + std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,4) OVER w > mean + std THEN 1 ELSE 0 END) >= 4\n    OR  (CASE WHEN value < mean - std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,1) OVER w < mean - std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,2) OVER w < mean - std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,3) OVER w < mean - std THEN 1 ELSE 0 END +\n         CASE WHEN LAG(value,4) OVER w < mean - std THEN 1 ELSE 0 END) >= 4\n    THEN TRUE ELSE FALSE END AS rule6_trigger,\n\n    FALSE AS rule7_trigger,\n\n    CASE WHEN\n        ABS(value - mean) > std AND\n        ABS(LAG(value,1) OVER w - mean) > std AND\n        ABS(LAG(value,2) OVER w - mean) > std AND\n        ABS(LAG(value,3) OVER w - mean) > std AND\n        ABS(LAG(value,4) OVER w - mean) > std AND\n        ABS(LAG(value,5) OVER w - mean) > std AND\n        ABS(LAG(value,6) OVER w - mean) > std AND\n        ABS(LAG(value,7) OVER w - mean) > std\n    THEN TRUE ELSE FALSE END AS rule8_trigger\n\n  FROM ordered\n  WINDOW w AS (ORDER BY rn)\n),\n\nbackfilled AS (\n  SELECT *,\n      rule1_trigger AS rule1,\n      CASE WHEN MAX(CASE WHEN rule2_trigger THEN 1 ELSE 0 END)\n           OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 8 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule2,\n      CASE WHEN MAX(CASE WHEN rule3_trigger THEN 1 ELSE 0 END)\n           OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 5 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule3,\n      FALSE AS rule4,\n      CASE WHEN MAX(CASE WHEN rule5_trigger THEN 1 ELSE 0 END)\n           OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule5,\n      CASE WHEN MAX(CASE WHEN rule6_trigger THEN 1 ELSE 0 END)\n           OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule6,\n      FALSE AS rule7,\n      CASE WHEN MAX(CASE WHEN rule8_trigger THEN 1 ELSE 0 END)\n           OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 7 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule8\n  FROM rules\n),\n\nfinal AS (\n  SELECT *,\n      (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n  FROM backfilled\n)\n\nSELECT\n  time,\n  value,\n  mean,\n  upper_3sigma,\n  lower_3sigma,\n  any_violation,\n  rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8,\n  CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n  CONCAT_WS(' | ',\n      CASE WHEN rule1 THEN 'Extreme Outlier Detected' END,\n      CASE WHEN rule2 THEN 'Process Shift Detected' END,\n      CASE WHEN rule3 THEN 'Process Drift Detected' END,\n      CASE WHEN rule5 THEN 'Early Warning: Shift Developing' END,\n      CASE WHEN rule6 THEN 'Gradual Drift Detected' END,\n      CASE WHEN rule8 THEN 'High Variability Detected' END\n  ) AS violated_rules\nFROM final\nORDER BY time;",
           "refId": "E",
           "sql": {
             "columns": [
@@ -419,8 +657,8 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH base AS (SELECT time, value FROM l2_buffer_b_cycle_nelson_view WHERE $__timeFilter(time))\nSELECT time,\n  STDDEV_SAMP(value) OVER (ORDER BY time RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW) AS rolling_std\nFROM base ORDER BY time;",
-          "refId": "F",
+          "rawSql": "WITH base AS (\n  SELECT time, value\n  FROM l2_buffer_b_cycle_nelson_view\n  WHERE $__timeFilter(time)\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time RANGE BETWEEN\n    CASE '${rolling_window}'\n      WHEN '1m'  THEN INTERVAL '1 minute'\n      WHEN '5m'  THEN INTERVAL '5 minutes'\n      WHEN '10m' THEN INTERVAL '10 minutes'\n      WHEN '15m' THEN INTERVAL '15 minutes'\n      WHEN '30m' THEN INTERVAL '30 minutes'\n      WHEN '1h'  THEN INTERVAL '1 hour'\n    END PRECEDING AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
           "sql": {
             "columns": [
               {
@@ -440,7 +678,472 @@
           }
         }
       ],
-      "title": "L2 BUFFER b CYCLE TIME",
+      "title": "L2 BUFFER B CYCLE TIME",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 6
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upper_3sigma"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Upper Band (+3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lower_3sigma"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Lower Band (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Band (+3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Band (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rolling Mean"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(255,165,0,1)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upper_3sigma"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Upper Band (+3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 11
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "lower_3sigma"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "new_glue_db",
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'buffer_idle_time'\n  AND station_name = 'l2_buffer_b'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "new_glue_db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time,\n  mean,\n  upper_3sigma,\n  lower_3sigma,\n  anomaly_point\nFROM l2_buffer_b_buffer_idle_time_view \nWHERE $__timeFilter(time)\nORDER BY time;\n",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "DROP VIEW IF EXISTS l2_buffer_b_buffer_idle_time_view;\nCREATE VIEW l2_buffer_b_buffer_idle_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time, pm.value,\n        bm.mean, bm.std_dev AS std,\n        bm.mean + (3 * bm.std_dev) AS upper_3sigma,\n        bm.mean - (3 * bm.std_dev) AS lower_3sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'l2_buffer_b'\n      AND pm.metric_name = 'buffer_idle_time'\n),\nrules AS (\n    SELECT *,\n        -- Rule 1: single point beyond 3σ\n        (ABS(value - mean) > 3 * std) AS rule1_trigger,\n \n        -- Rule 2: 9 consecutive same side\n        CASE WHEN\n            (value > mean AND LAG(value,1) OVER w > mean AND LAG(value,2) OVER w > mean\n             AND LAG(value,3) OVER w > mean AND LAG(value,4) OVER w > mean\n             AND LAG(value,5) OVER w > mean AND LAG(value,6) OVER w > mean\n             AND LAG(value,7) OVER w > mean AND LAG(value,8) OVER w > mean)\n        OR  (value < mean AND LAG(value,1) OVER w < mean AND LAG(value,2) OVER w < mean\n             AND LAG(value,3) OVER w < mean AND LAG(value,4) OVER w < mean\n             AND LAG(value,5) OVER w < mean AND LAG(value,6) OVER w < mean\n             AND LAG(value,7) OVER w < mean AND LAG(value,8) OVER w < mean)\n        THEN TRUE ELSE FALSE END AS rule2_trigger,\n \n        -- Rule 3: 6 consecutive trending\n        CASE WHEN\n            (value > LAG(value,1) OVER w AND LAG(value,1) OVER w > LAG(value,2) OVER w\n             AND LAG(value,2) OVER w > LAG(value,3) OVER w AND LAG(value,3) OVER w > LAG(value,4) OVER w\n             AND LAG(value,4) OVER w > LAG(value,5) OVER w)\n        OR  (value < LAG(value,1) OVER w AND LAG(value,1) OVER w < LAG(value,2) OVER w\n             AND LAG(value,2) OVER w < LAG(value,3) OVER w AND LAG(value,3) OVER w < LAG(value,4) OVER w\n             AND LAG(value,4) OVER w < LAG(value,5) OVER w)\n        THEN TRUE ELSE FALSE END AS rule3_trigger,\n \n        -- Rule 4: DISABLED\n        FALSE AS rule4_trigger,\n \n        -- Rule 5: 2 of 3 beyond 2σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + 2*std THEN 1 ELSE 0 END) >= 2\n        OR  (CASE WHEN value < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - 2*std THEN 1 ELSE 0 END) >= 2\n        THEN TRUE ELSE FALSE END AS rule5_trigger,\n \n        -- Rule 6: 4 of 5 beyond 1σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w > mean + std THEN 1 ELSE 0 END) >= 4\n        OR  (CASE WHEN value < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w < mean - std THEN 1 ELSE 0 END) >= 4\n        THEN TRUE ELSE FALSE END AS rule6_trigger,\n \n        -- Rule 7: DISABLED\n        FALSE AS rule7_trigger,\n \n        -- Rule 8: 8 consecutive beyond 1σ either side\n        CASE WHEN\n            ABS(value - mean) > std AND ABS(LAG(value,1) OVER w - mean) > std AND\n            ABS(LAG(value,2) OVER w - mean) > std AND ABS(LAG(value,3) OVER w - mean) > std AND\n            ABS(LAG(value,4) OVER w - mean) > std AND ABS(LAG(value,5) OVER w - mean) > std AND\n            ABS(LAG(value,6) OVER w - mean) > std AND ABS(LAG(value,7) OVER w - mean) > std\n        THEN TRUE ELSE FALSE END AS rule8_trigger\n    FROM ordered WINDOW w AS (ORDER BY rn)\n),\nbackfilled AS (\n    SELECT *,\n        rule1_trigger AS rule1,\n        CASE WHEN MAX(CASE WHEN rule2_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 8 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule2,\n        CASE WHEN MAX(CASE WHEN rule3_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 5 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule3,\n        FALSE AS rule4,\n        CASE WHEN MAX(CASE WHEN rule5_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule5,\n        CASE WHEN MAX(CASE WHEN rule6_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule6,\n        FALSE AS rule7,\n        CASE WHEN MAX(CASE WHEN rule8_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 7 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule8\n    FROM rules\n),\nfinal AS (\n    SELECT *, (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n    FROM backfilled\n)\nSELECT\n    time, value, mean, upper_3sigma, lower_3sigma,\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n    CONCAT_WS(' | ',\n        CASE WHEN rule1 THEN 'Extreme Outlier Detected' END,\n        CASE WHEN rule2 THEN 'Process Shift Detected' END,\n        CASE WHEN rule3 THEN 'Process Drift Detected' END,\n        CASE WHEN rule4 THEN 'Unstable Oscillation Detected' END,\n        CASE WHEN rule5 THEN 'Early Warning: Shift Developing' END,\n        CASE WHEN rule6 THEN 'Gradual Drift Detected' END,\n        CASE WHEN rule7 THEN 'Abnormal Stability Detected' END,\n        CASE WHEN rule8 THEN 'High Variability Detected' END\n    ) AS rule_description\nFROM final\nORDER BY time;",
+          "refId": "C",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT timestamp AS time, value\n  FROM process_metrics\n  WHERE metric_name = 'buffer_idle_time'\n    AND station_name = 'l2_buffer_b'\n    AND $__timeFilter(timestamp)\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (ORDER BY time RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW)\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "D",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "BUFFER IDLE TIME",
       "type": "timeseries"
     },
     {
@@ -540,24 +1243,24 @@
               },
               {
                 "id": "custom.pointSize",
-                "value": 6
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "points"
+                "value": 8
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "upper_2_5sigma"
+              "options": "upper_3sigma"
             },
             "properties": [
               {
+                "id": "displayName",
+                "value": "Upper Band (+3σ)"
+              },
+              {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#80808080",
+                  "fixedColor": "rgba(100,149,237,0.8)",
                   "mode": "fixed"
                 }
               },
@@ -570,19 +1273,121 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "lower_2_5sigma"
+              "options": "lower_3sigma"
             },
             "properties": [
               {
+                "id": "displayName",
+                "value": "Lower Band (-3σ)"
+              },
+              {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#2a2626",
-                  "mode": "shades"
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
                 }
               },
               {
                 "id": "custom.showPoints",
                 "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_point"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Band (+3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Band (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
               }
             ]
           },
@@ -593,66 +1398,64 @@
             },
             "properties": [
               {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "shades"
-                }
+                "id": "displayName",
+                "value": "Rolling Mean"
               },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rolling_std"
-            },
-            "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#decaca",
-                  "mode": "shades"
+                  "fixedColor": "rgba(255,165,0,1)",
+                  "mode": "fixed"
                 }
               },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "value"
-            },
-            "properties": [
               {
                 "id": "custom.lineWidth",
                 "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "upper_3sigma"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Upper Band (+3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "lower_3sigma"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 11
               }
             ]
           }
@@ -661,8 +1464,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 11
+        "x": 12,
+        "y": 13
       },
       "id": 2,
       "options": {
@@ -720,7 +1523,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma,\n  anomaly_point\nFROM l2_buffer_b_buffer_holding_time_view \nWHERE $__timeFilter(time)\nORDER BY time;",
+          "rawSql": "SELECT\n  time,\n  mean,\n  upper_3sigma,\n  lower_3sigma,\n  anomaly_point\nFROM l2_buffer_b_buffer_holding_time_view \nWHERE $__timeFilter(time)\nORDER BY time;\n",
           "refId": "A",
           "sql": {
             "columns": [
@@ -750,7 +1553,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "CREATE OR REPLACE VIEW l2_buffer_b_buffer_holding_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time, pm.value,\n        bm.mean, bm.std_dev AS std,\n        bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,\n        bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'l2_buffer_b'\n      AND pm.metric_name = 'buffer_holding_and_pre_stopper_down_time'\n),\nrules AS (\n    SELECT *,\n        -- Rule 1: single point beyond 3σ\n        (ABS(value - mean) > 3 * std) AS rule1_trigger,\n\n        -- Rule 2: 9 consecutive same side\n        CASE WHEN\n            (value > mean AND LAG(value,1) OVER w > mean AND LAG(value,2) OVER w > mean\n             AND LAG(value,3) OVER w > mean AND LAG(value,4) OVER w > mean\n             AND LAG(value,5) OVER w > mean AND LAG(value,6) OVER w > mean\n             AND LAG(value,7) OVER w > mean AND LAG(value,8) OVER w > mean)\n        OR  (value < mean AND LAG(value,1) OVER w < mean AND LAG(value,2) OVER w < mean\n             AND LAG(value,3) OVER w < mean AND LAG(value,4) OVER w < mean\n             AND LAG(value,5) OVER w < mean AND LAG(value,6) OVER w < mean\n             AND LAG(value,7) OVER w < mean AND LAG(value,8) OVER w < mean)\n        THEN TRUE ELSE FALSE END AS rule2_trigger,\n\n        -- Rule 3: 6 consecutive trending\n        CASE WHEN\n            (value > LAG(value,1) OVER w AND LAG(value,1) OVER w > LAG(value,2) OVER w\n             AND LAG(value,2) OVER w > LAG(value,3) OVER w AND LAG(value,3) OVER w > LAG(value,4) OVER w\n             AND LAG(value,4) OVER w > LAG(value,5) OVER w)\n        OR  (value < LAG(value,1) OVER w AND LAG(value,1) OVER w < LAG(value,2) OVER w\n             AND LAG(value,2) OVER w < LAG(value,3) OVER w AND LAG(value,3) OVER w < LAG(value,4) OVER w\n             AND LAG(value,4) OVER w < LAG(value,5) OVER w)\n        THEN TRUE ELSE FALSE END AS rule3_trigger,\n\n        -- Rule 4: 14 alternating\n        CASE WHEN\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n        THEN TRUE ELSE FALSE END AS rule4_trigger,\n\n        -- Rule 5: 2 of 3 beyond 2σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + 2*std THEN 1 ELSE 0 END) >= 2\n        OR  (CASE WHEN value < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - 2*std THEN 1 ELSE 0 END) >= 2\n        THEN TRUE ELSE FALSE END AS rule5_trigger,\n\n        -- Rule 6: 4 of 5 beyond 1σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w > mean + std THEN 1 ELSE 0 END) >= 4\n        OR  (CASE WHEN value < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w < mean - std THEN 1 ELSE 0 END) >= 4\n        THEN TRUE ELSE FALSE END AS rule6_trigger,\n\n        -- Rule 7: 15 consecutive within 1σ\n        CASE WHEN\n            ABS(value - mean) < std AND ABS(LAG(value,1) OVER w - mean) < std AND\n            ABS(LAG(value,2) OVER w - mean) < std AND ABS(LAG(value,3) OVER w - mean) < std AND\n            ABS(LAG(value,4) OVER w - mean) < std AND ABS(LAG(value,5) OVER w - mean) < std AND\n            ABS(LAG(value,6) OVER w - mean) < std AND ABS(LAG(value,7) OVER w - mean) < std AND\n            ABS(LAG(value,8) OVER w - mean) < std AND ABS(LAG(value,9) OVER w - mean) < std AND\n            ABS(LAG(value,10) OVER w - mean) < std AND ABS(LAG(value,11) OVER w - mean) < std AND\n            ABS(LAG(value,12) OVER w - mean) < std AND ABS(LAG(value,13) OVER w - mean) < std AND\n            ABS(LAG(value,14) OVER w - mean) < std\n        THEN TRUE ELSE FALSE END AS rule7_trigger,\n\n        -- Rule 8: 8 consecutive beyond 1σ either side\n        CASE WHEN\n            ABS(value - mean) > std AND ABS(LAG(value,1) OVER w - mean) > std AND\n            ABS(LAG(value,2) OVER w - mean) > std AND ABS(LAG(value,3) OVER w - mean) > std AND\n            ABS(LAG(value,4) OVER w - mean) > std AND ABS(LAG(value,5) OVER w - mean) > std AND\n            ABS(LAG(value,6) OVER w - mean) > std AND ABS(LAG(value,7) OVER w - mean) > std\n        THEN TRUE ELSE FALSE END AS rule8_trigger\n    FROM ordered WINDOW w AS (ORDER BY rn)\n),\nbackfilled AS (\n    SELECT *,\n        rule1_trigger AS rule1,\n        CASE WHEN MAX(CASE WHEN rule2_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 8 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule2,\n        CASE WHEN MAX(CASE WHEN rule3_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 5 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule3,\n        CASE WHEN MAX(CASE WHEN rule4_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 13 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule4,\n        CASE WHEN MAX(CASE WHEN rule5_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule5,\n        CASE WHEN MAX(CASE WHEN rule6_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule6,\n        CASE WHEN MAX(CASE WHEN rule7_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 14 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule7,\n        CASE WHEN MAX(CASE WHEN rule8_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 7 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule8\n    FROM rules\n),\nfinal AS (\n    SELECT *, (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation FROM backfilled\n)\nSELECT time, value, mean, upper_2_5sigma, lower_2_5sigma,\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n    CONCAT_WS(' | ',\n        CASE WHEN rule1 THEN 'Extreme Outlier Detected' END,\n        CASE WHEN rule2 THEN 'Process Shift Detected' END,\n        CASE WHEN rule3 THEN 'Process Drift Detected' END,\n        CASE WHEN rule4 THEN 'Unstable Oscillation Detected' END,\n        CASE WHEN rule5 THEN 'Early Warning: Shift Developing' END,\n        CASE WHEN rule6 THEN 'Gradual Drift Detected' END,\n        CASE WHEN rule7 THEN 'Abnormal Stability Detected' END,\n        CASE WHEN rule8 THEN 'High Variability Detected' END\n    ) AS rule_description\nFROM final ORDER BY time;",
+          "rawSql": "DROP VIEW IF EXISTS l2_buffer_b_buffer_holding_time_view;\nCREATE VIEW l2_buffer_b_buffer_holding_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time, pm.value,\n        bm.mean, bm.std_dev AS std,\n        bm.mean + (3 * bm.std_dev) AS upper_3sigma,\n        bm.mean - (3 * bm.std_dev) AS lower_3sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'l2_buffer_b'\n      AND pm.metric_name = 'buffer_holding_and_pre_stopper_down_time'\n),\nrules AS (\n    SELECT *,\n        -- Rule 1: single point beyond 3σ\n        (ABS(value - mean) > 3 * std) AS rule1_trigger,\n \n        -- Rule 2: 9 consecutive same side\n        CASE WHEN\n            (value > mean AND LAG(value,1) OVER w > mean AND LAG(value,2) OVER w > mean\n             AND LAG(value,3) OVER w > mean AND LAG(value,4) OVER w > mean\n             AND LAG(value,5) OVER w > mean AND LAG(value,6) OVER w > mean\n             AND LAG(value,7) OVER w > mean AND LAG(value,8) OVER w > mean)\n        OR  (value < mean AND LAG(value,1) OVER w < mean AND LAG(value,2) OVER w < mean\n             AND LAG(value,3) OVER w < mean AND LAG(value,4) OVER w < mean\n             AND LAG(value,5) OVER w < mean AND LAG(value,6) OVER w < mean\n             AND LAG(value,7) OVER w < mean AND LAG(value,8) OVER w < mean)\n        THEN TRUE ELSE FALSE END AS rule2_trigger,\n \n        -- Rule 3: 6 consecutive trending\n        CASE WHEN\n            (value > LAG(value,1) OVER w AND LAG(value,1) OVER w > LAG(value,2) OVER w\n             AND LAG(value,2) OVER w > LAG(value,3) OVER w AND LAG(value,3) OVER w > LAG(value,4) OVER w\n             AND LAG(value,4) OVER w > LAG(value,5) OVER w)\n        OR  (value < LAG(value,1) OVER w AND LAG(value,1) OVER w < LAG(value,2) OVER w\n             AND LAG(value,2) OVER w < LAG(value,3) OVER w AND LAG(value,3) OVER w < LAG(value,4) OVER w\n             AND LAG(value,4) OVER w < LAG(value,5) OVER w)\n        THEN TRUE ELSE FALSE END AS rule3_trigger,\n \n        -- Rule 4: DISABLED\n        FALSE AS rule4_trigger,\n \n        -- Rule 5: 2 of 3 beyond 2σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + 2*std THEN 1 ELSE 0 END) >= 2\n        OR  (CASE WHEN value < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - 2*std THEN 1 ELSE 0 END) >= 2\n        THEN TRUE ELSE FALSE END AS rule5_trigger,\n \n        -- Rule 6: 4 of 5 beyond 1σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w > mean + std THEN 1 ELSE 0 END) >= 4\n        OR  (CASE WHEN value < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w < mean - std THEN 1 ELSE 0 END) >= 4\n        THEN TRUE ELSE FALSE END AS rule6_trigger,\n \n        -- Rule 7: DISABLED\n        FALSE AS rule7_trigger,\n \n        -- Rule 8: 8 consecutive beyond 1σ either side\n        CASE WHEN\n            ABS(value - mean) > std AND ABS(LAG(value,1) OVER w - mean) > std AND\n            ABS(LAG(value,2) OVER w - mean) > std AND ABS(LAG(value,3) OVER w - mean) > std AND\n            ABS(LAG(value,4) OVER w - mean) > std AND ABS(LAG(value,5) OVER w - mean) > std AND\n            ABS(LAG(value,6) OVER w - mean) > std AND ABS(LAG(value,7) OVER w - mean) > std\n        THEN TRUE ELSE FALSE END AS rule8_trigger\n    FROM ordered WINDOW w AS (ORDER BY rn)\n),\nbackfilled AS (\n    SELECT *,\n        rule1_trigger AS rule1,\n        CASE WHEN MAX(CASE WHEN rule2_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 8 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule2,\n        CASE WHEN MAX(CASE WHEN rule3_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 5 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule3,\n        FALSE AS rule4,\n        CASE WHEN MAX(CASE WHEN rule5_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule5,\n        CASE WHEN MAX(CASE WHEN rule6_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule6,\n        FALSE AS rule7,\n        CASE WHEN MAX(CASE WHEN rule8_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 7 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule8\n    FROM rules\n),\nfinal AS (\n    SELECT *, (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation\n    FROM backfilled\n)\nSELECT\n    time, value, mean, upper_3sigma, lower_3sigma,\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n    CONCAT_WS(' | ',\n        CASE WHEN rule1 THEN 'Extreme Outlier Detected' END,\n        CASE WHEN rule2 THEN 'Process Shift Detected' END,\n        CASE WHEN rule3 THEN 'Process Drift Detected' END,\n        CASE WHEN rule4 THEN 'Unstable Oscillation Detected' END,\n        CASE WHEN rule5 THEN 'Early Warning: Shift Developing' END,\n        CASE WHEN rule6 THEN 'Gradual Drift Detected' END,\n        CASE WHEN rule7 THEN 'Abnormal Stability Detected' END,\n        CASE WHEN rule8 THEN 'High Variability Detected' END\n    ) AS rule_description\nFROM final\nORDER BY time;",
           "refId": "C",
           "sql": {
             "columns": [
@@ -780,38 +1583,8 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT timestamp AS time,\n  AVG(value) OVER (ORDER BY timestamp RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW) AS rolling_mean\nFROM process_metrics\nWHERE metric_name = 'buffer_holding_and_pre_stopper_down_time' AND station_name = 'l2_buffer_b' AND $__timeFilter(timestamp)\nORDER BY timestamp;",
+          "rawSql": "WITH base AS (\n  SELECT timestamp AS time, value\n  FROM process_metrics\n  WHERE metric_name = 'buffer_holding_and_pre_stopper_down_time'\n    AND station_name = 'l2_buffer_b'\n    AND $__timeFilter(timestamp)\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (ORDER BY time RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW)\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "D",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "dataset": "glue-dispenser-db",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "bfc3wenp44lxcc"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "SELECT timestamp AS time,\n  STDDEV_SAMP(value) OVER (ORDER BY timestamp RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW) AS rolling_STD\nFROM process_metrics\nWHERE metric_name = 'buffer_holding_and_pre_stopper_down_time' AND station_name = 'l2_buffer_b' AND $__timeFilter(timestamp)\nORDER BY timestamp;",
-          "refId": "E",
           "sql": {
             "columns": [
               {
@@ -867,7 +1640,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "showValues": false,
             "spanNulls": false,
             "stacking": {
@@ -922,7 +1695,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "anomaly"
+              "options": "anomaly_point"
             },
             "properties": [
               {
@@ -942,13 +1715,48 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "upper_2_5sigma"
+              "options": "upper_3sigma"
             },
             "properties": [
               {
+                "id": "displayName",
+                "value": "Upper Band (+3σ)"
+              },
+              {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#80808080",
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "lower_3sigma"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lower_3sigma"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Lower Band (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(100,149,237,0.8)",
                   "mode": "fixed"
                 }
               },
@@ -961,19 +1769,102 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "lower_2_5sigma"
+              "options": "anomaly_point"
             },
             "properties": [
               {
+                "id": "custom.drawStyle",
+                "value": "points"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Band (+3σ)"
+              },
+              {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#445042",
-                  "mode": "shades"
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
                 }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
               },
               {
                 "id": "custom.showPoints",
                 "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Band (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(100,149,237,0.8)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    4
+                  ],
+                  "fill": "dash"
+                }
               }
             ]
           },
@@ -984,72 +1875,36 @@
             },
             "properties": [
               {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "shades"
-                }
+                "id": "displayName",
+                "value": "Rolling Mean"
               },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rolling_std"
-            },
-            "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#decaca",
-                  "mode": "shades"
+                  "fixedColor": "rgba(255,165,0,1)",
+                  "mode": "fixed"
                 }
               },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "value"
-            },
-            "properties": [
               {
                 "id": "custom.lineWidth",
                 "value": 2
               },
               {
-                "id": "color",
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 0
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
                 "value": {
-                  "fixedColor": "semi-dark-green",
-                  "mode": "shades"
+                  "fill": "solid"
                 }
               }
             ]
@@ -1059,8 +1914,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 11
+        "x": 0,
+        "y": 21
       },
       "id": 4,
       "options": {
@@ -1088,7 +1943,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "\nSELECT\n  time,\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma\nFROM l2_buffer_b_buffer_pallet_release_time_view \nWHERE $__timeFilter(time)\nORDER BY time;",
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'buffer_pallet_release_and_pre_stopper_up_time'\n  AND station_name = 'l2_buffer_b'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;\n",
           "refId": "B",
           "sql": {
             "columns": [
@@ -1118,7 +1973,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'buffer_pallet_release_and_pre_stopper_up_time'\n  AND station_name = 'l2_buffer_b'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;",
+          "rawSql": "SELECT\n  time,\n  mean,\n  upper_3sigma,\n  lower_3sigma,\n  anomaly_point\nFROM l2_buffer_b_buffer_pallet_release_time_view \nWHERE $__timeFilter(time)\nORDER BY time;\n",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1148,7 +2003,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT timestamp AS time,\n  AVG(value) OVER (ORDER BY timestamp RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW) AS rolling_mean\nFROM process_metrics\nWHERE metric_name = 'buffer_pallet_release_and_pre_stopper_up_time' AND station_name = 'l2_buffer_b' AND $__timeFilter(timestamp)\nORDER BY timestamp;",
+          "rawSql": "DROP VIEW IF EXISTS public.l2_buffer_b_buffer_pallet_release_time_view;\nCREATE VIEW public.l2_buffer_b_buffer_pallet_release_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time, pm.value,\n        bm.mean, bm.std_dev AS std,\n        bm.mean + (3 * bm.std_dev) AS upper_3sigma,\n        bm.mean - (3 * bm.std_dev) AS lower_3sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'l2_buffer_b'\n      AND pm.metric_name = 'buffer_pallet_release_and_pre_stopper_up_time'\n),\nrules AS (\n    SELECT *,\n        -- Rule 1: single point beyond 3σ\n        (ABS(value - mean) > 3 * std) AS rule1_trigger,\n \n        -- Rule 2: 9 consecutive same side\n        CASE WHEN\n            (value > mean AND LAG(value,1) OVER w > mean AND LAG(value,2) OVER w > mean\n             AND LAG(value,3) OVER w > mean AND LAG(value,4) OVER w > mean\n             AND LAG(value,5) OVER w > mean AND LAG(value,6) OVER w > mean\n             AND LAG(value,7) OVER w > mean AND LAG(value,8) OVER w > mean)\n        OR  (value < mean AND LAG(value,1) OVER w < mean AND LAG(value,2) OVER w < mean\n             AND LAG(value,3) OVER w < mean AND LAG(value,4) OVER w < mean\n             AND LAG(value,5) OVER w < mean AND LAG(value,6) OVER w < mean\n             AND LAG(value,7) OVER w < mean AND LAG(value,8) OVER w < mean)\n        THEN TRUE ELSE FALSE END AS rule2_trigger,\n \n        -- Rule 3: 6 consecutive trending\n        CASE WHEN\n            (value > LAG(value,1) OVER w AND LAG(value,1) OVER w > LAG(value,2) OVER w\n             AND LAG(value,2) OVER w > LAG(value,3) OVER w AND LAG(value,3) OVER w > LAG(value,4) OVER w\n             AND LAG(value,4) OVER w > LAG(value,5) OVER w)\n        OR  (value < LAG(value,1) OVER w AND LAG(value,1) OVER w < LAG(value,2) OVER w\n             AND LAG(value,2) OVER w < LAG(value,3) OVER w AND LAG(value,3) OVER w < LAG(value,4) OVER w\n             AND LAG(value,4) OVER w < LAG(value,5) OVER w)\n        THEN TRUE ELSE FALSE END AS rule3_trigger,\n \n        -- Rule 4: DISABLED\n        FALSE AS rule4_trigger,\n \n        -- Rule 5: 2 of 3 beyond 2σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + 2*std THEN 1 ELSE 0 END) >= 2\n        OR  (CASE WHEN value < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - 2*std THEN 1 ELSE 0 END) >= 2\n        THEN TRUE ELSE FALSE END AS rule5_trigger,\n \n        -- Rule 6: 4 of 5 beyond 1σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w > mean + std THEN 1 ELSE 0 END) >= 4\n        OR  (CASE WHEN value < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w < mean - std THEN 1 ELSE 0 END) >= 4\n        THEN TRUE ELSE FALSE END AS rule6_trigger,\n \n        -- Rule 7: DISABLED\n        FALSE AS rule7_trigger,\n \n        -- Rule 8: 8 consecutive beyond 1σ either side\n        CASE WHEN\n            ABS(value - mean) > std AND ABS(LAG(value,1) OVER w - mean) > std AND\n            ABS(LAG(value,2) OVER w - mean) > std AND ABS(LAG(value,3) OVER w - mean) > std AND\n            ABS(LAG(value,4) OVER w - mean) > std AND ABS(LAG(value,5) OVER w - mean) > std AND\n            ABS(LAG(value,6) OVER w - mean) > std AND ABS(LAG(value,7) OVER w - mean) > std\n        THEN TRUE ELSE FALSE END AS rule8_trigger\n    FROM ordered WINDOW w AS (ORDER BY rn)\n),\nbackfilled AS (\n    SELECT *,\n        rule1_trigger AS rule1,\n        CASE WHEN MAX(CASE WHEN rule2_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 8 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule2,\n        CASE WHEN MAX(CASE WHEN rule3_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 5 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule3,\n        FALSE AS rule4,\n        CASE WHEN MAX(CASE WHEN rule5_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule5,\n        CASE WHEN MAX(CASE WHEN rule6_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule6,\n        FALSE AS rule7,\n        CASE WHEN MAX(CASE WHEN rule8_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 7 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule8\n    FROM rules\n),\nfinal AS (\n    SELECT *, (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation FROM backfilled\n)\nSELECT time, value, mean, upper_3sigma, lower_3sigma,\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n    CASE WHEN any_violation THEN CONCAT_WS(' | ',\n        CASE WHEN rule1 THEN 'Extreme Outlier Detected' END,\n        CASE WHEN rule2 THEN 'Process Shift Detected' END,\n        CASE WHEN rule3 THEN 'Process Drift Detected' END,\n        CASE WHEN rule4 THEN 'Unstable Oscillation Detected' END,\n        CASE WHEN rule5 THEN 'Early Warning: Shift Developing' END,\n        CASE WHEN rule6 THEN 'Gradual Drift Detected' END,\n        CASE WHEN rule7 THEN 'Abnormal Stability Detected' END,\n        CASE WHEN rule8 THEN 'High Variability Detected' END\n    ) ELSE '' END AS rule_description\nFROM final ORDER BY time;",
           "refId": "C",
           "sql": {
             "columns": [
@@ -1178,38 +2033,8 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT timestamp AS time,\n  STDDEV_SAMP(value) OVER (ORDER BY timestamp RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW) AS rolling_std\nFROM process_metrics\nWHERE metric_name = 'buffer_pallet_release_and_pre_stopper_up_time' AND station_name = 'l2_buffer_b' AND $__timeFilter(timestamp)\nORDER BY timestamp;",
+          "rawSql": "WITH base AS (\n  SELECT timestamp AS time, value\n  FROM process_metrics\n  WHERE metric_name = 'buffer_pallet_release_and_pre_stopper_up_time'\n    AND station_name = 'l2_buffer_b'\n    AND $__timeFilter(timestamp)\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (ORDER BY time RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW)\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "D",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "dataset": "glue-dispenser-db",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "bfc3wenp44lxcc"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "CREATE OR REPLACE VIEW l2_buffer_b_buffer_pallet_release_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time, pm.value,\n        bm.mean, bm.std_dev AS std,\n        bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,\n        bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'l2_buffer_b'\n      AND pm.metric_name = 'buffer_pallet_release_and_pre_stopper_up_time'\n),\nrules AS (\n    SELECT *,\n        -- Rule 1: single point beyond 3σ\n        (ABS(value - mean) > 3 * std) AS rule1_trigger,\n\n        -- Rule 2: 9 consecutive same side\n        CASE WHEN\n            (value > mean AND LAG(value,1) OVER w > mean AND LAG(value,2) OVER w > mean\n             AND LAG(value,3) OVER w > mean AND LAG(value,4) OVER w > mean\n             AND LAG(value,5) OVER w > mean AND LAG(value,6) OVER w > mean\n             AND LAG(value,7) OVER w > mean AND LAG(value,8) OVER w > mean)\n        OR  (value < mean AND LAG(value,1) OVER w < mean AND LAG(value,2) OVER w < mean\n             AND LAG(value,3) OVER w < mean AND LAG(value,4) OVER w < mean\n             AND LAG(value,5) OVER w < mean AND LAG(value,6) OVER w < mean\n             AND LAG(value,7) OVER w < mean AND LAG(value,8) OVER w < mean)\n        THEN TRUE ELSE FALSE END AS rule2_trigger,\n\n        -- Rule 3: 6 consecutive trending\n        CASE WHEN\n            (value > LAG(value,1) OVER w AND LAG(value,1) OVER w > LAG(value,2) OVER w\n             AND LAG(value,2) OVER w > LAG(value,3) OVER w AND LAG(value,3) OVER w > LAG(value,4) OVER w\n             AND LAG(value,4) OVER w > LAG(value,5) OVER w)\n        OR  (value < LAG(value,1) OVER w AND LAG(value,1) OVER w < LAG(value,2) OVER w\n             AND LAG(value,2) OVER w < LAG(value,3) OVER w AND LAG(value,3) OVER w < LAG(value,4) OVER w\n             AND LAG(value,4) OVER w < LAG(value,5) OVER w)\n        THEN TRUE ELSE FALSE END AS rule3_trigger,\n\n        -- Rule 4: 14 alternating\n        CASE WHEN\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n        THEN TRUE ELSE FALSE END AS rule4_trigger,\n\n        -- Rule 5: 2 of 3 beyond 2σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + 2*std THEN 1 ELSE 0 END) >= 2\n        OR  (CASE WHEN value < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - 2*std THEN 1 ELSE 0 END) >= 2\n        THEN TRUE ELSE FALSE END AS rule5_trigger,\n\n        -- Rule 6: 4 of 5 beyond 1σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w > mean + std THEN 1 ELSE 0 END) >= 4\n        OR  (CASE WHEN value < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w < mean - std THEN 1 ELSE 0 END) >= 4\n        THEN TRUE ELSE FALSE END AS rule6_trigger,\n\n        -- Rule 7: 15 consecutive within 1σ\n        CASE WHEN\n            ABS(value - mean) < std AND ABS(LAG(value,1) OVER w - mean) < std AND\n            ABS(LAG(value,2) OVER w - mean) < std AND ABS(LAG(value,3) OVER w - mean) < std AND\n            ABS(LAG(value,4) OVER w - mean) < std AND ABS(LAG(value,5) OVER w - mean) < std AND\n            ABS(LAG(value,6) OVER w - mean) < std AND ABS(LAG(value,7) OVER w - mean) < std AND\n            ABS(LAG(value,8) OVER w - mean) < std AND ABS(LAG(value,9) OVER w - mean) < std AND\n            ABS(LAG(value,10) OVER w - mean) < std AND ABS(LAG(value,11) OVER w - mean) < std AND\n            ABS(LAG(value,12) OVER w - mean) < std AND ABS(LAG(value,13) OVER w - mean) < std AND\n            ABS(LAG(value,14) OVER w - mean) < std\n        THEN TRUE ELSE FALSE END AS rule7_trigger,\n\n        -- Rule 8: 8 consecutive beyond 1σ either side\n        CASE WHEN\n            ABS(value - mean) > std AND ABS(LAG(value,1) OVER w - mean) > std AND\n            ABS(LAG(value,2) OVER w - mean) > std AND ABS(LAG(value,3) OVER w - mean) > std AND\n            ABS(LAG(value,4) OVER w - mean) > std AND ABS(LAG(value,5) OVER w - mean) > std AND\n            ABS(LAG(value,6) OVER w - mean) > std AND ABS(LAG(value,7) OVER w - mean) > std\n        THEN TRUE ELSE FALSE END AS rule8_trigger\n    FROM ordered WINDOW w AS (ORDER BY rn)\n),\nbackfilled AS (\n    SELECT *,\n        rule1_trigger AS rule1,\n        CASE WHEN MAX(CASE WHEN rule2_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 8 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule2,\n        CASE WHEN MAX(CASE WHEN rule3_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 5 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule3,\n        CASE WHEN MAX(CASE WHEN rule4_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 13 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule4,\n        CASE WHEN MAX(CASE WHEN rule5_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule5,\n        CASE WHEN MAX(CASE WHEN rule6_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule6,\n        CASE WHEN MAX(CASE WHEN rule7_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 14 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule7,\n        CASE WHEN MAX(CASE WHEN rule8_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 7 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule8\n    FROM rules\n),\nfinal AS (\n    SELECT *, (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation FROM backfilled\n)\nSELECT time, value, mean, upper_2_5sigma, lower_2_5sigma,\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n    CONCAT_WS(' | ',\n        CASE WHEN rule1 THEN 'Extreme Outlier Detected' END,\n        CASE WHEN rule2 THEN 'Process Shift Detected' END,\n        CASE WHEN rule3 THEN 'Process Drift Detected' END,\n        CASE WHEN rule4 THEN 'Unstable Oscillation Detected' END,\n        CASE WHEN rule5 THEN 'Early Warning: Shift Developing' END,\n        CASE WHEN rule6 THEN 'Gradual Drift Detected' END,\n        CASE WHEN rule7 THEN 'Abnormal Stability Detected' END,\n        CASE WHEN rule8 THEN 'High Variability Detected' END\n    ) AS rule_description\nFROM final ORDER BY time;",
-          "refId": "E",
           "sql": {
             "columns": [
               {
@@ -1231,404 +2056,6 @@
       ],
       "title": "BUFFER PALLET RELEASE TIME",
       "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "bfc3wenp44lxcc"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Duration(sec)",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-purple",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "anomaly"
-            },
-            "properties": [
-              {
-                "id": "custom.drawStyle",
-                "value": "points"
-              },
-              {
-                "id": "custom.pointSize",
-                "value": 6
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "points"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "upper_2_5sigma"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#80808080",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "lower_2_5sigma"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#2a2626",
-                  "mode": "shades"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rolling_mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "shades"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rolling_std"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#decaca",
-                  "mode": "shades"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "value"
-            },
-            "properties": [
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "semi-dark-green",
-                  "mode": "shades"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 19
-      },
-      "id": 6,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "dataset": "glue_dispenser_db",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "bfc3wenp44lxcc"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "\nSELECT\n  time,\n  mean,\n  upper_2_5sigma,\n  lower_2_5sigma\nFROM l2_buffer_b_buffer_idle_time_view \nWHERE $__timeFilter(time)\nORDER BY time;",
-          "refId": "B",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "dataset": "new_glue_db",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "bfc3wenp44lxcc"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE \n  metric_name = 'buffer_idle_time'\n  AND station_name = 'l2_buffer_b'\n  AND $__timeFilter(timestamp)\nORDER BY timestamp;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "dataset": "glue-dispenser-db",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "bfc3wenp44lxcc"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "SELECT timestamp AS time,\n  AVG(value) OVER (ORDER BY timestamp RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW) AS rolling_mean\nFROM process_metrics\nWHERE metric_name = 'buffer_idle_time' AND station_name = 'l2_buffer_b' AND $__timeFilter(timestamp)\nORDER BY timestamp;",
-          "refId": "C",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "dataset": "glue-dispenser-db",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "bfc3wenp44lxcc"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "SELECT timestamp AS time,\n  STDDEV_SAMP(value) OVER (ORDER BY timestamp RANGE BETWEEN INTERVAL '${rolling_window}' PRECEDING AND CURRENT ROW) AS rolling_std\nFROM process_metrics\nWHERE metric_name = 'buffer_idle_time' AND station_name = 'l2_buffer_b' AND $__timeFilter(timestamp)\nORDER BY timestamp;",
-          "refId": "D",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "dataset": "glue-dispenser-db",
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "bfc3wenp44lxcc"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "CREATE OR REPLACE VIEW l2_buffer_b_buffer_idle_time_view AS\nWITH ordered AS (\n    SELECT\n        pm.timestamp AS time, pm.value,\n        bm.mean, bm.std_dev AS std,\n        bm.mean + (2.5 * bm.std_dev) AS upper_2_5sigma,\n        bm.mean - (2.5 * bm.std_dev) AS lower_2_5sigma,\n        ROW_NUMBER() OVER (ORDER BY pm.timestamp) AS rn\n    FROM public.process_metrics pm\n    JOIN public.baseline_metrics bm\n      ON bm.station_name = pm.station_name AND bm.metric_name = pm.metric_name\n    WHERE pm.station_name = 'l2_buffer_b'\n      AND pm.metric_name = 'buffer_idle_time'\n),\nrules AS (\n    SELECT *,\n        -- Rule 1: single point beyond 3σ\n        (ABS(value - mean) > 3 * std) AS rule1_trigger,\n\n        -- Rule 2: 9 consecutive same side\n        CASE WHEN\n            (value > mean AND LAG(value,1) OVER w > mean AND LAG(value,2) OVER w > mean\n             AND LAG(value,3) OVER w > mean AND LAG(value,4) OVER w > mean\n             AND LAG(value,5) OVER w > mean AND LAG(value,6) OVER w > mean\n             AND LAG(value,7) OVER w > mean AND LAG(value,8) OVER w > mean)\n        OR  (value < mean AND LAG(value,1) OVER w < mean AND LAG(value,2) OVER w < mean\n             AND LAG(value,3) OVER w < mean AND LAG(value,4) OVER w < mean\n             AND LAG(value,5) OVER w < mean AND LAG(value,6) OVER w < mean\n             AND LAG(value,7) OVER w < mean AND LAG(value,8) OVER w < mean)\n        THEN TRUE ELSE FALSE END AS rule2_trigger,\n\n        -- Rule 3: 6 consecutive trending\n        CASE WHEN\n            (value > LAG(value,1) OVER w AND LAG(value,1) OVER w > LAG(value,2) OVER w\n             AND LAG(value,2) OVER w > LAG(value,3) OVER w AND LAG(value,3) OVER w > LAG(value,4) OVER w\n             AND LAG(value,4) OVER w > LAG(value,5) OVER w)\n        OR  (value < LAG(value,1) OVER w AND LAG(value,1) OVER w < LAG(value,2) OVER w\n             AND LAG(value,2) OVER w < LAG(value,3) OVER w AND LAG(value,3) OVER w < LAG(value,4) OVER w\n             AND LAG(value,4) OVER w < LAG(value,5) OVER w)\n        THEN TRUE ELSE FALSE END AS rule3_trigger,\n\n        -- Rule 4: 14 alternating\n        CASE WHEN\n            (SIGN(value - LAG(value,1) OVER w) != SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w)) AND\n            (SIGN(LAG(value,1) OVER w - LAG(value,2) OVER w) != SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w)) AND\n            (SIGN(LAG(value,2) OVER w - LAG(value,3) OVER w) != SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w)) AND\n            (SIGN(LAG(value,3) OVER w - LAG(value,4) OVER w) != SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w)) AND\n            (SIGN(LAG(value,4) OVER w - LAG(value,5) OVER w) != SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w)) AND\n            (SIGN(LAG(value,5) OVER w - LAG(value,6) OVER w) != SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w)) AND\n            (SIGN(LAG(value,6) OVER w - LAG(value,7) OVER w) != SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w)) AND\n            (SIGN(LAG(value,7) OVER w - LAG(value,8) OVER w) != SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w)) AND\n            (SIGN(LAG(value,8) OVER w - LAG(value,9) OVER w) != SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w)) AND\n            (SIGN(LAG(value,9) OVER w - LAG(value,10) OVER w) != SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w)) AND\n            (SIGN(LAG(value,10) OVER w - LAG(value,11) OVER w) != SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w)) AND\n            (SIGN(LAG(value,11) OVER w - LAG(value,12) OVER w) != SIGN(LAG(value,12) OVER w - LAG(value,13) OVER w))\n        THEN TRUE ELSE FALSE END AS rule4_trigger,\n\n        -- Rule 5: 2 of 3 beyond 2σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + 2*std THEN 1 ELSE 0 END) >= 2\n        OR  (CASE WHEN value < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - 2*std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - 2*std THEN 1 ELSE 0 END) >= 2\n        THEN TRUE ELSE FALSE END AS rule5_trigger,\n\n        -- Rule 6: 4 of 5 beyond 1σ same side\n        CASE WHEN\n            (CASE WHEN value > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w > mean + std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w > mean + std THEN 1 ELSE 0 END) >= 4\n        OR  (CASE WHEN value < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,1) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,2) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,3) OVER w < mean - std THEN 1 ELSE 0 END +\n             CASE WHEN LAG(value,4) OVER w < mean - std THEN 1 ELSE 0 END) >= 4\n        THEN TRUE ELSE FALSE END AS rule6_trigger,\n\n        -- Rule 7: 15 consecutive within 1σ\n        CASE WHEN\n            ABS(value - mean) < std AND ABS(LAG(value,1) OVER w - mean) < std AND\n            ABS(LAG(value,2) OVER w - mean) < std AND ABS(LAG(value,3) OVER w - mean) < std AND\n            ABS(LAG(value,4) OVER w - mean) < std AND ABS(LAG(value,5) OVER w - mean) < std AND\n            ABS(LAG(value,6) OVER w - mean) < std AND ABS(LAG(value,7) OVER w - mean) < std AND\n            ABS(LAG(value,8) OVER w - mean) < std AND ABS(LAG(value,9) OVER w - mean) < std AND\n            ABS(LAG(value,10) OVER w - mean) < std AND ABS(LAG(value,11) OVER w - mean) < std AND\n            ABS(LAG(value,12) OVER w - mean) < std AND ABS(LAG(value,13) OVER w - mean) < std AND\n            ABS(LAG(value,14) OVER w - mean) < std\n        THEN TRUE ELSE FALSE END AS rule7_trigger,\n\n        -- Rule 8: 8 consecutive beyond 1σ either side\n        CASE WHEN\n            ABS(value - mean) > std AND ABS(LAG(value,1) OVER w - mean) > std AND\n            ABS(LAG(value,2) OVER w - mean) > std AND ABS(LAG(value,3) OVER w - mean) > std AND\n            ABS(LAG(value,4) OVER w - mean) > std AND ABS(LAG(value,5) OVER w - mean) > std AND\n            ABS(LAG(value,6) OVER w - mean) > std AND ABS(LAG(value,7) OVER w - mean) > std\n        THEN TRUE ELSE FALSE END AS rule8_trigger\n    FROM ordered WINDOW w AS (ORDER BY rn)\n),\nbackfilled AS (\n    SELECT *,\n        rule1_trigger AS rule1,\n        CASE WHEN MAX(CASE WHEN rule2_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 8 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule2,\n        CASE WHEN MAX(CASE WHEN rule3_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 5 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule3,\n        CASE WHEN MAX(CASE WHEN rule4_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 13 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule4,\n        CASE WHEN MAX(CASE WHEN rule5_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule5,\n        CASE WHEN MAX(CASE WHEN rule6_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule6,\n        CASE WHEN MAX(CASE WHEN rule7_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 14 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule7,\n        CASE WHEN MAX(CASE WHEN rule8_trigger THEN 1 ELSE 0 END) OVER (ORDER BY rn ROWS BETWEEN CURRENT ROW AND 7 FOLLOWING) = 1 THEN TRUE ELSE FALSE END AS rule8\n    FROM rules\n),\nfinal AS (\n    SELECT *, (rule1 OR rule2 OR rule3 OR rule4 OR rule5 OR rule6 OR rule7 OR rule8) AS any_violation FROM backfilled\n)\nSELECT time, value, mean, upper_2_5sigma, lower_2_5sigma,\n    CASE WHEN any_violation THEN value ELSE NULL END AS anomaly_point,\n    CONCAT_WS(' | ',\n        CASE WHEN rule1 THEN 'Extreme Outlier Detected' END,\n        CASE WHEN rule2 THEN 'Process Shift Detected' END,\n        CASE WHEN rule3 THEN 'Process Drift Detected' END,\n        CASE WHEN rule4 THEN 'Unstable Oscillation Detected' END,\n        CASE WHEN rule5 THEN 'Early Warning: Shift Developing' END,\n        CASE WHEN rule6 THEN 'Gradual Drift Detected' END,\n        CASE WHEN rule7 THEN 'Abnormal Stability Detected' END,\n        CASE WHEN rule8 THEN 'High Variability Detected' END\n    ) AS rule_description\nFROM final ORDER BY time;",
-          "refId": "E",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "BUFFER IDLE TIME",
-      "type": "timeseries"
     }
   ],
   "preload": false,
@@ -1639,15 +2066,15 @@
     "list": [
       {
         "current": {
-          "text": "1m",
-          "value": "1m"
+          "text": "15m",
+          "value": "15m"
         },
         "description": "Rolling window duration (e.g. 1m, 5m, 10m, 30m, 1h)",
         "label": "Rolling Window",
         "name": "rolling_window",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "1m",
             "value": "1m"
           },
@@ -1662,7 +2089,7 @@
             "value": "10m"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "15m",
             "value": "15m"
           },
@@ -1683,12 +2110,12 @@
     ]
   },
   "time": {
-    "from": "2026-02-03T20:44:07.000Z",
-    "to": "2026-02-03T21:01:35.000Z"
+    "from": "2026-02-03T20:43:03.249Z",
+    "to": "2026-02-03T21:01:58.021Z"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "L2 BUFFER B ",
-  "uid": "adt8qgc",
+  "title": "L2 BUFFER B  ",
+  "uid": "adxqjlv",
   "version": 4
 }

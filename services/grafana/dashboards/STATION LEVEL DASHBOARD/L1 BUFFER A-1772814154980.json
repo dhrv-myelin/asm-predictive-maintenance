@@ -25,6 +25,12 @@
           "uid": "bfc3wenp44lxcc"
         },
         "enable": false,
+        "filter": {
+          "exclude": false,
+          "ids": [
+            1
+          ]
+        },
         "hide": false,
         "iconColor": "red",
         "name": "L1 BUFFER A CYCLE TIME",
@@ -60,6 +66,12 @@
           "uid": "bfc3wenp44lxcc"
         },
         "enable": false,
+        "filter": {
+          "exclude": false,
+          "ids": [
+            9
+          ]
+        },
         "hide": false,
         "iconColor": "red",
         "name": "BUFFER IDLE TIME",
@@ -95,6 +107,12 @@
           "uid": "bfc3wenp44lxcc"
         },
         "enable": false,
+        "filter": {
+          "exclude": false,
+          "ids": [
+            2
+          ]
+        },
         "hide": false,
         "iconColor": "red",
         "name": "BUFFER HOLDING TIME",
@@ -130,6 +148,12 @@
           "uid": "bfc3wenp44lxcc"
         },
         "enable": false,
+        "filter": {
+          "exclude": false,
+          "ids": [
+            3
+          ]
+        },
         "hide": false,
         "iconColor": "red",
         "name": "BUFFER STOPPER LOWERING TIME",
@@ -165,6 +189,12 @@
           "uid": "bfc3wenp44lxcc"
         },
         "enable": false,
+        "filter": {
+          "exclude": false,
+          "ids": [
+            4
+          ]
+        },
         "hide": false,
         "iconColor": "red",
         "name": "BUFFER PALLET RELEASE TIME",
@@ -200,6 +230,12 @@
           "uid": "bfc3wenp44lxcc"
         },
         "enable": false,
+        "filter": {
+          "exclude": false,
+          "ids": [
+            5
+          ]
+        },
         "hide": false,
         "iconColor": "red",
         "name": "BUFFER STOPPER RISING TIME",
@@ -234,7 +270,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 0,
+  "id": 59,
   "links": [],
   "panels": [
     {
@@ -3081,7 +3117,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "L1 BUFFER A ",
+  "title": "L1 BUFFER A",
   "uid": "addmwbj",
-  "version": 4
+  "version": 1
 }

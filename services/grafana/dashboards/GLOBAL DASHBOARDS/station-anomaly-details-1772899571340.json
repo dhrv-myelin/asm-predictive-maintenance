@@ -1,0 +1,218 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 68,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bfc3wenp44lxcc"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "links": [
+            {
+              "targetBlank": true,
+              "title": "station graph ",
+              "url": "http://localhost:3000/d/adz75ft/substation-overall?orgId=1&var-station=${__value.text}&var-anomaly_time=${anomaly_time}\n "
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "ANOMALY": {
+                        "color": "dark-red",
+                        "index": 0
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "station_name"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Station Breakdown",
+                    "url": "/d/adlsfdp/station-breakdown?orgId=1&var-station_name=${__value.raw}&var-anomaly_time=${anomaly_time}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 19,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "frameIndex": 1,
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.2",
+      "repeat": "anomaly_time",
+      "repeatDirection": "h",
+      "targets": [
+        {
+          "dataset": "glue-dispenser-db",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bfc3wenp44lxcc"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH station_data AS (\n\n    SELECT 'l1_buffer_a' AS station_name,\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l1_buffer_a_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l1_buffer_b',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l1_buffer_b_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_buffer_a',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l2_buffer_a_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_buffer_b',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l2_buffer_b_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'shuttle_station',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM shuttle_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l1_dispenser',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        rule_description AS violated_rules\n    FROM l1_dispenser_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_dispenser',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        rule_description AS violated_rules\n    FROM l2_dispenser_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l1_inspection',\n        time, value, mean,\n        (anomaly_point IS NOT NULL) AS any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l1_inspection_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_inspection',\n        time, value, mean,\n        (anomaly_point IS NOT NULL) AS any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l2_inspection_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n)\n\nSELECT\n    station_name,\n    value,\n    time,\n    mean,\n    upper_3sigma AS ucl,\n    lower_3sigma AS lcl,\n    CASE\n        WHEN any_violation THEN 'ANOMALY'\n        ELSE 'NORMAL'\n    END AS status,\n    violated_rules\nFROM station_data\nORDER BY value DESC;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Station Breakdown",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "lcl": true,
+              "mean": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "station_name": "STATION NAME",
+              "status": "STATUS ",
+              "ucl": "UPPER CONTROL LIMIT",
+              "value": "VALUE(SEC)"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "1770144226000",
+          "value": "1770144226000"
+        },
+        "name": "anomaly_time",
+        "options": [
+          {
+            "selected": true,
+            "text": "1770144226000",
+            "value": "1770144226000"
+          }
+        ],
+        "query": "1770144226000",
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "2026-01-23T22:45:00.000Z",
+    "to": "2026-01-23T23:15:00.000Z"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "station-anomaly-details",
+  "uid": "ad8qh8c",
+  "version": 6
+}

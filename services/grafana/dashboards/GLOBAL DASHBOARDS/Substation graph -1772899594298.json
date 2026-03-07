@@ -160,7 +160,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE station_name = '${station_name}'\n  AND metric_name = '${metric_name}'\n  AND timestamp BETWEEN\n        '${anomaly_time}'::timestamptz - INTERVAL '0.4 minute'\n    AND '${anomaly_time}'::timestamptz + INTERVAL '0.4 minute'\nORDER BY timestamp;",
+          "rawSql": "SELECT\n  timestamp AS time,\n  value\nFROM process_metrics\nWHERE station_name = '${station_name}'\n  AND metric_name = REPLACE(REPLACE('${metric_name}', '${station_name}_', ''), '_view', '')\n  AND timestamp BETWEEN\n        to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '0.4 minute'\n    AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '0.4 minute'\nORDER BY timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -190,7 +190,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT\n  time,\n  mean,\n  upper_2_5sigma AS ucl,\n  lower_2_5sigma AS lcl\nFROM ${station_name}_${metric_name}_view\nWHERE time BETWEEN\n      '${anomaly_time}'::timestamptz - INTERVAL '0.4 minute'\n  AND '${anomaly_time}'::timestamptz + INTERVAL '0.4 minute'\nORDER BY time;",
+          "rawSql": "SELECT\n  time,\n  mean,\n  upper_3sigma AS ucl,\n  lower_3sigma AS lcl\nFROM ${metric_name}\nWHERE time BETWEEN\n      to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '0.4 minute'\n  AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '0.4 minute'\nORDER BY time;",
           "refId": "B",
           "sql": {
             "columns": [
@@ -222,18 +222,24 @@
     "list": [
       {
         "current": {
-          "text": "2026-02-04 02:16:48",
-          "value": "2026-02-04 02:16:48"
+          "text": "1770144226000",
+          "value": "1770144226000"
         },
         "name": "anomaly_time",
-        "options": [],
-        "query": "",
+        "options": [
+          {
+            "selected": true,
+            "text": "1770144226000",
+            "value": "1770144226000"
+          }
+        ],
+        "query": "1770144226000",
         "type": "custom"
       },
       {
         "current": {
-          "text": "l1_dispenser",
-          "value": "l1_dispenser"
+          "text": "",
+          "value": ""
         },
         "name": "station_name",
         "options": [],
@@ -248,13 +254,13 @@
             "$__all"
           ]
         },
-        "definition": "SELECT DISTINCT metric_name\nFROM process_metrics\nWHERE station_name = '${station_name}'\nORDER BY metric_name;",
+        "definition": "SELECT viewname AS metric_name\nFROM pg_views\nWHERE schemaname = 'public'\n  AND viewname IN (\n    'l1_buffer_a_buffer_holding_time_view',\n    'l1_buffer_a_buffer_idle_time_view',\n    'l1_buffer_a_buffer_pallet_release_time_view',\n    'l1_buffer_a_buffer_stopper_lowering_time_view',\n    'l1_buffer_b_buffer_holding_time_view',\n    'l1_buffer_b_buffer_idle_time_view',\n    'l1_buffer_b_buffer_pallet_release_time_view',\n    'l1_dispenser_dispenser_delay_post_entry_unclamp_view',\n    'l1_dispenser_dispenser_entry_unclamp_time_view',\n    'l1_inspection_inspection_idle_time_view',\n    'l1_inspection_inspection_lifter_rising_time_view',\n    'l2_buffer_a_buffer_holding_time_view',\n    'l2_buffer_a_buffer_idle_time_view',\n    'l2_buffer_a_buffer_pallet_release_time_view',\n    'l2_buffer_b_buffer_holding_time_view',\n    'l2_buffer_b_buffer_idle_time_view',\n    'l2_buffer_b_buffer_pallet_release_time_view',\n    'l2_dispenser_dispenser_delay_post_entry_unclamp_view',\n    'l2_dispenser_dispenser_entry_unclamp_time_view',\n    'l2_inspection_inspection_idle_time_view',\n    'l2_inspection_inspection_lifter_rising_time_view',\n    'shuttle_station_shuttle_idle_time_view',\n    'shuttle_station_shuttle_pre_scan_time_view'\n  )\n  AND viewname LIKE '${station_name}_%'\nORDER BY viewname;",
         "includeAll": true,
         "multi": true,
         "name": "metric_name",
         "options": [],
-        "query": "SELECT DISTINCT metric_name\nFROM process_metrics\nWHERE station_name = '${station_name}'\nORDER BY metric_name;",
-        "refresh": 1,
+        "query": "SELECT viewname AS metric_name\nFROM pg_views\nWHERE schemaname = 'public'\n  AND viewname IN (\n    'l1_buffer_a_buffer_holding_time_view',\n    'l1_buffer_a_buffer_idle_time_view',\n    'l1_buffer_a_buffer_pallet_release_time_view',\n    'l1_buffer_a_buffer_stopper_lowering_time_view',\n    'l1_buffer_b_buffer_holding_time_view',\n    'l1_buffer_b_buffer_idle_time_view',\n    'l1_buffer_b_buffer_pallet_release_time_view',\n    'l1_dispenser_dispenser_delay_post_entry_unclamp_view',\n    'l1_dispenser_dispenser_entry_unclamp_time_view',\n    'l1_inspection_inspection_idle_time_view',\n    'l1_inspection_inspection_lifter_rising_time_view',\n    'l2_buffer_a_buffer_holding_time_view',\n    'l2_buffer_a_buffer_idle_time_view',\n    'l2_buffer_a_buffer_pallet_release_time_view',\n    'l2_buffer_b_buffer_holding_time_view',\n    'l2_buffer_b_buffer_idle_time_view',\n    'l2_buffer_b_buffer_pallet_release_time_view',\n    'l2_dispenser_dispenser_delay_post_entry_unclamp_view',\n    'l2_dispenser_dispenser_entry_unclamp_time_view',\n    'l2_inspection_inspection_idle_time_view',\n    'l2_inspection_inspection_lifter_rising_time_view',\n    'shuttle_station_shuttle_idle_time_view',\n    'shuttle_station_shuttle_pre_scan_time_view'\n  )\n  AND viewname LIKE '${station_name}_%'\nORDER BY viewname;",
+        "refresh": 2,
         "regex": "",
         "type": "query"
       }
@@ -268,5 +274,5 @@
   "timezone": "browser",
   "title": "Substation graph ",
   "uid": "adg2s5v",
-  "version": 12
+  "version": 15
 }

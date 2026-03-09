@@ -63,7 +63,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 80,
+  "id": 84,
   "links": [],
   "panels": [
     {
@@ -193,7 +193,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -228,7 +228,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -1049,5 +1049,5 @@
   "timezone": "browser",
   "title": "cycle time",
   "uid": "addhzww",
-  "version": 2
+  "version": 1
 }

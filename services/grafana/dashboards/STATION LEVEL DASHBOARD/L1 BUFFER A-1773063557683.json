@@ -270,7 +270,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 59,
+  "id": 63,
   "links": [],
   "panels": [
     {
@@ -431,7 +431,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               }
             ]
           },
@@ -586,7 +586,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "custom.fillBelowTo",
@@ -900,7 +900,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -923,7 +923,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -1089,7 +1089,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -1361,7 +1361,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -1384,7 +1384,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -1546,7 +1546,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -1826,7 +1826,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -1857,7 +1857,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -2272,7 +2272,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -2303,7 +2303,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -2722,7 +2722,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -2753,7 +2753,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",

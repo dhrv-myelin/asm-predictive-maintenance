@@ -378,6 +378,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 52,
   "links": [],
   "panels": [
     {
@@ -505,7 +506,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               }
             ]
           },
@@ -531,7 +532,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               }
             ]
           },
@@ -686,7 +687,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "custom.fillBelowTo",
@@ -1000,7 +1001,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -1023,7 +1024,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -1189,7 +1190,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -1480,7 +1481,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -1503,7 +1504,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -1665,7 +1666,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL(+3σ)"
               },
               {
                 "id": "color",
@@ -1960,7 +1961,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -1991,7 +1992,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -2406,7 +2407,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -2437,7 +2438,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -2856,7 +2857,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -2887,7 +2888,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -3321,7 +3322,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -3352,7 +3353,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL(-3σ)"
               },
               {
                 "id": "color",
@@ -3782,7 +3783,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Upper Band (+3σ)"
+                "value": "UCL (+3σ)"
               },
               {
                 "id": "color",
@@ -3813,7 +3814,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Lower Band (-3σ)"
+                "value": "LCL (-3σ)"
               },
               {
                 "id": "color",
@@ -4197,5 +4198,5 @@
   "timezone": "browser",
   "title": "L2 INSPECTION",
   "uid": "adnkfn7",
-  "version": 7
+  "version": 1
 }

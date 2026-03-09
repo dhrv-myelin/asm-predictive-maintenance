@@ -118,9 +118,9 @@ target:
         - system__cycle_time
         - timestamp
 
-      history_window: 6
+      history_window: 2
       stride: 1
-      prediction_window: 7
+      prediction_window: 1
 
       #TODO: make mlfow dockerized
       load_path: "saved_models/mamba/model.pt"

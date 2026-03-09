@@ -63,7 +63,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 84,
+  "id": 88,
   "links": [],
   "panels": [
     {
@@ -383,6 +383,13 @@
               {
                 "id": "custom.lineWidth",
                 "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ebebeb",
+                  "mode": "fixed"
+                }
               }
             ]
           }

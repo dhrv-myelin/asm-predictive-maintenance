@@ -36,7 +36,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n    time AS time,\n    rule_description AS text,\n    'Anomaly Detected' AS tags\nFROM system_cycle_time_nelson_view\nWHERE $__timeFilter(time)\n  AND rule_description IS NOT NULL\n  AND rule_description != ''\nORDER BY time",
+          "rawSql": "SELECT\n    time AS time,\n    rule_description AS text,\n    'Nelson Rule' AS tags\nFROM system_cycle_time_nelson_view\nWHERE $__timeFilter(time)\n  AND rule_description IS NOT NULL\n  AND rule_description != ''\nORDER BY time",
           "refId": "Anno",
           "sql": {
             "columns": [
@@ -63,7 +63,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 74,
+  "id": 80,
   "links": [],
   "panels": [
     {
@@ -1049,5 +1049,5 @@
   "timezone": "browser",
   "title": "cycle time",
   "uid": "addhzww",
-  "version": 1
+  "version": 2
 }

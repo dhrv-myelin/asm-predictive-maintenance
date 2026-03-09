@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 68,
+  "id": 79,
   "links": [],
   "panels": [
     {
@@ -139,7 +139,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH station_data AS (\n\n    SELECT 'l1_buffer_a' AS station_name,\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l1_buffer_a_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l1_buffer_b',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l1_buffer_b_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_buffer_a',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l2_buffer_a_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_buffer_b',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l2_buffer_b_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'shuttle_station',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM shuttle_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l1_dispenser',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        rule_description AS violated_rules\n    FROM l1_dispenser_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_dispenser',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        rule_description AS violated_rules\n    FROM l2_dispenser_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l1_inspection',\n        time, value, mean,\n        (anomaly_point IS NOT NULL) AS any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l1_inspection_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_inspection',\n        time, value, mean,\n        (anomaly_point IS NOT NULL) AS any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l2_inspection_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\n)\n\nSELECT\n    station_name,\n    value,\n    time,\n    mean,\n    upper_3sigma AS ucl,\n    lower_3sigma AS lcl,\n    CASE\n        WHEN any_violation THEN 'ANOMALY'\n        ELSE 'NORMAL'\n    END AS status,\n    violated_rules\nFROM station_data\nORDER BY value DESC;",
+          "rawSql": "WITH station_data AS (\n\n    SELECT 'l1_buffer_a' AS station_name,\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l1_buffer_a_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l1_buffer_b',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l1_buffer_b_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_buffer_a',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l2_buffer_a_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_buffer_b',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l2_buffer_b_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'shuttle_station',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM shuttle_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l1_dispenser',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l1_dispenser_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_dispenser',\n        time, value, mean, any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l2_dispenser_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l1_inspection',\n        time, value, mean,\n        (anomaly_point IS NOT NULL) AS any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l1_inspection_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) + INTERVAL '30 seconds'\n\n    UNION ALL\n    SELECT 'l2_inspection',\n        time, value, mean,\n        (anomaly_point IS NOT NULL) AS any_violation,\n        upper_3sigma, lower_3sigma,\n        violated_rules\n    FROM l2_inspection_cycle_nelson_view\n    WHERE time BETWEEN\n          to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) - INTERVAL '30 seconds'\n      AND to_timestamp(CAST(NULLIF('${anomaly_time}', '') AS bigint) / 1000.0) + INTERVAL '30 seconds'\n)\n\nSELECT\n    station_name,\n    value,\n    time,\n    mean,\n    upper_3sigma AS ucl,\n    lower_3sigma AS lcl,\n    CASE\n        WHEN any_violation THEN 'ANOMALY'\n        ELSE 'NORMAL'\n    END AS status,\n    violated_rules\nFROM station_data\nORDER BY value DESC;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -190,18 +190,18 @@
     "list": [
       {
         "current": {
-          "text": "1770144226000",
-          "value": "1770144226000"
+          "text": "0",
+          "value": "0"
         },
         "name": "anomaly_time",
         "options": [
           {
             "selected": true,
-            "text": "1770144226000",
-            "value": "1770144226000"
+            "text": "0",
+            "value": "0"
           }
         ],
-        "query": "1770144226000",
+        "query": "0",
         "type": "textbox"
       }
     ]
@@ -214,5 +214,5 @@
   "timezone": "browser",
   "title": "station-anomaly-details",
   "uid": "ad8qh8c",
-  "version": 6
+  "version": 7
 }

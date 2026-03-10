@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 82,
+  "id": 86,
   "links": [],
   "panels": [
     {
@@ -99,7 +99,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT DISTINCT ON (p.metric_name)\n  p.metric_name,\n  p.value,\n  p.unit,\n  p.timestamp\nFROM process_metrics p\nWHERE p.station_name = '${station_name}'\n  AND p.timestamp BETWEEN\n      to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '30 seconds'\n  AND to_timestamp(${anomaly_time}::bigint / 1000.0) + INTERVAL '30 seconds'\nORDER BY p.metric_name, ABS(EXTRACT(EPOCH FROM (p.timestamp - to_timestamp(${anomaly_time}::bigint / 1000.0))));",
+          "rawSql": "SELECT DISTINCT ON (p.metric_name)\n  p.metric_name,\n  p.value,\n  p.unit,\n  p.timestamp\nFROM process_metrics p\nWHERE p.station_name = '${station_name}'\n  AND p.timestamp >= to_timestamp(${anomaly_time}::bigint / 1000.0) - INTERVAL '60 seconds'\n  AND p.timestamp <= to_timestamp(${anomaly_time}::bigint / 1000.0)\nORDER BY p.metric_name, p.timestamp DESC;",
           "refId": "A",
           "sql": {
             "columns": [

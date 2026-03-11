@@ -17,6 +17,7 @@ matplotlib.use("Agg")
 from models.isolation_health import IsolationForestHealth
 from models.mamba import Mamba_TS
 from models.xgboost_window_forecaster import XGBWindowForecaster
+from models.var_forecaster import VARForecaster
 
 # ============================================================
 # Registry
@@ -26,10 +27,11 @@ models = {
     "mamba": Mamba_TS,
     "isolation_forest": IsolationForestHealth,
     "xgboost_forecast": XGBWindowForecaster,
+    "var_forecast": VARForecaster,
 }
 
 # Unsupervised: y is ignored entirely for fit and eval
-UNSUPERVISED_MODELS = {"isolation_forest"}
+UNSUPERVISED_MODELS = {"isolation_forest", "var_forecast"}  # <-- add var_forecast
 
 # Row-wise: DO NOT flatten seq_len into columns.
 # Instead unroll (N, seq_len, F) -> (N*seq_len, F) so the model
@@ -37,6 +39,7 @@ UNSUPERVISED_MODELS = {"isolation_forest"}
 ROWWISE_MODELS = {"isolation_forest"}
 
 
+VAR_MODELS = {"var_forecast"}
 # ============================================================
 # Main Wrapper
 # ============================================================
@@ -116,6 +119,14 @@ class Model:
             elif self.config["method"] in ROWWISE_MODELS:
                 X = X.reshape(N * seq_len, F)
                 y = np.repeat(y, seq_len, axis=0)
+
+            # for var models
+            elif self.config["method"] in VAR_MODELS:
+                # Unroll (N, seq_len, F) -> (N * seq_len, F)
+                # VAR sees the full temporal sequence, not independent windows.
+                X = X.reshape(N * seq_len, F)
+                # y is ignored by VARForecaster.fit() but passed through harmlessly
+
             else:
                 X = X.reshape(N, seq_len * F)
 

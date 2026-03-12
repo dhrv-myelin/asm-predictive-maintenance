@@ -15,6 +15,7 @@ from poller import DBPoller
 from sklearn.preprocessing import RobustScaler
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -185,13 +186,13 @@ def main():
         "--start",
         type=str,
         default="2026-02-03 18:45:00",
-        help="Start timestamp for train/backup mode (format: 'YYYY-MM-DD HH:MM:SS')",
+        help="Start timestamp in IST for train/backup mode (format: 'YYYY-MM-DD HH:MM:SS')",
     )
     parser.add_argument(
         "--end",
         type=str,
         default="2026-02-03 19:27:35",
-        help="End timestamp for train/backup mode (format: 'YYYY-MM-DD HH:MM:SS')",
+        help="End timestamp in IST for train/backup mode (format: 'YYYY-MM-DD HH:MM:SS')",
     )
     parser.add_argument(
         "--poll-interval",
@@ -291,8 +292,9 @@ def main():
     # Mode dispatch
     # --------------------------------------------------
     if args.mode == "train":
-        start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S")
-        end_ts = datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S")
+        start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S").replace(tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
+        end_ts = datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S").replace(tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
+
         rows = db_util.fetch_data(start_ts, end_ts)
 
         for name, handler in data_handlers.items():
@@ -309,8 +311,10 @@ def main():
                     models[name].train(X, y)
 
     elif args.mode == "backup":
-        start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S")
-        end_ts = datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S")
+
+        start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S").replace(tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
+        end_ts = datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S").replace(tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
+
         infer_from_archive(start_ts, end_ts, data_handlers, models, db_util)
 
     elif args.mode == "infer":

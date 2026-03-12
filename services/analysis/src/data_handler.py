@@ -336,6 +336,8 @@ class DataHandler:
                 if not self.df.empty
                 else row_df.copy()
             )
+            self.df.drop_duplicates(inplace=True)
+
 
     # ------------------------------------------------------------------
     # Public: sliding-window fetch (inference)
@@ -352,14 +354,13 @@ class DataHandler:
             return None
 
         if curr_first_timestamp is None:
-            start_idx = 0
+            start = 0
         else:
             idx = df.index[df["timestamp"] == curr_first_timestamp]
             if len(idx) == 0:
                 return None
-            start_idx = idx[0]
+            start = idx[0] + self.stride
 
-        start = start_idx + self.stride
         end = start + self.history_window
 
         if end > len(df):

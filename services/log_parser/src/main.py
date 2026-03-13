@@ -208,6 +208,7 @@ def main():
     parser.add_argument('--viz', action='store_true')
     parser.add_argument('--patterns', default='config/log_patterns/prod_patterns.yaml')
     parser.add_argument('--no-db', action='store_true', help='Disable database (fallback to CSV)')
+    parser.add_argument('--machine', choices=['GDM', 'CED'], default='CED', help='Indicates which Machine the logs are from (GDM/CED)')
     parser.add_argument(
     '--baseline_hours',
     type=int,
@@ -242,12 +243,31 @@ def main():
 
     # 4. Initialize Visualizer
     start_time_str = None
+    lg_file_date = None
+
     try:
-        with open(args.input, 'r') as f:
-            first_line = f.readline()
-            start_time_str = first_line.split(' [')[0]
-    except:
-        pass
+        if args.machine == "GDM":
+            with open(args.input, "r") as f:
+                first_line = f.readline()
+                start_time_str = first_line.split(" [")[0]
+
+        elif args.machine == "CED":
+            # Extract date from folder name
+            folder_name = os.path.basename(os.path.normpath(args.input))
+            lg_file_date = datetime.strptime(folder_name, "%y%m%d").strftime("%Y-%m-%d")
+
+            # Open Message.txt inside the folder
+            message_file = os.path.join(args.input, "Message.txt")
+
+            with open(message_file, "r") as f:
+                first_line = f.readline()
+                time_part = first_line.split(">")[1].split()[0]
+
+            # Combine folder date with time from log
+            start_time_str = f"{lg_file_date} {time_part}"
+
+    except Exception as e:
+        print(f"Error parsing start time: {e}")
 
     viz = None
     if args.viz:
@@ -269,13 +289,16 @@ def main():
         print(f"CRITICAL: Pattern file not found at {args.patterns}")
         sys.exit(1)
 
-    log_parser = LogParser(args.patterns)
+    log_parser = LogParser(args.patterns, args.machine, lg_file_date)
 
     is_live_mode = not args.once
     if "vector_buffer" in args.input:
         consumer = VectorBufferConsumer(args.input, live=is_live_mode)
     else:
-        consumer = RawFileConsumer(args.input, live=is_live_mode)
+        if args.machine == "GDM":
+            consumer = RawFileConsumer(args.input, live=is_live_mode)
+        elif args.machine == "CED":
+            consumer = RawFileConsumer(os.path.join(args.input, "Message.txt"), live=is_live_mode)
 
     # 7. Run the Loop
     print(f"\n=== Starting Engine ===")

@@ -337,6 +337,9 @@ class LogicEngine:
                 self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state)
     
     def _push_raw_metrics(self, event, timestamp):
+
+        SKIP_KEYS = {'pallet_id', 'unit', 'carrier_sn', 'position', 'version'}
+
         def normalize(value):
             if isinstance(value, str):
                 s = value.strip()
@@ -350,15 +353,16 @@ class LogicEngine:
 
         payload = event.get('payload', {})
         for key in payload:
-            if key == 'pallet_id':
+            if key in SKIP_KEYS:
                 continue
+            
             value = normalize(payload[key])
             self._stream_metric(
                 timestamp=timestamp,
                 comp_id=event.get('target', 'system'),
                 name=f"{key}",
                 value=value,
-                unit=None,
+                unit=payload.get('unit', None),
                 context=event.get('type')
             )
 

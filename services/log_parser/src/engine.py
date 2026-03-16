@@ -48,6 +48,7 @@ class LogicEngine:
             self._reset_system()
             return 
         print(f"[DEBUG]: Payload: {payload}, Target ID: {target_id}")
+        print(f"[DEBUG] Event detected : {event['type']}")
 
         # 1. Resolve Target (Tag -> ID)
         if not target_id and 'tag_id' in payload and self.tag_resolver:
@@ -62,7 +63,7 @@ class LogicEngine:
             print(f"[DEBUG]: State Resolved target from {state_resolver} to Target ID: {target_id}" )
         
         if target_id=="system":
-            print("event : ",event)
+            # print("event : ",event)
             self._push_raw_metrics(event,timestamp)
             return
 

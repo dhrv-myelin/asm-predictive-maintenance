@@ -130,7 +130,7 @@
         - "event": "SFC_RESPONSE_RECEIVED"
           "next_state": "PRE_DISPENSING"
           "metrics":
-          - "name": "sfc_query_processing time"
+          - "name": "sfc_query_processing_time"
             "type": "duration_seconds"
             "export": true
       "PRE_DISPENSING":
@@ -239,12 +239,80 @@
           - "name": "exit_stopper_raising_time"
             "type": "duration_seconds"
             "export": true
+            
+  # ====================================================================================
+  # 2. CED Maintenance : Virtual; Does not Actually exist
+  # ====================================================================================
+
+  "ced_maintenance":
+    "initial_state": "IDLE"
+    "states":
+      "IDLE":
+        "transitions":
+        - "event": "MAINT_CLEAN_NOZZLE_START"
+          "next_state": "MAINT_NOZZLE_CLEANING"
+          "metrics":
+          - "name": "maintenance_waiting_time"
+            "type": "duration_seconds"
+            "export": true
+      "MAINT_NOZZLE_CLEANING":
+        "transitions":
+        - "event": "MAINT_CLEAN_NOZZLE_DONE"
+          "next_state": "MAINT_EVAL_NOZZLE_CLEANING"
+          "metrics":
+          - "name": "maint_nozzle_cleaning_time"
+            "type": "duration_seconds"
+            "export": true
+      "MAINT_EVAL_NOZZLE_CLEANING":
+        "transitions":
+        - "event": "MAINT_CLEAN_NOZZLE_START"
+          "next_state": "MAINT_NOZZLE_CLEANING"
+          "metrics":
+          - "name": "maint_between_nozzle_clean_delay"
+            "type": "duration_seconds"
+            "export": true
+        - "event": "MAINT_PURGE_GLUE_START"
+          "next_state": "MAINT_GLUE_PURGING"
+          "metrics":
+          - "name": "maint_post_nozzle_clean_delay"
+            "type": "duration_seconds"
+            "export": true
+      "MAINT_GLUE_PURGING":
+        "transitions":
+        - "event": "MAINT_PURGE_GLUE_DONE"
+          "next_state": "MAINT_EVAL_GLUE_PURGING"
+          "metrics":
+          - "name": "maint_glue_purging_time"
+            "type": "duration_seconds"
+            "export": true
+      "MAINT_EVAL_GLUE_PURGING":
+        "transitions":
+        - "event": "MAINT_PURGE_GLUE_START"
+          "next_state": "MAINT_GLUE_PURGING"
+          "metrics":
+          - "name": "maint_between_glue_purge_delay"
+            "type": "duration_seconds"
+            "export": true
+        - "event": "MAINT_MOVE_SAFE_START"
+          "next_state": "MAINT_MOVEMENT_SAFE"
+          "metrics":
+          - "name": "maint_post_glue_purge_delay"
+            "type": "duration_seconds"
+            "export": true
+      "MAINT_MOVEMENT_SAFE":
+        "transitions":
+        - "event": "MAINT_MOVE_SAFE_DONE"
+          "next_state": "IDLE"
+          "metrics":
+          - "name": "maint_move_to_safe_time"
+            "type": "duration_seconds"
+            "export": true
 
   # ==========================================
-  # 2. SINK
+  # 3. SINK
   # ==========================================
 
-  exit_sink:
+  "exit_sink":
     initial_state: "ACTIVE"
     states:
       ACTIVE:

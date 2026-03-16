@@ -62,7 +62,7 @@
   "event_type": "SFC_QUERY_SENT"
   "target_id": "ced_station"
 - "name": "Sfc Response Received"
-  "regex": "ok@\\{0 SFC_OK(?P<payload>.*)\\}@"
+  "regex": "OK:(?P<payload>.*)\\}@"
   "event_type": "SFC_RESPONSE_RECEIVED"
   "target_id": "ced_station"
 - "name": "Cavity Move Start"

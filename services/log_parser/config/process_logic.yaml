@@ -127,7 +127,7 @@
             "export": true
       "SFC_QUERY_PROCESSING":
         "transitions":
-        - "event": "SFC_RESPONSE_RECEIEVED"
+        - "event": "SFC_RESPONSE_RECEIVED"
           "next_state": "PRE_DISPENSING"
           "metrics":
           - "name": "sfc_query_processing time"

@@ -64,7 +64,8 @@ class CEDAdapter(MachineAdapter):
         r"^(\w+)[-—>]+(\d{2}:\d{2}:\d{2}[.,]\d+)\s+(.*)"
     )
     # Detects the opening of a  给PDCA发送:_{  block in the message part
-    _BLOCK_OPEN = re.compile(r"给PDCA发送:_\{")
+    _PDCA_BLOCK_OPEN = re.compile(r"给PDCA发送:_\{")
+    _SFC_OK_BLOCK_OPEN = re.compile(r"ok@\{0 SFC_OK$")
     # One data row inside a  给PDCA发送:_{...}  block
     # e.g.  J63HQG006TB0000WDH@pdata@glue_weight@10@9.5@10.5@mg
     _DATA_ROW = re.compile(
@@ -264,7 +265,24 @@ class LogParser:
 
         # ── Case 1: we are already inside a _{ ... } block ────────────────
         if self._in_block:
-            if stripped == '}':
+            if re.search(r"OK:(?P<payload>.*)\}@", stripped):
+
+                print("[DEBUG] Found SFC_OK Block close")
+
+                self._in_block = False
+
+                for pattern in self.patterns:
+                    pmatch = pattern['regex'].search(stripped)
+                    # print(f"stripped ::{len(self._block_lines)}:: {stripped}")
+                    if pmatch:
+                        print("[DEBUG] Matched Regex for SFC_OK Block close, Building Event")
+                        yield self._block_epoch, self._build_event(pattern, pmatch, self._block_channel, line_text)
+                        self._block_lines   = []
+                        self._block_channel = ''
+                        self._block_epoch   = 0.0
+                        break
+
+            elif stripped == '}':
                 # Closing brace — block is complete, fire all events
                 self._in_block = False
                 yield from self._process_ced_block(
@@ -288,7 +306,15 @@ class LogParser:
         epoch, channel, content = parsed
 
         # ── Case 3: block opener ───────────────────────────────────────────
-        if adapter._BLOCK_OPEN.search(line_text):
+        if adapter._PDCA_BLOCK_OPEN.search(line_text):
+            self._in_block      = True
+            self._block_epoch   = epoch
+            self._block_channel = channel
+            self._block_lines   = [line_text]    # index 0 = opener
+            return                               # rows will arrive in future calls
+
+        if adapter._SFC_OK_BLOCK_OPEN.search(content):
+            print("[DEBUG] Found SFC_OK Block open")
             self._in_block      = True
             self._block_epoch   = epoch
             self._block_channel = channel

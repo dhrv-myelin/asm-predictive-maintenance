@@ -1,23 +1,240 @@
-version: "1.0"
-description: "CED Station Process Logic"
-
-definitions:
+"version": "1.0"
+"description": "Process Logic"
+"definitions":
   # ==========================================
   # 1. CED STATION
   # ==========================================
-  ced_station:
-    initial_state: "IDLE"
-    states:
-      IDLE:
-        transitions:
-          - event: "PALLET_ARRIVAL"
-            next_state: "IDLE"
-            metrics:
-              - name: "ced_idle_time"
-                type: "duration_seconds"
-                description: "Time spent in IDLE state"
-            transition_stage: "arrival"
-
+  "ced_station":
+    "initial_state": "IDLE"
+    "states":
+      "IDLE":
+        "transitions":
+        - "event": "ENTRY_STOPPER_DOWN_START"
+          "next_state": "ENTRY_STOPPER_LOWERING"
+          "metrics":
+          - "name": "upstream_waiting_time"
+            "type": "duration_seconds"
+            "export": true
+      "ENTRY_STOPPER_LOWERING":
+        "transitions":
+        - "event": "ENTRY_STOPPER_DOWN_DONE"
+          "next_state": "ENTRY_STOPPER_DOWN_EVAL"
+          "metrics":
+          - "name": "entry_stopper_lowering_time"
+            "type": "duration_seconds"
+            "export": true
+      "ENTRY_STOPPER_DOWN_EVAL":
+        "transitions":
+        - "event": "ENTRY_STOPPER_DOWN_START"
+          "next_state": "ENTRY_STOPPER_LOWERING"
+          "metrics":
+          - "name": "entry_stopper_eval_delay"
+            "type": "duration_seconds"
+            "export": true
+        - "event": "PALLET_ARRIVED"
+          "next_state": "PALLET_HOME_POSITION"
+          "metrics":
+          - "name": "pallet_movein_time"
+            "type": "duration_seconds"
+            "export": true
+      "PALLET_HOME_POSITION":
+        "transitions":
+        - "event": "ENTRY_STOPPER_UP_START"
+          "next_state": "ENTRY_STOPPER_RAISING"
+          "metrics":
+          - "name": "movein_to_entry_stopper_up_delay"
+            "type": "duration_seconds"
+            "export": true
+      "ENTRY_STOPPER_RAISING":
+        "transitions":
+        - "event": "ENTRY_STOPPER_UP_DONE"
+          "next_state": "PALLET_READY_FOR_CLAMPING"
+          "metrics":
+          - "name": "entry_stopper_raising_time"
+            "type": "duration_seconds"
+            "export": true
+      "PALLET_READY_FOR_CLAMPING":
+        "transitions":
+        - "event": "PALLET_CLAMP_START"
+          "next_state": "PALLET_CLAMPING"
+          "metrics":
+          - "name": "pre_clamping_delay"
+            "type": "duration_seconds"
+            "export": true
+      "PALLET_CLAMPING":
+        "transitions":
+        - "event": "PALLET_CLAMP_DONE"
+          "next_state": "PALLET_READY_FOR_LIFTING"
+          "metrics":
+          - "name": "pallet_clamping_time"
+            "type": "duration_seconds"
+            "export": true
+      "PALLET_READY_FOR_LIFTING":
+        "transitions":
+        - "event": "PALLET_LIFTING_START"
+          "next_state": "PALLET_LIFTING"
+          "metrics":
+          - "name": "pre_pallet_lifting_delay"
+            "type": "duration_seconds"
+            "export": true
+      "PALLET_LIFTING":
+        "transitions":
+        - "event": "PALLET_LIFTING_DONE"
+          "next_state": "PALLET_WORK_POSITION"
+          "metrics":
+          - "name": "pallet_lifting_time"
+            "type": "duration_seconds"
+            "export": true
+      "PALLET_WORK_POSITION":
+        "transitions":
+        - "event": "SCAN_START"
+          "next_state": "BARCODE_SCANNING"
+          "metrics":
+          - "name": "post_pallet_lifting_delay"
+            "type": "duration_seconds"
+            "export": true
+      "BARCODE_SCANNING":
+        "transitions":
+        - "event": "SCAN_DONE"
+          "next_state": "PRE_PDCA_CONN"
+          "metrics":
+          - "name": "barcode_scanning_time"
+            "type": "duration_seconds"
+            "export": true
+      "PRE_PDCA_CONN":
+        "transitions":
+        - "event": "PDCA_CONN_OK"
+          "next_state": "PRE_SFC_CONN"
+          "metrics":
+          - "name": "pdca_conn_time"
+            "type": "duration_seconds"
+            "export": true
+      "PRE_SFC_CONN":
+        "transitions":
+        - "event": "SFC_CONN_OK"
+          "next_state": "PRE_SFC_REQUEST"
+          "metrics":
+          - "name": "sfc_conn_time"
+            "type": "duration_seconds"
+            "export": true
+      "PRE_SFC_REQUEST":
+        "transitions":
+        - "event": "SFC_QUERY_SENT"
+          "next_state": "SFC_QUERY_PROCESSING"
+          "metrics":
+          - "name": "pre_sfc_query_delay"
+            "type": "duration_seconds"
+            "export": true
+      "SFC_QUERY_PROCESSING":
+        "transitions":
+        - "event": "SFC_RESPONSE_RECEIEVED"
+          "next_state": "PRE_DISPENSING"
+          "metrics":
+          - "name": "sfc_query_processing time"
+            "type": "duration_seconds"
+            "export": true
+      "PRE_DISPENSING":
+        "transitions":
+        - "event": "CAVITY_MOVE_START"
+          "next_state": "DISPENSING"
+          "metrics":
+          - "name": "pre_dispensing_delay"
+            "type": "duration_seconds"
+            "export": true
+      "DISPENSING":
+        "transitions":
+        - "event": "CAVITY_MOVE_DONE"
+          "next_state": "POST_DISPENSING"
+          "metrics":
+          - "name": "dispensing_time"
+            "type": "duration_seconds"
+            "export": true
+      "POST_DISPENSING":
+        "transitions":
+        - "event": "CAVITY_MOVE_START"
+          "next_state": "DISPENSING"
+          "metrics":
+          - "name": "between_cavities_delay"
+            "type": "duration_seconds"
+            "export": true
+        - "event": "INSPECTION_MOVE_START"
+          "next_state": "INSPECTION"
+          "metrics":
+          - "name": "pre_inspection_delay"
+            "type": "duration_seconds"
+            "export": true
+      "INSPECTION":
+        "transitions":
+        - "event": "INSPECTION_MOVE_DONE"
+          "next_state": "PDCA_UPLOAD"
+          "metrics":
+          - "name": "inspection_time"
+            "type": "duration_seconds"
+            "export": true
+      "PDCA_UPLOAD":
+        "transitions":
+        - "event": "PALLET_UNCLAMP_START"
+          "next_state": "PALLET_UNCLAMPING"
+          "metrics":
+          - "name": "pdca_upload_time"
+            "type": "duration_seconds"
+            "export": true
+      "PALLET_UNCLAMPING":
+        "transitions":
+        - "event": "PALLET_UNCLAMP_DONE"
+          "next_state": "POST_UNCLAMPING"
+          "metrics":
+          - "name": "pallet_unclamping_time"
+            "type": "duration_seconds"
+            "export": true
+      "POST_UNCLAMPING":
+        "transitions":
+        - "event": "PALLET_LOWERING_START"
+          "next_state": "PALLET_LOWERING"
+          "metrics":
+          - "name": "pre_pallet_lowering_delay"
+            "type": "duration_seconds"
+            "export": true
+      "PALLET_LOWERING":
+        "transitions":
+        - "event": "PALLET_LOWERING_DONE"
+          "next_state": "PALLET_RETURN_HOME"
+          "metrics":
+          - "name": "pallet_lowering_time"
+            "type": "duration_seconds"
+            "export": true
+      "PALLET_RETURN_HOME":
+        "transitions":
+        - "event": "EXIT_STOPPER_DOWN_START"
+          "next_state": "EXIT_STOPPER_LOWERING"
+          "metrics":
+          - "name": "downstream_waiting_time"
+            "type": "duration_seconds"
+            "export": true
+      "EXIT_STOPPER_LOWERING":
+        "transitions":
+        - "event": "EXIT_STOPPER_DOWN_DONE"
+          "next_state": "PALLET_RELEASING"
+          "metrics":
+          - "name": "exit_stopper_lowering_time"
+            "type": "duration_seconds"
+            "export": true
+      "PALLET_RELEASING":
+        "transitions":
+        - "event": "EXIT_STOPPER_UP_START"
+          "next_state": "EXIT_STOPPER_RAISING"
+          "metrics":
+          - "name": "pallet_moveout_time"
+            "type": "duration_seconds"
+            "export": true
+      "EXIT_STOPPER_RAISING":
+        "transitions":
+        - "event": "EXIT_STOPPER_UP_DONE"
+          "next_state": "IDLE"
+          "metrics":
+          - "name": "exit_stopper_raising_time"
+            "type": "duration_seconds"
+            "export": true
 
   # ==========================================
   # 2. SINK

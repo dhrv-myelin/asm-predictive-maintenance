@@ -149,6 +149,8 @@
           - "name": "dispensing_time"
             "type": "duration_seconds"
             "export": true
+        - "event": "PALLET_UNCLAMP_START"
+          "next_state": "PALLET_UNCLAMPING"
       "POST_DISPENSING":
         "transitions":
         - "event": "CAVITY_MOVE_START"
@@ -163,6 +165,8 @@
           - "name": "pre_inspection_delay"
             "type": "duration_seconds"
             "export": true
+        - "event": "PALLET_UNCLAMP_START"
+          "next_state": "PALLET_UNCLAMPING"
       "INSPECTION":
         "transitions":
         - "event": "INSPECTION_MOVE_DONE"

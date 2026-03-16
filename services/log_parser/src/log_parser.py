@@ -88,7 +88,10 @@ class CEDAdapter(MachineAdapter):
 
         time_part = ts_str.replace(',', '.')
         hms, frac = time_part.split('.')
-        frac = frac.ljust(3, '0')[:3]
+
+        # frac = frac.ljust(3, '0')[:3] # Right Padding after Decimal :: Ex : 0.98 -> 0.980
+        frac = frac.zfill(3)[:3] # Left Padding after Decimal :: Ex : 0.98 -> 0.098
+
         full_ts = f"{self._log_date} {hms}.{frac}"
         try:
             dt = datetime.strptime(full_ts, "%Y-%m-%d %H:%M:%S.%f")

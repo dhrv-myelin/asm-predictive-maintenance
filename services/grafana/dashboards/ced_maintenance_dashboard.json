@@ -1,0 +1,1871 @@
+{
+  "__inputs": [
+    {
+      "name": "datasource",
+      "label": "PostgreSQL Datasource",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "postgres",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "postgres",
+      "name": "PostgreSQL",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.0.0"
+    }
+  ],
+  "id": null,
+  "uid": "ced-maintenance-metrics",
+  "title": "Ced Maintenance — Process Metrics",
+  "tags": [
+    "process-metrics",
+    "ced_maintenance"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "pluginId": "postgres",
+        "label": "Data Source",
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "options": [],
+        "query": "postgres",
+        "refresh": 1,
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "id": 1,
+      "title": "Maint Nozzle Cleaning Time",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5,
+            "spanNulls": false,
+            "barAlignment": 0
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#37872D"
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#37872D"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_nozzle_cleaning_time'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_nozzle_cleaning_time'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_nozzle_cleaning_time'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_nozzle_cleaning_time'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 2,
+      "title": "Maint Between Nozzle Clean Delay",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5,
+            "spanNulls": false,
+            "barAlignment": 0
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#37872D"
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#37872D"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_between_nozzle_clean_delay'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_between_nozzle_clean_delay'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_between_nozzle_clean_delay'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_between_nozzle_clean_delay'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 3,
+      "title": "Maint Post Nozzle Clean Delay",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5,
+            "spanNulls": false,
+            "barAlignment": 0
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#37872D"
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#37872D"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_post_nozzle_clean_delay'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_post_nozzle_clean_delay'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_post_nozzle_clean_delay'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_post_nozzle_clean_delay'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 4,
+      "title": "Maint Glue Purging Time",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5,
+            "spanNulls": false,
+            "barAlignment": 0
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#37872D"
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#37872D"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_glue_purging_time'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_glue_purging_time'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_glue_purging_time'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_glue_purging_time'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 5,
+      "title": "Maint Between Glue Purge Delay",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5,
+            "spanNulls": false,
+            "barAlignment": 0
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#37872D"
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#37872D"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_between_glue_purge_delay'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_between_glue_purge_delay'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_between_glue_purge_delay'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_between_glue_purge_delay'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 6,
+      "title": "Maint Post Glue Purge Delay",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5,
+            "spanNulls": false,
+            "barAlignment": 0
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#37872D"
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#37872D"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_post_glue_purge_delay'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_post_glue_purge_delay'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_post_glue_purge_delay'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_post_glue_purge_delay'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 7,
+      "title": "Maint Move To Safe Time",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5,
+            "spanNulls": false,
+            "barAlignment": 0
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#37872D"
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#37872D"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_move_to_safe_time'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_move_to_safe_time'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maint_move_to_safe_time'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maint_move_to_safe_time'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 8,
+      "title": "Maintenance Waiting Time",
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "pointSize": 5,
+            "spanNulls": false,
+            "barAlignment": 0
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#37872D"
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#37872D"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maintenance_waiting_time'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maintenance_waiting_time'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'ced_maintenance'\n      AND metric_name = 'maintenance_waiting_time'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'ced_maintenance'\n      AND metric_name = 'maintenance_waiting_time'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
+          "format": "time_series"
+        }
+      ]
+    }
+  ]
+}

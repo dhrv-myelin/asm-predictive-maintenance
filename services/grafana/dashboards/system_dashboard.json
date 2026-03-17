@@ -100,7 +100,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 4,
+  "id": 0,
   "links": [],
   "panels": [
     {
@@ -138,6 +138,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -153,7 +154,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -343,25 +344,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'cycle_time_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'cycle_time_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'cycle_time_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'cycle_time_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'cycle_time_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'cycle_time_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'cycle_time_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'cycle_time_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Cycle Time Value",
@@ -402,6 +441,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -417,7 +457,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -607,25 +647,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'pressure_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'pressure_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'pressure_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'pressure_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'pressure_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'pressure_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'pressure_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'pressure_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Pressure Value",
@@ -666,6 +744,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -681,7 +760,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -871,25 +950,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'gantry_cpk_y_upper'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'gantry_cpk_y_upper'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_y_upper'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_y_upper'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'gantry_cpk_y_upper'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'gantry_cpk_y_upper'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_y_upper'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_y_upper'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Gantry Cpk Y Upper",
@@ -930,6 +1047,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -945,7 +1063,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1135,25 +1253,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'Online_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'Online_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'online_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'online_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'Online_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'Online_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'online_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'online_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Online Value",
@@ -1194,6 +1350,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1209,7 +1366,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1399,25 +1556,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'dispense_speed_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'dispense_speed_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'dispense_speed_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'dispense_speed_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'dispense_speed_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'dispense_speed_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'dispense_speed_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'dispense_speed_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Dispense Speed Value",
@@ -1458,6 +1653,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1473,7 +1669,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1663,25 +1859,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'glue_weight_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'glue_weight_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'glue_weight_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'glue_weight_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'glue_weight_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'glue_weight_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'glue_weight_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'glue_weight_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Glue Weight Value",
@@ -1722,6 +1956,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1737,7 +1972,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1927,25 +2162,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'striking_time_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'striking_time_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'striking_time_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'striking_time_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'striking_time_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'striking_time_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'striking_time_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'striking_time_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Striking Time Value",
@@ -1986,6 +2259,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2001,7 +2275,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -2191,25 +2465,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'nozzle_temp_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'nozzle_temp_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'nozzle_temp_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'nozzle_temp_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'nozzle_temp_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'nozzle_temp_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'nozzle_temp_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'nozzle_temp_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Nozzle Temp Value",
@@ -2250,6 +2562,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2265,7 +2578,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -2455,25 +2768,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'single_dot_valve2_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'single_dot_valve2_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'single_dot_value2_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'single_dot_value2_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'single_dot_valve2_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'single_dot_valve2_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'single_dot_value2_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'single_dot_value2_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Single Dot Valve2 Value",
@@ -2514,6 +2865,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2529,7 +2881,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -2719,25 +3071,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'cam_uv_glue_sn'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'cam_uv_glue_sn'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'cam_uv_glue_sn'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'cam_uv_glue_sn'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'cam_uv_glue_sn'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'cam_uv_glue_sn'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'cam_uv_glue_sn'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'cam_uv_glue_sn'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Cam Uv Glue Sn",
@@ -2778,6 +3168,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2793,7 +3184,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -2983,25 +3374,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'Priority_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'Priority_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'Priority_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'Priority_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'Priority_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'Priority_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'Priority_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'Priority_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Priority Value",
@@ -3042,6 +3471,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -3057,7 +3487,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -3247,25 +3677,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'dispense_voltage_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'dispense_voltage_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'dispense_voltage_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'dispense_voltage_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'dispense_voltage_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'dispense_voltage_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'dispense_voltage_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'dispense_voltage_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Dispense Voltage Value",
@@ -3306,6 +3774,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -3321,7 +3790,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -3511,25 +3980,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'tossing_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'tossing_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'tossing_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'tossing_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'tossing_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'tossing_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'tossing_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'tossing_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Tossing Value",
@@ -3570,6 +4077,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -3585,7 +4093,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -3775,25 +4283,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'pulse_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'pulse_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'pulse_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'pulse_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'pulse_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'pulse_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'pulse_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'pulse_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Pulse Value",
@@ -3834,6 +4380,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -3849,7 +4396,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -4039,25 +4586,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'operator_id_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'operator_id_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'operator_id_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'operator_id_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'operator_id_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'operator_id_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'operator_id_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'operator_id_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Operator Id Value",
@@ -4098,6 +4683,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -4113,7 +4699,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -4303,25 +4889,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'gantry_cpk_x_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'gantry_cpk_x_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_x_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_x_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'gantry_cpk_x_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'gantry_cpk_x_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_x_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_x_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Gantry Cpk X Value",
@@ -4362,6 +4986,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -4377,7 +5002,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -4567,25 +5192,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'single_dot_valve1_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'single_dot_valve1_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'single_dot_valve1_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'single_dot_valve1_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'single_dot_valve1_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'single_dot_valve1_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'single_dot_valve1_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'single_dot_valve1_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Single Dot Valve1 Value",
@@ -4626,6 +5289,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -4641,7 +5305,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -4831,25 +5495,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'raising_time_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'raising_time_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'raising_time_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'raising_time_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'raising_time_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'raising_time_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'raising_time_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'raising_time_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Raising Time Value",
@@ -4890,6 +5592,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -4905,7 +5608,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -5095,25 +5798,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'dispense_height_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'dispense_height_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'dispense_height_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'dispense_height_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'dispense_height_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'dispense_height_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'dispense_height_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'dispense_height_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Dispense Height Value",
@@ -5154,6 +5895,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -5169,7 +5911,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -5359,25 +6101,63 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  -- Pull only the rows we need, pushing the time filter down early\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'gantry_cpk_y_value'\n  ),\n  -- Single index lookup for baseline — fetched once, not per row\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'gantry_cpk_y_value'\n    LIMIT 1\n  )\nSELECT\n  $__timeGroupAlias(f.timestamp, $__interval),\n  avg(f.value)                        AS \"value\",\n  min(b.mean + 3 * b.std_dev)         AS \"UCL (+3σ)\",\n  min(b.mean - 3 * b.std_dev)         AS \"LCL (-3σ)\",\n  min(b.mean)                         AS \"Mean\"\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY time\nORDER BY time",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_y_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_y_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "postgres",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "format": "time_series",
-          "rawSql": "WITH\n  filtered AS (\n    SELECT timestamp, value\n    FROM process_metrics\n    WHERE $__timeFilter(timestamp)\n      AND station_name = 'system'\n      AND metric_name = 'gantry_cpk_y_value'\n  ),\n  baseline AS (\n    SELECT mean, std_dev\n    FROM baseline_metrics\n    WHERE station_name = 'system'\n      AND metric_name = 'gantry_cpk_y_value'\n    LIMIT 1\n  ),\n  bucketed AS (\n    SELECT\n      $__timeGroupAlias(f.timestamp, $__interval),\n      avg(f.value)                    AS avg_val,\n      min(b.mean + 3 * b.std_dev)     AS ucl,\n      min(b.mean - 3 * b.std_dev)     AS lcl\n    FROM filtered f\n    CROSS JOIN baseline b\n    GROUP BY time\n  )\nSELECT\n  time,\n  CASE\n    WHEN avg_val > ucl OR avg_val < lcl THEN avg_val\n    ELSE NULL\n  END AS \"Anomaly\"\nFROM bucketed\nORDER BY time",
-          "refId": "B"
+          "rawQuery": true,
+          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_y_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'gantry_cpk_y_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Gantry Cpk Y Value",
@@ -5386,14 +6166,14 @@
   ],
   "preload": true,
   "refresh": "30s",
-  "schemaVersion": 40,
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "text": "PostgreSQL",
-          "value": "bffvbhhjc42yoe"
+          "text": "grafana-postgresql-datasource",
+          "value": "bfc3wenp44lxcc"
         },
         "includeAll": false,
         "label": "Data Source",
@@ -5406,13 +6186,12 @@
     ]
   },
   "time": {
-    "from": "2026-02-13T19:00:18.288Z",
-    "to": "2026-02-15T02:03:11.017Z"
+    "from": "now-90d",
+    "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "System — Global",
   "uid": "afg9euxwb9f5sf",
-  "version": 2,
-  "weekStart": ""
+  "version": 3
 }

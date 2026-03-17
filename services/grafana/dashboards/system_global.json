@@ -251,12 +251,23 @@
               {
                 "id": "custom.lineStyle",
                 "value": {
-                  "dash": [
-                    8,
-                    4
-                  ],
-                  "fill": "dash"
+                  "fill": "solid"
                 }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 7
               }
             ]
           },
@@ -284,11 +295,7 @@
               {
                 "id": "custom.lineStyle",
                 "value": {
-                  "dash": [
-                    8,
-                    4
-                  ],
-                  "fill": "dash"
+                  "fill": "solid"
                 }
               }
             ]
@@ -317,11 +324,7 @@
               {
                 "id": "custom.lineStyle",
                 "value": {
-                  "dash": [
-                    8,
-                    4
-                  ],
-                  "fill": "dash"
+                  "fill": "solid"
                 }
               }
             ]
@@ -358,6 +361,93 @@
               {
                 "id": "custom.spanNulls",
                 "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
               }
             ]
           }
@@ -415,14 +505,14 @@
         },
         {
           "datasource": {
-            "type": "postgres",
+            "type": "grafana-postgresql-datasource",
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "format": "time_series",
-          "hide": true,
+          "format": "table",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH\n\n  filtered AS (\n\n    SELECT timestamp, value\n\n    FROM process_metrics\n\n    WHERE $__timeFilter(timestamp)\n\n      AND station_name = 'system'\n\n      AND metric_name = 'cycle_time_value'\n\n  ),\n\n  baseline AS (\n\n    SELECT mean, std_dev\n\n    FROM baseline_metrics\n\n    WHERE station_name = 'system'\n\n      AND metric_name = 'cycle_time_value'\n\n    LIMIT 1\n\n  )\n\nSELECT\n\n  f.timestamp AS time,\n\n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n\nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cycle_time_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "B",
           "sql": {
             "columns": [
@@ -5787,6 +5877,52 @@
         "query": "postgres",
         "refresh": 1,
         "type": "datasource"
+      },
+      {
+        "current": {
+          "text": [
+            "1 minute"
+          ],
+          "value": [
+            "1 minute"
+          ]
+        },
+        "includeAll": false,
+        "name": "rolling_window",
+        "options": [
+          {
+            "selected": true,
+            "text": "1 minute",
+            "value": "1 minute"
+          },
+          {
+            "selected": false,
+            "text": "5 minutes",
+            "value": "5 minutes"
+          },
+          {
+            "selected": false,
+            "text": "10 minutes",
+            "value": "10 minutes"
+          },
+          {
+            "selected": false,
+            "text": "15 minutes",
+            "value": "15 minutes"
+          },
+          {
+            "selected": false,
+            "text": "30 minutes",
+            "value": "30 minutes"
+          },
+          {
+            "selected": false,
+            "text": "1 hour",
+            "value": "1 hour"
+          }
+        ],
+        "query": "1 minute,5 minutes,10 minutes,15 minutes,30 minutes,1 hour",
+        "type": "custom"
       }
     ]
   },
@@ -5798,6 +5934,6 @@
   "timezone": "browser",
   "title": "System — Global",
   "uid": "afg9euxwb9f5sf",
-  "version": 17,
+  "version": 21,
   "weekStart": ""
 }

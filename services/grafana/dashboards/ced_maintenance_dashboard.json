@@ -2930,7 +2930,7 @@
     }
   ],
   "preload": false,
-  "refresh": "30s",
+  "refresh": "1d",
   "schemaVersion": 40,
   "tags": [
     "process-metrics",
@@ -2953,9 +2953,9 @@
       }
     ]
   },
-  "time": {
-    "from": "now-90d",
-    "to": "now"
+"time": {
+    "from": "2026-02-02T10:16:03.771Z",
+    "to": "2026-02-09T10:51:57.438Z"
   },
   "timepicker": {},
   "timezone": "browser",

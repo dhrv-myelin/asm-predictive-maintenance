@@ -394,3 +394,17 @@
   regex: 'Start of manual blanking'
   target_id: warning
   event_details: 'Operator initiated manual blanking (unloading).'
+
+
+# From TemperatureValue.txt
+- name: MAIN_VALVE_TEMP
+  event_type: TEMPERATURE
+  regex: '主阀：(?P<main_valve_temp>[\d.]+)'
+  target_id: system
+  unit: celsius
+
+- name: SUB_VALVE_TEMP
+  event_type: TEMPERATURE
+  regex: '副阀：(?P<sub_valve_temp>[\d.]+)'
+  target_id: system
+  unit: celsius

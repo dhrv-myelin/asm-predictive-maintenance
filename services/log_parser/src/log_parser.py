@@ -100,6 +100,27 @@ class CEDAdapter(MachineAdapter):
             return None
 
         return epoch, channel, content
+    
+    def extract_temperature_header(self, line: str):
+        temperature_file_header = re.compile(
+            r"^(\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}_\d{3})\s+→\s*(.*)"
+        )
+        m = temperature_file_header.match(line)
+        if not m:
+            return None
+
+        ts_str, content = m.group(1), m.group(2)
+        try:
+            # Normalise to standard format: 2026/02/03 02:24:21_124 → 2026-02-03 02:24:21.124
+            ts_normalised = ts_str.replace('/', '-').replace('_', '.')
+            dt = datetime.strptime(ts_normalised, "%Y-%m-%d %H:%M:%S.%f")
+            epoch = dt.timestamp()
+        except ValueError:
+            return None
+
+        channel = None  # This log format has no channel/service field
+
+        return epoch, channel, content
 
     def parse_data_row(self, raw_row: str) -> dict | None:
         """
@@ -223,6 +244,7 @@ class LogParser:
                     'state_resolver': p.get('state_resolver', {}),
                     'mapping':        p.get('value_mapping', {}),
                     'event_details':        p.get('event_details', ""),
+                    'unit':        p.get('unit', ""),
                 })
             except re.error as e:
                 print(f"Error compiling regex for '{p['name']}': {e}")
@@ -305,7 +327,9 @@ class LogParser:
         # ── Case 2: normal line — parse header first ───────────────────────
         parsed = adapter.extract_header(line_text)
         if parsed is None:
-            return
+            parsed = adapter.extract_temperature_header(line_text)
+            if parsed is None:
+                return
 
         epoch, channel, content = parsed
 
@@ -431,6 +455,9 @@ class LogParser:
         target = pattern.get('target_id')
         if not target:
             target = mapped_payload.get('target')
+
+        if pattern.get('unit'):
+            mapped_payload['unit'] = pattern['unit']
 
         return {
             "type":           pattern['event_type'],

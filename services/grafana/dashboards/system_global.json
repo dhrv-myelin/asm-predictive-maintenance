@@ -5560,7 +5560,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'dispense_height_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cycle_time_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'dispense_height_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'dispense_height_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
           "refId": "B",
           "sql": {
             "columns": [
@@ -5880,18 +5880,14 @@
       },
       {
         "current": {
-          "text": [
-            "1 minute"
-          ],
-          "value": [
-            "1 minute"
-          ]
+          "text": "10 minutes",
+          "value": "10 minutes"
         },
         "includeAll": false,
         "name": "rolling_window",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "1 minute",
             "value": "1 minute"
           },
@@ -5901,7 +5897,7 @@
             "value": "5 minutes"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "10 minutes",
             "value": "10 minutes"
           },
@@ -5934,6 +5930,6 @@
   "timezone": "browser",
   "title": "System — Global",
   "uid": "afg9euxwb9f5sf",
-  "version": 21,
+  "version": 30,
   "weekStart": ""
 }

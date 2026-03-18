@@ -140,3 +140,271 @@
   "event_type": "MAINT_MOVE_SAFE_DONE"
   "regex": "^运动到［安全位］完成$"
   "target_id": "ced_maintenance"
+
+# errors:
+- name: ERR_TIMEOUT_FRONT_BARRIER_WORK
+  event_type: ERR_TIMEOUT_FRONT_BARRIER_WORK
+  regex: '^前阻挡顶升气缸WORK位.*信号没有感应到[\]］]?$'
+  target_id: error
+  event_details: 'CRITICAL: Front Barrier failed to reach WORK (Extend) position.'
+
+- name: ERR_TIMEOUT_FRONT_BARRIER_HOME
+  event_type: ERR_TIMEOUT_FRONT_BARRIER_HOME
+  regex: '^前阻挡顶升气缸HOME位.*信号没有感应到[\]］]?$'
+  target_id: error
+  event_details: 'CRITICAL: Front Barrier failed to reach HOME (Retract) position.'
+
+- name: ERR_TIMEOUT_MIDDLE_LIFT_WORK
+  event_type: ERR_TIMEOUT_MIDDLE_LIFT_WORK
+  regex: '^中顶升气缸WORK位.*信号没有感应到[\]］]?$'
+  target_id: error
+  event_details: 'CRITICAL: Middle Lift failed to reach WORK (Raise) position.'
+
+- name: ERR_TIMEOUT_MIDDLE_LIFT_HOME
+  event_type: ERR_TIMEOUT_MIDDLE_LIFT_HOME
+  regex: '^中顶升气缸HOME位.*信号没有感应到[\]］]?$'
+  target_id: error
+  event_details: 'CRITICAL: Middle Lift failed to reach HOME (Lower) position.'
+
+- name: ERR_TIMEOUT_REAR_BARRIER_WORK
+  event_type: ERR_TIMEOUT_REAR_BARRIER_WORK
+  regex: '^后阻挡顶升气缸WORK位.*信号没有感应到[\]］]?$'
+  target_id: error
+  event_details: 'CRITICAL: Rear Barrier failed to reach WORK (Extend) position.'
+
+- name: ERR_TIMEOUT_REAR_BARRIER_HOME
+  event_type: ERR_TIMEOUT_REAR_BARRIER_HOME
+  regex: '^后阻挡顶升气缸HOME位.*信号没有感应到[\]］]?$'
+  target_id: error
+  event_details: 'CRITICAL: Rear Barrier failed to reach HOME (Retract) position.'
+
+- name: ERR_TIMEOUT_ICEFISH_WORK
+  event_type: ERR_TIMEOUT_ICEFISH_WORK
+  regex: '^冰鱼顶升气缸WORK位.*信号没有感应到[\]］]?$'
+  target_id: error
+  event_details: 'CRITICAL: Icefish Clamp failed to reach WORK position.'
+
+- name: ERR_TIMEOUT_ICEFISH_HOME
+  event_type: ERR_TIMEOUT_ICEFISH_HOME
+  regex: '^冰鱼顶升气缸HOME位.*信号没有感应到[\]］]?$'
+  target_id: error
+  event_details: 'CRITICAL: Icefish Clamp failed to reach HOME position.'
+
+- name: ALIGNMENT_FAIL
+  event_type: ALIGNMENT_FAIL
+  regex: '第\s*(?P<attempt>\d+)\s*次定位NG'
+  target_id: error
+  event_details: 'Vision Alignment FAILED (Attempt {attempt}). Status: NG (No Good).'
+
+- name: SCAN_ERROR
+  event_type: SCAN_ERROR
+  regex: '(?:没有扫到二维码!error|No QR code is scanned!error)'
+  target_id: error
+  event_details: 'QR/Barcode scan failed or timed out.'
+
+- name: TIMEOUT_ERROR
+  event_type: TIMEOUT_ERROR
+  regex: '物料进入进料感应超时'
+  target_id: error
+  event_details: 'ERROR: Pallet entry timeout. Check nozzle/sensors.'
+
+- name: HARDWARE_INIT_ERROR
+  event_type: HARDWARE_INIT_ERROR
+  regex: '(?P<component>.*)初始化失败,请检查串口号是否存在'
+  target_id: error
+  event_details: 'CRITICAL: {component} initialization failed. Check COM port/Serial connection.'
+
+- name: AXIS_LIMIT_ALARM
+  event_type: AXIS_LIMIT_ALARM
+  regex: '(?:\x5b|\uff3b)(?P<axis>.*)(?:\x5d|\uff3d)\s*轴负限位触发'
+  target_id: error
+  event_details: 'MECHANICAL ALERT: Axis {axis} triggered the negative limit sensor.'
+
+- name: HW_COMM_INIT_FAIL
+  event_type: HW_COMM_INIT_FAIL
+  regex: '(?P<comp>.*)初始化失败,请检查串口号是否存在'
+  target_id: error
+  event_details: 'Initialization FAILED for {comp}. Serial/COM port not found.'
+
+- name: BARCODE_CONN_FAIL
+  event_type: BARCODE_CONN_FAIL
+  regex: 'Barcode连接失败.*请检查IP'
+  target_id: error
+  event_details: 'Barcode Scanner Error: Connection failed. Check IP settings and network cable.'
+
+- name: VISION_INIT_FAIL
+  event_type: VISION_INIT_FAIL
+  regex: '相机初始化失败，请检查'
+  target_id: error
+  event_details: 'Vision system camera failed to initialize.'
+
+- name: GENERAL_CONN_ERROR
+  event_type: GENERAL_CONN_ERROR
+  regex: '^连接失败$'
+  target_id: error
+  event_details: 'A generic connection failure was triggered.'
+
+- name: PROCESS_EXEC_ERROR
+  event_type: PROCESS_EXEC_ERROR
+  regex: 'Right_DoWork\s*ErrStr\s*(?P<msg>.*)'
+  target_id: error
+  event_details: 'Right Gantry Photography Error: {msg}'
+
+- name: NETWORK_DISCONNECT
+  event_type: NETWORK_DISCONNECT
+  regex: 'PDCA断开连接[！!]'
+  target_id: error
+  event_details: 'Alert: PDCA service has disconnected.'
+
+- name: NETWORK_CONFIG_ERROR
+  event_type: NETWORK_CONFIG_ERROR
+  regex: '.*请检查IP是否设置正确.*'
+  target_id: error
+  event_details: 'Network Error: Check IP settings and physical cabling.'
+
+- name: SCALE_STATUS
+  event_type: SCALE_STATUS
+  regex: 'Electronic [Ss]cale.*'
+  target_id: error
+  event_details: 'Electronic scale status/feedback update.'
+
+- name: SERIAL_INIT_ERROR
+  event_type: SERIAL_INIT_ERROR
+  regex: '.*(?:初始化失败|failed to initialize).*请检查(?:串口号|serial number).*'
+  target_id: error
+  event_details: 'Peripheral Init Error: Serial/COM port not found or invalid.'
+
+- name: SUBROUTINE_ERROR
+  event_type: SUBROUTINE_ERROR
+  regex: '(?P<func>\w+) ErrStr (?P<msg>.*)'
+  target_id: error
+  event_details: 'Function Error in {func}: {msg}'
+
+- name: FATAL_DATA_ERROR
+  event_type: FATAL_DATA_ERROR
+  regex: '(?:err@|err@\{|HAVE NOT LINK VALID SN)'
+  target_id: error
+  event_details: 'SFC/PDCA reported a fatal data or SN link error.'
+
+- name: ESTOP_ACTIVATED
+  event_type: ESTOP_ACTIVATED
+  regex: '.*急停按钮.*被按下.*'
+  target_id: error
+  event_details: 'EMERGENCY STOP: Physical E-Stop button pressed. Software shutting down.'
+
+- name: SENSOR_TIMEOUT
+  event_type: SENSOR_TIMEOUT
+  regex: '.*HOME Signal Not Sensed.*'
+  target_id: error
+  event_details: 'Mechanical Error: Home sensor failed to trigger within timeout.'
+
+- name: PDCA_DATA_FAIL
+  event_type: PDCA_DATA_FAIL
+  regex: 'PDCA连接失败.*无法发送数据'
+  target_id: error
+  event_details: 'PDCA Error: Connection failed; data could not be transmitted.'
+
+- name: PDCA_CONN_FAIL_EN
+  event_type: PDCA_CONN_FAIL_EN
+  regex: 'PDCA connection failed.*check if IP'
+  target_id: error
+  event_details: 'PDCA Connection Error (EN): Check IP/Network settings.'
+
+- name: HW_INIT_FAIL
+  event_type: HW_INIT_FAIL
+  regex: '.*(?:Initialization of|balance Initialization|controller failed to initialize).*exists'
+  target_id: error
+  event_details: 'Hardware component failed to initialize. Check COM/Serial ports.'
+
+# warnings:
+- name: SYSTEM_STATUS
+  event_type: SYSTEM_STATUS
+  regex: '设备(?P<state>暂停|继续)运行'
+  target_id: warning
+  event_details: 'Machine execution has been {state}d.'
+
+- name: PARAM_UPDATE_FULL
+  event_type: PARAM_UPDATE
+  regex: '更改(?P<state>前|后)参数\[【(?P<name>.*)】当前值:(?P<val>.*)最大值:(?P<max>.*)最小值:(?P<min>.*)\]'
+  target_id: warning
+  event_details: "Parameter '{name}' ({state} change): Value={val} (Range: {min} to {max})"
+
+- name: COUNTER_RESET
+  event_type: COUNTER_RESET
+  regex: '清空已作料板数完成(?P<count>.*)'
+  target_id: warning
+  event_details: 'Production counter reset: {count}'
+
+- name: PARAM_MODIFY
+  event_type: PARAM_MODIFY
+  regex: '把参数名称【(?P<name>.*)】的值从[：:](?P<old>.*)修改为[：:](?P<new>.*)'
+  target_id: warning
+  event_details: "MANUAL CHANGE: Parameter '{name}' changed from {old} to {new}."
+
+- name: PARAM_SAVE
+  event_type: PARAM_SAVE
+  regex: '保存参数(?P<name>.*)[：:](?P<val>.*)'
+  target_id: warning
+  event_details: 'Parameter {name} persisted to disk with value {val}.'
+
+- name: MANUAL_INTERVENTION
+  event_type: MANUAL_INTERVENTION
+  regex: '手动(?P<op>上料|下料)(?P<state>开始|结束)'
+  target_id: warning
+  event_details: 'Operator initiated manual {op} ({state}).'
+
+- name: DB_RETRY_COUNT
+  event_type: DB_RETRY_COUNT
+  regex: 'PDCA\s*连接失败次数:(?P<count>\d+)'
+  target_id: warning
+  event_details: 'PDCA Connection Retry attempt #{count}.'
+
+- name: MAINT_PROMPT_CLEAR
+  event_type: MAINT_PROMPT_CLEAR
+  regex: '是否擦拭喷嘴提示，已经解除'
+  target_id: warning
+  event_details: 'Nozzle wipe reminder has been cleared/dismissed.'
+
+- name: PARAM_UPDATE_SIMPLE
+  event_type: PARAM_UPDATE
+  regex: '更改(?P<state>前|后)参数(?:\[|［)【(?P<name>.*)】当前值:(?P<val>.*)'
+  target_id: warning
+  event_details: "Parameter '{name}' ({state} change) set to: {val}"
+
+- name: PRESSURE_ALARM
+  event_type: PRESSURE_ALARM
+  regex: '.*胶阀压力检测信号异常.*'
+  target_id: warning
+  event_details: 'ALARM: Glue valve pressure signal abnormal. Check air supply.'
+
+- name: MANUAL_OP_EN
+  event_type: MANUAL_OP_EN
+  regex: '(?:Manual feeding|manual blanking|End of manual) (?:start|end|feeding|blanking)'
+  target_id: warning
+  event_details: 'Operator performed a manual material handling action.'
+
+- name: WAIT_STATE
+  event_type: WAIT_STATE
+  regex: '等待PDCA上传完成'
+  target_id: warning
+  event_details: 'Machine idling: Waiting for database confirmation.'
+
+- name: MANUAL_BLANK_START
+  event_type: MANUAL_BLANK_START
+  regex: 'Start of manual blanking'
+  target_id: warning
+  event_details: 'Operator initiated manual blanking (unloading).'
+
+
+# From TemperatureValue.txt
+- name: MAIN_VALVE_TEMP
+  event_type: TEMPERATURE
+  regex: '主阀：(?P<main_valve_temp>[\d.]+)'
+  target_id: system
+  unit: celsius
+
+- name: SUB_VALVE_TEMP
+  event_type: TEMPERATURE
+  regex: '副阀：(?P<sub_valve_temp>[\d.]+)'
+  target_id: system
+  unit: celsius

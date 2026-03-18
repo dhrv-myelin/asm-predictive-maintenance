@@ -265,6 +265,10 @@
               {
                 "id": "displayName",
                 "value": "Rolling Upper Bound (+3σ)"
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
               }
             ]
           },
@@ -11211,13 +11215,13 @@
       },
       {
         "current": {
-          "text": "1 minute",
-          "value": "1 minute"
+          "text": "10 minutes",
+          "value": "10 minutes"
         },
         "name": "rolling_window",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "1 minute",
             "value": "1 minute"
           },
@@ -11227,7 +11231,7 @@
             "value": "5 minutes"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "10 minutes",
             "value": "10 minutes"
           },
@@ -11253,13 +11257,13 @@
     ]
   },
   "time": {
-    "from": "2026-02-02T00:00:00.507Z",
-    "to": "2026-03-10T00:00:00.083Z"
+    "from": "2026-02-01T18:30:00.000Z",
+    "to": "2026-03-10T18:29:59.000Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Ced Station — Process Metrics",
   "uid": "ced-station-metrics",
-  "version": 37,
+  "version": 43,
   "weekStart": ""
 }

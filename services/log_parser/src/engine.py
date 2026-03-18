@@ -67,8 +67,11 @@ class LogicEngine:
             self._push_raw_metrics(event,timestamp)
             return
 
-        if event["type"] == "ERROR_LOG":
-            print("ENGINE SAW ERROR_LOG")
+        # if event["type"] == "ERROR_LOG":
+        #     print("ENGINE SAW ERROR_LOG")
+        #     self._stream_error(timestamp, event)
+        #     return
+        if (event["type"] == "error") or (event["type"] == "error"):
             self._stream_error(timestamp, event)
             return
 
@@ -391,6 +394,7 @@ class LogicEngine:
         except Exception as e:
             print(f"[STREAM] ✗ DB failed: {e}. Writing to CSV.")
             self._write_to_csv(timestamp, comp_id, name, value, unit, context)
+
     def _write_to_csv(self, ts_iso, comp_id, name, value, unit, context):
         """Fallback: Write single row to CSV"""
         try:

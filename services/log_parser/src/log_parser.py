@@ -222,6 +222,7 @@ class LogParser:
                     'target_id':      p.get('target_id'),
                     'state_resolver': p.get('state_resolver', {}),
                     'mapping':        p.get('value_mapping', {}),
+                    'event_details':        p.get('event_details', ""),
                 })
             except re.error as e:
                 print(f"Error compiling regex for '{p['name']}': {e}")
@@ -328,6 +329,11 @@ class LogParser:
         for pattern in self.patterns:
             pmatch = pattern['regex'].search(content)
             if pmatch:
+                if (pattern['target_id'] == 'error') or (pattern['target_id'] == 'warning'):
+                    print("pattern : ", pattern)
+                    yield epoch, self._sentinel_event(pattern['target_id'], pattern['target_id'], pattern['event_details'])
+                    break
+
                 yield epoch, self._build_event(pattern, pmatch, channel, line_text)
                 break
 
@@ -336,6 +342,10 @@ class LogParser:
         """
         Explode a 给PDCA发送:_{...} block into one normalised event per data row.
         block_lines[0] is the opener; block_lines[1:] are the raw data rows.
+
+        Deduplication: rows that are identical except for pallet_id are emitted
+        only once (first occurrence).  After all rows, one final 'PDCA_UNIQUE_PALLETS'
+        event carries the count of unique pallet_ids seen in the block.
         """
         adapter: CEDAdapter = self.adapter  # type: ignore[assignment]
 
@@ -347,23 +357,52 @@ class LogParser:
             'submit':  'CED_SUBMIT',
         }
 
+        seen_payloads: set[tuple] = set()   # fingerprints of already-emitted rows
+        unique_pallet_ids: set[str] = set() # all pallet_ids encountered
+
         for raw_row in block_lines[1:]:      # skip opener at index 0
             row = adapter.parse_data_row(raw_row)
             if row is None:
                 continue
 
-            # serial      = row.get('serial', 'Unknown')
-            record_type = row.pop('record_type', 'unknown') # Remove recod_type before passing to payload
+            pallet_id   = row.get('pallet_id')
+            record_type = row.pop('record_type', 'unknown')
+
+            if pallet_id:
+                unique_pallet_ids.add(pallet_id)
+
+            # Build a fingerprint that ignores pallet_id so that identical rows
+            # from different pallets are treated as duplicates.
+            payload_without_pid = {k: v for k, v in row.items() if k != 'pallet_id'}
+            fingerprint = (record_type, tuple(sorted(payload_without_pid.items())))
+
+            if fingerprint in seen_payloads:
+                continue                    # duplicate – skip
+            seen_payloads.add(fingerprint)
 
             yield epoch, {
                 "type":           event_type_map.get(record_type, 'CED_UNKNOWN'),
-                "target":         'system',       # serial number = event owner
-                "level":          channel,      # PUBLIC / LEFT / RIGHT …
+                "target":         'system',
+                "level":          channel,
                 "destination":    None,
                 "state_resolver": {},
-                "payload":        row,          # full parsed row dict
+                "payload":        row,       # pallet_id still present, record_type removed
                 "raw_line":       raw_row,
             }
+
+        # --- final summary event for the whole block ---
+        yield epoch, {
+            "type":           'PDCA_UNIQUE_PALLETS',
+            "target":         'system',
+            "level":          channel,
+            "destination":    None,
+            "state_resolver": {},
+            "payload":        {
+                "unique_pallet_count": len(unique_pallet_ids),
+                # "pallet_ids":          sorted(unique_pallet_ids),
+            },
+            "raw_line":       None,
+        }
 
     # ── helpers ────────────────────────────────────────────────────────────
     @staticmethod

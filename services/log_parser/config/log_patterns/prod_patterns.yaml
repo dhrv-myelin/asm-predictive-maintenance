@@ -408,3 +408,18 @@
   regex: '副阀：(?P<sub_valve_temp>[\d.]+)'
   target_id: system
   unit: celsius
+
+
+# Metrics
+- name: DISPENSE_START_POINT
+  event_type: DISPENSE_START_POINT
+  regex: '(?P<cavity_number>\d+)\s*穴点胶起点:\s*X=(?P<x_value>-?\d+(?:\.\d+)?)\s*Y=(?P<y_value>-?\d+(?:\.\d+)?)\s*A=(?P<a_value>-?\d+(?:\.\d+)?)'
+  target_id: system
+  value_mapping:
+    cavity_number:
+      "1": "cavity_1_dispenser_start_point"
+      "2": "cavity_2_dispenser_start_point"
+      "3": "cavity_3_dispenser_start_point"
+      "4": "cavity_4_dispenser_start_point"
+      "5": "cavity_5_dispenser_start_point"
+      "6": "cavity_6_dispenser_start_point"

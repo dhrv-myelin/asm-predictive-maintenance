@@ -356,6 +356,15 @@ class LogicEngine:
             return value
 
         payload = event.get('payload', {})
+
+        if 'cavity_number' in payload:
+            temp_payload = {}
+            for key in payload:
+                if key == 'cavity_number':
+                    pass
+                temp_payload[f"{payload['cavity_number']}_{key}"] = payload[key]
+            payload = temp_payload
+
         for key in payload:
             if key in SKIP_KEYS:
                 continue

@@ -321,12 +321,23 @@
   event_type: SYSTEM_STATUS
   regex: '设备(?P<state>暂停|继续)运行'
   target_id: warning
-  event_details: 'Machine execution has been {state}d.'
+  value_mapping:
+    state:
+      暂停: Paused
+      继续: Resumed
+  event_details: 'Machine execution has been {state}.'
 
 - name: PARAM_UPDATE_FULL
   event_type: PARAM_UPDATE
   regex: '更改(?P<state>前|后)参数\[【(?P<name>.*)】当前值:(?P<val>.*)最大值:(?P<max>.*)最小值:(?P<min>.*)\]'
   target_id: warning
+  value_mapping:
+    state:
+      前: Before
+      后: After
+    name:
+      副阀X方向补偿: Sub-Valve X Direction Compensation
+      副阀Y方向补偿: Sub-Valve Y Direction Compensation
   event_details: "Parameter '{name}' ({state} change): Value={val} (Range: {min} to {max})"
 
 - name: COUNTER_RESET
@@ -339,18 +350,38 @@
   event_type: PARAM_MODIFY
   regex: '把参数名称【(?P<name>.*)】的值从[：:](?P<old>.*)修改为[：:](?P<new>.*)'
   target_id: warning
+  value_mapping:
+    name:
+      dispense2起点偏移X: dispense2 Start Offset X
+      dispense2起点偏移Y: dispense2 Start Offset Y
+      副阀X方向补偿: Sub-Valve X Direction Compensation
+      副阀Y方向补偿: Sub-Valve Y Direction Compensation
   event_details: "MANUAL CHANGE: Parameter '{name}' changed from {old} to {new}."
 
 - name: PARAM_SAVE
   event_type: PARAM_SAVE
   regex: '保存参数(?P<name>.*)[：:](?P<val>.*)'
   target_id: warning
+  value_mapping:
+    name:
+      九点标定光源亮度: 9-Point Calibration Light Intensity
+      复检光源亮度: Re-inspection Light Intensity
+      正常生产光源亮度: Normal Production Light Intensity
+      正常生产光源亮度2: Normal Production Light Intensity 2
   event_details: 'Parameter {name} persisted to disk with value {val}.'
+
 
 - name: MANUAL_INTERVENTION
   event_type: MANUAL_INTERVENTION
   regex: '手动(?P<op>上料|下料)(?P<state>开始|结束)'
   target_id: warning
+  value_mapping:
+    op:
+      上料: Loading
+      下料: Unloading
+    state:
+      开始: Start
+      结束: End
   event_details: 'Operator initiated manual {op} ({state}).'
 
 - name: DB_RETRY_COUNT
@@ -369,6 +400,13 @@
   event_type: PARAM_UPDATE
   regex: '更改(?P<state>前|后)参数(?:\[|［)【(?P<name>.*)】当前值:(?P<val>.*)'
   target_id: warning
+  value_mapping:
+    state:
+      前: Before
+      后: After
+    name:
+      副阀X方向补偿: Sub-Valve X Direction Compensation
+      副阀Y方向补偿: Sub-Valve Y Direction Compensation
   event_details: "Parameter '{name}' ({state} change) set to: {val}"
 
 - name: PRESSURE_ALARM
@@ -394,6 +432,12 @@
   regex: 'Start of manual blanking'
   target_id: warning
   event_details: 'Operator initiated manual blanking (unloading).'
+
+- name: vision_light_config
+  event_type: VISION_LIGHT_CONFIG
+  regex: '九点标定光源亮度:(?P<calib>\d+),正常生产光源亮度:(?P<prod>\d+),复检光源亮度:(?P<insp>\d+)'
+  target_id: warning
+  event_details: 'Vision Light Intensities - Calib: {calib}, Prod: {prod}, Insp: {insp}'
 
 
 # From TemperatureValue.txt

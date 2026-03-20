@@ -71,7 +71,7 @@ class LogicEngine:
         #     print("ENGINE SAW ERROR_LOG")
         #     self._stream_error(timestamp, event)
         #     return
-        if (event["type"] == "error") or (event["type"] == "error"):
+        if (event.get('level','') == "error") or (event.get('level','') == "warning"):
             self._stream_error(timestamp, event)
             return
 

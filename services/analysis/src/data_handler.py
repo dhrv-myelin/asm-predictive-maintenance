@@ -52,6 +52,7 @@ _ALL_END_KEYS: set[str] = {
     "system__tossing_lower",
     "system__tossing_upper",
     "system__tossing_value",
+    "timestamp",
 }
 
 # All known L1 keys (excluding 'timestamp')

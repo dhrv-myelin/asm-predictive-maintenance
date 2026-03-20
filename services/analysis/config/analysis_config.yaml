@@ -188,6 +188,7 @@ target:
         - system__tossing_lower
         - system__tossing_upper
         - system__tossing_value
+        - timestamp
 
       load_path:
         "saved_models/ced_machine__health_score/model.joblib"

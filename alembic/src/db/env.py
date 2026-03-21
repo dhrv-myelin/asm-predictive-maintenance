@@ -30,8 +30,9 @@ if config.config_file_name is not None:
 
 from src.db.base import Base
 import src.db.models  # <-- THIS registers tables
-from src.db import Base 
+# from src.db import Base 
 target_metadata = Base.metadata
+print("TABLES:", list(target_metadata.tables.keys()))
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

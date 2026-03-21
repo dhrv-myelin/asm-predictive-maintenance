@@ -308,8 +308,30 @@
             "type": "duration_seconds"
             "export": true
 
+  # ====================================================================================
+  # 3. Gantry postioning : Virtual; Does not Actually exist
+  # ====================================================================================
+  "gantry_positioning":
+      "initial_state": "IDLE"
+      "states":
+        "IDLE":
+          "transitions":
+          - "event": "SAFETY_POSITIONING_START"
+            "next_state": "SAFETY_POSITIONING"
+            # "metrics":
+            # - "name": "safety_positioning_waiting_time"
+            #   "type": "duration_seconds"
+            #   "export": true
+        "SAFETY_POSITIONING":
+          "transitions":
+          - "event": "SAFETY_POSITIONING_DONE"
+            "next_state": "IDLE"
+            "metrics":
+            - "name": "gantry_safety_positioning_time"
+              "type": "duration_seconds"
+              "export": true
   # ==========================================
-  # 3. SINK
+  # 4. SINK
   # ==========================================
 
   "exit_sink":

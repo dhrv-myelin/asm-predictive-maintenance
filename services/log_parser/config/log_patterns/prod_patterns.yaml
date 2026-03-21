@@ -141,6 +141,17 @@
   "regex": "^运动到［安全位］完成$"
   "target_id": "ced_maintenance"
 
+# Gantry Safety positioning
+- name: SAFETY_POSITIONING_START
+  event_type: SAFETY_POSITIONING_START
+  regex: '开始运动到\[安全位\]'
+  target_id: gantry_positioning
+
+- name: SAFETY_POSITIONING_DONE
+  event_type: SAFETY_POSITIONING_DONE
+  regex: '运动到\[安全位\]完成'
+  target_id: gantry_positioning
+
 # errors:
 - name: ERR_TIMEOUT_FRONT_BARRIER_WORK
   event_type: ERR_TIMEOUT_FRONT_BARRIER_WORK

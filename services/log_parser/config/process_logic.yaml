@@ -15,6 +15,7 @@
           - "name": "upstream_waiting_time"
             "type": "duration_seconds"
             "export": true
+          transition_stage: "arrival"
       "ENTRY_STOPPER_LOWERING":
         "transitions":
         - "event": "ENTRY_STOPPER_DOWN_DONE"

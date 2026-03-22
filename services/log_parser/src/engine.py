@@ -71,6 +71,14 @@ class LogicEngine:
             # print("event : ",event)
             self._push_raw_metrics(event,timestamp)
             return
+        
+        if event['type'] == "EXIT_STOPPER_DOWN_DONE":
+            self.inventory['ced_station'].cycle_count += 1
+            self.inventory['ced_station'].pallet_serial_number = None
+
+        if event['type'] == "BARCODE_READ_SUCCESS":
+            print("[DEBUG] Read barcode sn : ", payload.get('sn',''))
+            self.inventory['ced_station'].pallet_serial_number = payload.get('sn','')
 
         # if event["type"] == "ERROR_LOG":
         #     print("ENGINE SAW ERROR_LOG")
@@ -221,7 +229,9 @@ class LogicEngine:
             name="throughput_total",
             value=self.throughput_count,
             unit="units",
-            context="EXIT"
+            context="EXIT",
+            cycle_count = self.inventory['ced_station'].cycle_count,
+            pallet_serial_number = self.inventory['ced_station'].pallet_serial_number,
         )
 
         if self.viz:
@@ -356,7 +366,7 @@ class LogicEngine:
 
             if value is not None:
                 # Stream immediately to database
-                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state)
+                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state, self.inventory['ced_station'].cycle_count, self.inventory['ced_station'].pallet_serial_number)
     
     def _push_raw_metrics(self, event, timestamp):
 
@@ -394,11 +404,13 @@ class LogicEngine:
                 name=f"{key}",
                 value=value,
                 unit=payload.get('unit', None),
-                context=event.get('type')
+                context=event.get('type'),
+                cycle_count = self.inventory['ced_station'].cycle_count,
+                pallet_serial_number = self.inventory['ced_station'].pallet_serial_number,
             )
 
 
-    def _stream_metric(self, timestamp, comp_id, name, value, unit, context):
+    def _stream_metric(self, timestamp, comp_id, name, value, unit, context, cycle_count=None, pallet_serial_number=None):
         try:
             #ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
             ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
@@ -412,6 +424,8 @@ class LogicEngine:
                     else value,
                     unit=unit,
                     state_context=context,
+                    cycle_count=cycle_count,
+                    pallet_serial_number=pallet_serial_number,
                 )
                 session.add(metric)
                 session.commit()

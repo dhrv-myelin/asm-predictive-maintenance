@@ -19,7 +19,7 @@ from zoneinfo import ZoneInfo
 
 # Stats pipeline imports
 from baseline_stats import analyse_metric, build_config
-from models.stats_model_2 import run_pattern_pipeline, print_summary
+from stats_model_2 import run_pattern_pipeline, print_summary
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

@@ -17,6 +17,10 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from zoneinfo import ZoneInfo
 
+# Stats pipeline imports
+from baseline_stats import analyse_metric, build_config
+from models.stats_model_2 import run_pattern_pipeline, print_summary
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -78,8 +82,6 @@ def loop(poller, data_handlers, models, db_util):
 
 
 def inference_loop(data_handler, model, db_util):
-    # Use integer index for models without a timestamp column (e.g. health_score),
-    # timestamp-based advancement for models that have it.
     has_timestamp = "timestamp" in data_handler.df.columns
     curr_first_timestamp = None
     curr_idx = 0
@@ -88,7 +90,6 @@ def inference_loop(data_handler, model, db_util):
         if has_timestamp:
             X = data_handler.fetch_next_window(curr_first_timestamp, for_training=False)
         else:
-            # Index-based window fetch — mirrors fetch_train_data unsupervised path
             start = curr_idx
             end = start + data_handler.history_window
             if end > len(data_handler.df):
@@ -101,7 +102,6 @@ def inference_loop(data_handler, model, db_util):
             time.sleep(1)
             continue
 
-        # Advance cursor
         if has_timestamp:
             curr_first_timestamp = X.iloc[0]["timestamp"]
         else:
@@ -111,8 +111,6 @@ def inference_loop(data_handler, model, db_util):
         preds = model.real_time_inference(X)
         preds = [preds[-1]]
 
-        # write results — use last row's timestamp if available, else fall back
-        # to data_handler.last_timestamp tracked during _try_flush
         last_ts = (
             X.iloc[-1]["timestamp"] if has_timestamp else data_handler.last_timestamp
         )
@@ -122,17 +120,16 @@ def inference_loop(data_handler, model, db_util):
             values=preds,
             station_name=data_handler.target_name.split("__")[0],
             metric_name=data_handler.target_name.split("__")[1],
-            model_name=model.model_name,  
+            model_name=model.model_name,
         )
 
-        time.sleep(0.5)  # pacing
+        time.sleep(0.5)
 
 
 def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
     rows = db_util.fetch_data(start_ts, end_ts)
 
     if not rows:
-        # print(f"[ERROR] No data found between {start_ts} and {end_ts}")
         return
 
     def start(target_func):
@@ -148,21 +145,74 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
         t = start(target_func=lambda h=handler, m=model: inference_loop(h, m, db_util))
         threads.append(t)
 
-    # block forever (or join threads)
     for t in threads:
         t.join()
 
 
-# ====================== new main =============================
+# --------------------------------------------------
+# Stats pipeline (no DataHandler needed)
+# --------------------------------------------------
+
+def run_stats_pipeline(db_util: DBUtils) -> None:
+    """
+    1. Pull process_metrics (full history) and baseline from DB
+    2. Build per-metric config via baseline_stats logic (in-memory, no JSON file)
+    3. Run stats_model_2 pattern detectors
+    4. Push results to the `patterns` table
+    """
+    logger.info("📊 [Stats] Fetching process_metrics from DB...")
+    df = db_util.fetch_all_process_metrics()
+
+    if df.empty:
+        logger.error("❌ [Stats] process_metrics is empty — aborting stats pipeline")
+        return
+
+    logger.info("📊 [Stats] %d rows fetched across %d days",
+                len(df), df["timestamp"].dt.date.nunique())
+
+    logger.info("📊 [Stats] Fetching baseline from DB...")
+    baseline = db_util.fetch_baseline()  # dict: {metric_name: (mean, std)}
+
+    # ── Build metric config in-memory (mirrors baseline_stats.main()) ──────────
+    logger.info("📊 [Stats] Building per-metric config...")
+    results = []
+    for (station, metric), _ in df.groupby(["station_name", "metric_name"]):
+        r = analyse_metric(metric, station, df, baseline)
+        if r:
+            results.append(r)
+
+    if not results:
+        logger.error("❌ [Stats] analyse_metric returned no results — check data volume (need ≥50 rows per metric/station)")
+        return
+
+    metric_cfg = build_config(results)
+    logger.info("📊 [Stats] Config built for %d metric/station combos", len(results))
+
+    # ── Run pattern detectors ──────────────────────────────────────────────────
+    logger.info("📊 [Stats] Running pattern detectors...")
+    patterns_df = run_pattern_pipeline(df, global_baseline=baseline, metric_cfg=metric_cfg)
+    patterns_df = print_summary(patterns_df)
+
+    # ── Push to DB ─────────────────────────────────────────────────────────────
+    logger.info("📊 [Stats] Writing patterns to DB...")
+    db_util.insert_patterns(patterns_df)
+
+    logger.info("✅ [Stats] Pipeline complete — %d pattern windows written", len(patterns_df))
+
+
+# ====================== main =============================
 
 
 def main():
     parser = argparse.ArgumentParser(description="Glue Dispenser ML Pipeline")
     parser.add_argument(
         "--mode",
-        choices=["train", "infer", "backup"],
+        choices=["train", "infer", "backup", "stats"],
         default="infer",
-        help="Execution mode: train a model, run live inference, or replay from archive logs",
+        help=(
+            "Execution mode: train a model, run live inference, "
+            "replay from archive logs, or run the stats pattern pipeline"
+        ),
     )
     parser.add_argument(
         "--config",
@@ -251,7 +301,14 @@ def main():
     db_util = DBUtils(session_factory=session_factory)
 
     # --------------------------------------------------
-    # Init handlers + models
+    # Stats mode — no DataHandler or Model needed
+    # --------------------------------------------------
+    if args.mode == "stats":
+        run_stats_pipeline(db_util)
+        return
+
+    # --------------------------------------------------
+    # Init handlers + models (train / infer / backup only)
     # --------------------------------------------------
     data_handlers = {}
     models = {}
@@ -260,7 +317,6 @@ def main():
         for method_config in cfg["target"][target]:
             key = f"{target}:{method_config['method']}"
 
-            # If --model is specified, skip everything else
             if (
                 args.model
                 and key != args.model
@@ -276,12 +332,6 @@ def main():
                 target_name=target,
             )
 
-            # if args.load_path:
-            #     logger.info("📂 Loading model weights from: %s", args.load_path)
-            #     model.load(
-            #         args.load_path
-            #     )  # assumes your Model class has a load() method
-
             data_handlers[key] = handler
             models[key] = model
 
@@ -292,8 +342,10 @@ def main():
     # Mode dispatch
     # --------------------------------------------------
     if args.mode == "train":
-        start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S").replace(tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
-        end_ts = datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S").replace(tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
+        start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
+        end_ts = datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
 
         rows = db_util.fetch_data(start_ts, end_ts)
 
@@ -301,7 +353,7 @@ def main():
             handler.ingest(rows)
             XY = handler.fetch_train_data()
             if XY is not None:
-                X, y, timestamps = XY  # ← unpack timestamps too
+                X, y, timestamps = XY
                 if X is None:
                     logger.warning(
                         "[%s] fetch_train_data returned no windows — skipping", name
@@ -311,9 +363,10 @@ def main():
                     models[name].train(X, y)
 
     elif args.mode == "backup":
-
-        start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S").replace(tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
-        end_ts = datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S").replace(tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
+        start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
+        end_ts = datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
 
         infer_from_archive(start_ts, end_ts, data_handlers, models, db_util)
 
@@ -328,113 +381,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-# # --------------------------------------------------
-# # Bootcolumns
-# # --------------------------------------------------
-#
-# if __name__ == "__main__":
-
-# TRAIN = True
-# BACKUP_LOGS = False
-# start_ts = datetime(2026, 1, 23, 22, 6, 0)
-# end_ts = datetime(2026, 1, 23, 23, 10, 35)
-#
-# config_path = "config/analysis_config.yaml"
-# with open(config_path, "r") as f:
-#     cfg = yaml.safe_load(f)
-# print("[DEBUG] Loaded config : ", cfg)
-# # resolve DB URL
-# # DATABASE_URL = os.getenv(cfg['global']['db']['database_url_env'])
-# # INFO: removed getenv bc im not making it a env
-# DATABASE_URL = cfg["global"]["db"]["database_url_env"]
-# if not DATABASE_URL:
-#     raise RuntimeError("DATABASE_URL env var not set")
-#
-# # mlflow uri
-# import os
-# import mlflow
-#
-# mlflow.set_tracking_uri("http://localhost:5000")
-# mlflow.set_experiment("Glue_Dispenser")
-#
-# engine = create_engine(DATABASE_URL)
-# SessionLocal = sessionmaker(bind=engine)
-# try:
-#     with engine.connect() as conn:
-#         conn.execute(text("SELECT 1"))
-#         logger.info("✅ Database connection successful")
-#
-#         inspector = inspect(engine)
-#         tables = inspector.get_table_names(
-#             schema=cfg["global"]["db"].get("schema", None)
-#         )
-#
-#         if tables:
-#             logger.info("📦 Tables found in DB:")
-#             for t in tables:
-#                 logger.info(f"   - {t}")
-#         else:
-#             logger.warning("⚠️ No tables found in database schema")
-#
-# except Exception as e:
-#     logger.exception("❌ Database connection failed")
-#     raise
-#
-# def session_factory():
-#     return SessionLocal()
-#
-# db_util = DBUtils(session_factory=session_factory)
-#
-# # --------------------------------------------------
-# # Init handlers, models
-# # --------------------------------------------------
-#
-# data_handlers = {}
-# models = {}
-#
-# for target in cfg["target"]:
-#     for method_config in cfg["target"][target]:
-#
-#         handler = DataHandler(config=method_config, target_name=target)
-#
-#         model = Model(
-#             data_handler=handler,
-#             model=method_config["method"],
-#             config=method_config,
-#             target_name=target,
-#         )
-#
-#         key = f"{target}:{method_config['method']}"
-#
-#         data_handlers[key] = handler
-#         models[key] = model
-#
-# # --------------------------------------------------
-# # Training mode
-# # --------------------------------------------------
-#
-# if TRAIN:
-#     rows = db_util.fetch_data(start_ts, end_ts)
-#     for name, handler in data_handlers.items():
-#         handler.ingest(rows)
-#         model = models[name]
-#         XY = handler.fetch_train_data()
-#         print("[DEBUG] Train data : \n", XY)
-#         if XY:
-#             X, y = XY
-#             print("[DEBUG] Train X shape:", X.shape)
-#             print("[DEBUG] Train y shape:", y.shape)
-#             models[name].train(X, y)
-#
-# elif BACKUP_LOGS:
-#     infer_from_archive(start_ts, end_ts, data_handlers, models, db_util)
-# # --------------------------------------------------
-# # Inference mode
-# # --------------------------------------------------
-#
-# else:
-#     poller = DBPoller(session_factory=session_factory, poll_interval=1)
-#     poller.start(target_func=lambda: loop(poller, data_handlers, models, db_util))
-#
-#     while True:
-#         time.sleep(60)

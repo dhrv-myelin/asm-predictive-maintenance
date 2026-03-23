@@ -28,7 +28,9 @@ class ProcessMetric(Base):
     unit = Column(Text)
     state_context = Column(Text)
     #new_col
-    status = Column(Text, nullable=True) 
+    status = Column(Float, nullable=True) 
+    cycle_count = Column(Float, nullable=True)
+    pallet_serial_number = Column(String, nullable=True)
 
     __table_args__ = (
         Index(
@@ -137,6 +139,7 @@ class ModelPrediction(Base):
     station_name = Column(Text, nullable=False)
     metric_name = Column(Text, nullable=False)
     model_name = Column(Text, nullable=False)
+    patterns = Column(Text, nullable=True)
 
     __table_args__ = (
         Index(
@@ -147,4 +150,3 @@ class ModelPrediction(Base):
         ),
     )
     
-

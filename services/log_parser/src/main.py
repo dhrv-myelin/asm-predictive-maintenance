@@ -4,18 +4,16 @@ The Entry Point for the Industrial Digital Twin Engine.
 NOW WITH DIRECT TIMESCALEDB STREAMING (NO CSV)
 """
 import argparse
-from html import parser
-from html import parser
 import json
 import yaml
 import time
 import os
 import sys
 import statistics
-from datetime import datetime
+import threading
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from sqlalchemy import text
-from datetime import datetime, timedelta, timezone
 
 # Import our modules
 from inventory import SystemInventory
@@ -24,10 +22,10 @@ from engine import LogicEngine
 from viz_adapter import VizAdapter
 from utils.tag_resolver import TagResolver
 from shared.db.database import engine as db_engine
-import statistics
+
+
 from shared.db.models import BaselineMetric
 from shared.db.database import SessionLocal
-
 from utils.data_fetcher import RawFileConsumer, VectorBufferConsumer
 
 def load_yaml(path):
@@ -40,8 +38,6 @@ def load_json(path):
     with open(path, 'r') as f:
         return json.load(f)
     
-STREAMING = False
-
 
 def run_record_mode(baseline_file, baseline_hours):
     """
@@ -200,6 +196,21 @@ def run_monitor_mode(engine, baseline_file):
             print(f"✓ Baseline loaded with {len(baseline)} components")
             print("  (Real-time alerting logic goes here in Phase 4)")
 
+def temperature_log_parser(temperature_consumer, log_parser, engine):
+    line_count = 0
+    start_time = time.time()
+    
+    for cleaned_line in temperature_consumer.stream():
+        for timestamp, event in log_parser.process_line(cleaned_line):
+            # Normal engine processing
+            engine.process_event(timestamp, event)
+            
+            line_count += 1
+            if line_count % 5000 == 0:
+                elapsed = time.time() - start_time
+                rate = line_count / elapsed
+                print(f"Processed {line_count} events... ({int(rate)} ev/s)")
+
 def main():
     parser = argparse.ArgumentParser(description="Industrial Log Analytics Engine")
     parser.add_argument('--mode', choices=['record', 'monitor'], required=True)
@@ -298,7 +309,19 @@ def main():
         if args.machine == "GDM":
             consumer = RawFileConsumer(args.input, live=is_live_mode)
         elif args.machine == "CED":
-            consumer = RawFileConsumer(os.path.join(args.input, "Message.txt"), live=is_live_mode)
+            consumer = RawFileConsumer(os.path.join(args.input, "Message.txt"), live=is_live_mode) 
+            temperature_file_path = os.path.join(args.input, "TemperatureValue.txt")
+            if os.path.exists(temperature_file_path):
+                temperature_consumer = RawFileConsumer(temperature_file_path, live=is_live_mode)
+                if temperature_consumer:
+                    temp_thread = threading.Thread(
+                        target=temperature_log_parser,
+                        args=(temperature_consumer, log_parser, engine),
+                        daemon=True,
+                        name="temperature-parser"
+                    )
+                    temp_thread.start()
+                    print(">> Temperature parser running on background thread")
 
     # 7. Run the Loop
     print(f"\n=== Starting Engine ===")

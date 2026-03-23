@@ -47,6 +47,12 @@ class LogicEngine:
         if event['type'] == "SYSTEM_RESET":
             self._reset_system()
             return 
+        
+        if event['type'] == 'ENTRY_STOPPER_DOWN_START':
+            print("[DEBUG] New Station start event detected. Reseting station at timestamp : ", timestamp)
+            self._reset_system(station_to_reset=event['target'])
+
+        print(f"[DEBUG] Event detected : {event['type']}")
         print(f"[DEBUG]: Payload: {payload}, Target ID: {target_id}")
 
         # 1. Resolve Target (Tag -> ID)
@@ -62,12 +68,23 @@ class LogicEngine:
             print(f"[DEBUG]: State Resolved target from {state_resolver} to Target ID: {target_id}" )
         
         if target_id=="system":
-            print("event : ",event)
+            # print("event : ",event)
             self._push_raw_metrics(event,timestamp)
             return
+        
+        if event['type'] == "EXIT_STOPPER_DOWN_DONE":
+            self.inventory['ced_station'].cycle_count += 1
+            self.inventory['ced_station'].pallet_serial_number = None
 
-        if event["type"] == "ERROR_LOG":
-            print("ENGINE SAW ERROR_LOG")
+        if event['type'] == "BARCODE_READ_SUCCESS":
+            print("[DEBUG] Read barcode sn : ", payload.get('sn',''))
+            self.inventory['ced_station'].pallet_serial_number = payload.get('sn','')
+
+        # if event["type"] == "ERROR_LOG":
+        #     print("ENGINE SAW ERROR_LOG")
+        #     self._stream_error(timestamp, event)
+        #     return
+        if (event.get('level','') == "error") or (event.get('level','') == "warning"):
             self._stream_error(timestamp, event)
             return
 
@@ -120,19 +137,14 @@ class LogicEngine:
             context = {'pallet_id': station.active_pallet_id}
             self.viz.update(timestamp, station.id, station.current_state, context)
 
-    def _reset_system(self):
+    def _reset_system(self, station_to_reset=None):
         """
         Resets all mutable engine and station state to initial values.
         Called when a SYSTEM_RESET event is received.
+        If station_to_reset is provided, only that station is reset.
+        If None, all stations are reset along with engine-level counters.
         """
-        # 1. Reset engine-level counters
-        self.throughput_count = 0
-
-        # 2. Clear all virtual sensor memory
-        self.virtual_state_map = {cid: {} for cid in self.inventory}
-
-        # 3. Reset every station back to its configured initial state
-        for station in self.inventory.values():
+        def _reset_station(station):
             station.current_state = station.logic_template.get('initial_state', 'IDLE')
             station.previous_state = None
             station.state_entry_time = 0.0
@@ -141,9 +153,27 @@ class LogicEngine:
             station.current_destination = None
             station.metric_timers = {}
 
-        print("--------------------------------------------")
-        print("[SYSTEM RESET]: All station states, pallet tracking, and counters cleared.")
-        print("--------------------------------------------")
+        if station_to_reset is not None:
+            station = self.inventory.get(station_to_reset)
+            if station is None:
+                print(f"[SYSTEM RESET]: Warning - station '{station_to_reset}' not found in inventory.")
+                return
+            _reset_station(station)
+            self.virtual_state_map[station_to_reset] = {}
+            print("--------------------------------------------")
+            print(f"[SYSTEM RESET]: Station '{station_to_reset}' state and pallet tracking cleared.")
+            print("--------------------------------------------")
+        else:
+            # 1. Reset engine-level counters
+            self.throughput_count = 0
+            # 2. Clear all virtual sensor memory
+            self.virtual_state_map = {cid: {} for cid in self.inventory}
+            # 3. Reset every station
+            for station in self.inventory.values():
+                _reset_station(station)
+            print("--------------------------------------------")
+            print("[SYSTEM RESET]: All station states, pallet tracking, and counters cleared.")
+            print("--------------------------------------------")
 
     def _get_destination_id(self, station, event):
         """Given a station and event, determine the destination station ID."""
@@ -199,7 +229,9 @@ class LogicEngine:
             name="throughput_total",
             value=self.throughput_count,
             unit="units",
-            context="EXIT"
+            context="EXIT",
+            cycle_count = self.inventory['ced_station'].cycle_count,
+            pallet_serial_number = self.inventory['ced_station'].pallet_serial_number,
         )
 
         if self.viz:
@@ -334,7 +366,7 @@ class LogicEngine:
 
             if value is not None:
                 # Stream immediately to database
-                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state)
+                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state, self.inventory['ced_station'].cycle_count, self.inventory['ced_station'].pallet_serial_number)
     
     def _push_raw_metrics(self, event, timestamp):
 
@@ -352,6 +384,15 @@ class LogicEngine:
             return value
 
         payload = event.get('payload', {})
+
+        if 'cavity_number' in payload:
+            temp_payload = {}
+            for key in payload:
+                if key == 'cavity_number':
+                    pass
+                temp_payload[f"{payload['cavity_number']}_{key}"] = payload[key]
+            payload = temp_payload
+
         for key in payload:
             if key in SKIP_KEYS:
                 continue
@@ -363,11 +404,13 @@ class LogicEngine:
                 name=f"{key}",
                 value=value,
                 unit=payload.get('unit', None),
-                context=event.get('type')
+                context=event.get('type'),
+                cycle_count = self.inventory['ced_station'].cycle_count,
+                pallet_serial_number = self.inventory['ced_station'].pallet_serial_number,
             )
 
 
-    def _stream_metric(self, timestamp, comp_id, name, value, unit, context):
+    def _stream_metric(self, timestamp, comp_id, name, value, unit, context, cycle_count=None, pallet_serial_number=None):
         try:
             #ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
             ts_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
@@ -381,6 +424,8 @@ class LogicEngine:
                     else value,
                     unit=unit,
                     state_context=context,
+                    cycle_count=cycle_count,
+                    pallet_serial_number=pallet_serial_number,
                 )
                 session.add(metric)
                 session.commit()
@@ -390,6 +435,7 @@ class LogicEngine:
         except Exception as e:
             print(f"[STREAM] ✗ DB failed: {e}. Writing to CSV.")
             self._write_to_csv(timestamp, comp_id, name, value, unit, context)
+
     def _write_to_csv(self, ts_iso, comp_id, name, value, unit, context):
         """Fallback: Write single row to CSV"""
         try:

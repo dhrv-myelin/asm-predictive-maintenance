@@ -64,7 +64,8 @@ class CEDAdapter(MachineAdapter):
         r"^(\w+)[-—>]+(\d{2}:\d{2}:\d{2}[.,]\d+)\s+(.*)"
     )
     # Detects the opening of a  给PDCA发送:_{  block in the message part
-    _BLOCK_OPEN = re.compile(r"给PDCA发送:_\{")
+    _PDCA_BLOCK_OPEN = re.compile(r"给PDCA发送:_\{")
+    _SFC_OK_BLOCK_OPEN = re.compile(r"ok@\{0 SFC_OK$")
     # One data row inside a  给PDCA发送:_{...}  block
     # e.g.  J63HQG006TB0000WDH@pdata@glue_weight@10@9.5@10.5@mg
     _DATA_ROW = re.compile(
@@ -87,13 +88,37 @@ class CEDAdapter(MachineAdapter):
 
         time_part = ts_str.replace(',', '.')
         hms, frac = time_part.split('.')
-        frac = frac.ljust(3, '0')[:3]
+
+        # frac = frac.ljust(3, '0')[:3] # Right Padding after Decimal :: Ex : 0.98 -> 0.980
+        frac = frac.zfill(3)[:3] # Left Padding after Decimal :: Ex : 0.98 -> 0.098
+
         full_ts = f"{self._log_date} {hms}.{frac}"
         try:
             dt = datetime.strptime(full_ts, "%Y-%m-%d %H:%M:%S.%f")
             epoch = dt.timestamp()
         except ValueError:
             return None
+
+        return epoch, channel, content
+    
+    def extract_temperature_header(self, line: str):
+        temperature_file_header = re.compile(
+            r"^(\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}_\d{3})\s+→\s*(.*)"
+        )
+        m = temperature_file_header.match(line)
+        if not m:
+            return None
+
+        ts_str, content = m.group(1), m.group(2)
+        try:
+            # Normalise to standard format: 2026/02/03 02:24:21_124 → 2026-02-03 02:24:21.124
+            ts_normalised = ts_str.replace('/', '-').replace('_', '.')
+            dt = datetime.strptime(ts_normalised, "%Y-%m-%d %H:%M:%S.%f")
+            epoch = dt.timestamp()
+        except ValueError:
+            return None
+
+        channel = None  # This log format has no channel/service field
 
         return epoch, channel, content
 
@@ -218,6 +243,9 @@ class LogParser:
                     'target_id':      p.get('target_id'),
                     'state_resolver': p.get('state_resolver', {}),
                     'mapping':        p.get('value_mapping', {}),
+                    'event_details':        p.get('event_details', ""),
+                    'value_mapping':        p.get('value_mapping', {}),
+                    'unit':        p.get('unit', ""),
                 })
             except re.error as e:
                 print(f"Error compiling regex for '{p['name']}': {e}")
@@ -264,7 +292,24 @@ class LogParser:
 
         # ── Case 1: we are already inside a _{ ... } block ────────────────
         if self._in_block:
-            if stripped == '}':
+            if re.search(r"OK:(?P<payload>.*)\}@", stripped):
+
+                print("[DEBUG] Found SFC_OK Block close")
+
+                self._in_block = False
+
+                for pattern in self.patterns:
+                    pmatch = pattern['regex'].search(stripped)
+                    # print(f"stripped ::{len(self._block_lines)}:: {stripped}")
+                    if pmatch:
+                        print("[DEBUG] Matched Regex for SFC_OK Block close, Building Event")
+                        yield self._block_epoch, self._build_event(pattern, pmatch, self._block_channel, line_text)
+                        self._block_lines   = []
+                        self._block_channel = ''
+                        self._block_epoch   = 0.0
+                        break
+
+            elif stripped == '}':
                 # Closing brace — block is complete, fire all events
                 self._in_block = False
                 yield from self._process_ced_block(
@@ -283,12 +328,22 @@ class LogParser:
         # ── Case 2: normal line — parse header first ───────────────────────
         parsed = adapter.extract_header(line_text)
         if parsed is None:
-            return
+            parsed = adapter.extract_temperature_header(line_text)
+            if parsed is None:
+                return
 
         epoch, channel, content = parsed
 
         # ── Case 3: block opener ───────────────────────────────────────────
-        if adapter._BLOCK_OPEN.search(line_text):
+        if adapter._PDCA_BLOCK_OPEN.search(line_text):
+            self._in_block      = True
+            self._block_epoch   = epoch
+            self._block_channel = channel
+            self._block_lines   = [line_text]    # index 0 = opener
+            return                               # rows will arrive in future calls
+
+        if adapter._SFC_OK_BLOCK_OPEN.search(content):
+            print("[DEBUG] Found SFC_OK Block open")
             self._in_block      = True
             self._block_epoch   = epoch
             self._block_channel = channel
@@ -299,6 +354,19 @@ class LogParser:
         for pattern in self.patterns:
             pmatch = pattern['regex'].search(content)
             if pmatch:
+                if (pattern['target_id'] == 'error') or (pattern['target_id'] == 'warning'):
+                    groups = pmatch.groupdict()
+
+                    # Apply value_mapping translations before formatting
+                    if 'value_mapping' in pattern:
+                        for group_name, mapping in pattern['value_mapping'].items():
+                            if group_name in groups and groups[group_name] in mapping:
+                                groups[group_name] = mapping[groups[group_name]]
+                                
+                    formatted_details = pattern['event_details'].format(**groups)
+                    yield epoch, self._sentinel_event(pattern['event_type'], pattern['target_id'], formatted_details)
+                    break
+
                 yield epoch, self._build_event(pattern, pmatch, channel, line_text)
                 break
 
@@ -307,6 +375,10 @@ class LogParser:
         """
         Explode a 给PDCA发送:_{...} block into one normalised event per data row.
         block_lines[0] is the opener; block_lines[1:] are the raw data rows.
+
+        Deduplication: rows that are identical except for pallet_id are emitted
+        only once (first occurrence).  After all rows, one final 'PDCA_UNIQUE_PALLETS'
+        event carries the count of unique pallet_ids seen in the block.
         """
         adapter: CEDAdapter = self.adapter  # type: ignore[assignment]
 
@@ -318,23 +390,52 @@ class LogParser:
             'submit':  'CED_SUBMIT',
         }
 
+        seen_payloads: set[tuple] = set()   # fingerprints of already-emitted rows
+        unique_pallet_ids: set[str] = set() # all pallet_ids encountered
+
         for raw_row in block_lines[1:]:      # skip opener at index 0
             row = adapter.parse_data_row(raw_row)
             if row is None:
                 continue
 
-            # serial      = row.get('serial', 'Unknown')
-            record_type = row.pop('record_type', 'unknown') # Remove recod_type before passing to payload
+            pallet_id   = row.get('pallet_id')
+            record_type = row.pop('record_type', 'unknown')
+
+            if pallet_id:
+                unique_pallet_ids.add(pallet_id)
+
+            # Build a fingerprint that ignores pallet_id so that identical rows
+            # from different pallets are treated as duplicates.
+            payload_without_pid = {k: v for k, v in row.items() if k != 'pallet_id'}
+            fingerprint = (record_type, tuple(sorted(payload_without_pid.items())))
+
+            if fingerprint in seen_payloads:
+                continue                    # duplicate – skip
+            seen_payloads.add(fingerprint)
 
             yield epoch, {
                 "type":           event_type_map.get(record_type, 'CED_UNKNOWN'),
-                "target":         'system',       # serial number = event owner
-                "level":          channel,      # PUBLIC / LEFT / RIGHT …
+                "target":         'system',
+                "level":          channel,
                 "destination":    None,
                 "state_resolver": {},
-                "payload":        row,          # full parsed row dict
+                "payload":        row,       # pallet_id still present, record_type removed
                 "raw_line":       raw_row,
             }
+
+        # --- final summary event for the whole block ---
+        yield epoch, {
+            "type":           'PDCA_UNIQUE_PALLETS',
+            "target":         'system',
+            "level":          channel,
+            "destination":    None,
+            "state_resolver": {},
+            "payload":        {
+                "unique_pallet_count": len(unique_pallet_ids),
+                # "pallet_ids":          sorted(unique_pallet_ids),
+            },
+            "raw_line":       None,
+        }
 
     # ── helpers ────────────────────────────────────────────────────────────
     @staticmethod
@@ -363,6 +464,9 @@ class LogParser:
         target = pattern.get('target_id')
         if not target:
             target = mapped_payload.get('target')
+
+        if pattern.get('unit'):
+            mapped_payload['unit'] = pattern['unit']
 
         return {
             "type":           pattern['event_type'],

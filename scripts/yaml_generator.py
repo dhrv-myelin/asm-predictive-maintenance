@@ -352,13 +352,14 @@ def convert_excel_to_yaml(excel_file: str, output_dir: str = "."):
     machine_graph = build_machine_graph(excel_file)
     machine_graph_path = os.path.join(output_dir, "machine_graph.yaml")
 
-    with open(machine_graph_path, "w") as f:
+    with open(machine_graph_path, "w", encoding="utf-8") as f:
         yaml.dump(
             machine_graph,
             f,
             Dumper=QuotedStringDumper,
             default_flow_style=False,
             sort_keys=False,
+            allow_unicode=True,
         )
 
     print(f"✓ Wrote {machine_graph_path}")
@@ -369,13 +370,14 @@ def convert_excel_to_yaml(excel_file: str, output_dir: str = "."):
     process_logic = build_process_logic(excel_file)
     process_logic_path = os.path.join(output_dir, "process_logic.yaml")
 
-    with open(process_logic_path, "w") as f:
+    with open(process_logic_path, "w", encoding="utf-8") as f:
         yaml.dump(
             process_logic,
             f,
             Dumper=QuotedStringDumper,
             default_flow_style=False,
             sort_keys=False,
+            allow_unicode=True,
         )
 
     print(f"✓ Wrote {process_logic_path}")
@@ -389,13 +391,14 @@ def convert_excel_to_yaml(excel_file: str, output_dir: str = "."):
     event_mapping = build_event_log_mapping(excel_file)
     event_mapping_path = os.path.join(output_dir, "event_log_mapping.yaml")
 
-    with open(event_mapping_path, "w") as f:
+    with open(event_mapping_path, "w", encoding="utf=8") as f:
         yaml.dump(
             event_mapping,
             f,
             Dumper=QuotedStringDumper,
             default_flow_style=False,
             sort_keys=False,
+            allow_unicode=True,
         )
 
     print(f"✓ Wrote {event_mapping_path}")
@@ -423,8 +426,8 @@ if __name__ == "__main__":
     # claude combined usage
     # Example usage
     output_files = convert_excel_to_yaml(
-        excel_file="~/code/asm-predictive-maintenance/machine_state/GDM_process_details_v2.xlsx",
-        output_dir="./",
+        excel_file="../data/CED_process_details_v1.xlsx",
+        output_dir="../data/",
     )
 
     print("\nGenerated files:")

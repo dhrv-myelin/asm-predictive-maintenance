@@ -13,6 +13,24 @@ topology:
     next_nodes: ["exit_sink"]
 
   # ==========================================
+  # ENTRY: CED Maintenance
+  # ==========================================
+  - id: "ced_maintenance"
+    class: "CEDMaintenance"
+    is_entry: true
+    logic_template: "ced_maintenance"
+    next_nodes: ["exit_sink"]
+
+  # ==========================================
+  # ENTRY: CED Maintenance
+  # ==========================================
+  - id: "gantry_positioning"
+    class: "GantryPositioning"
+    is_entry: true
+    logic_template: "gantry_positioning"
+    next_nodes: ["exit_sink"]
+
+  # ==========================================
   # EXIT SINK
   # ==========================================
   - id: "exit_sink"

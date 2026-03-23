@@ -21,10 +21,13 @@ class DBUtils:
         """)
 
         with self._sf() as s:
-            rows = s.execute(sql, {
-                "start_ts": start_timestamp,
-                "end_ts": end_timestamp,
-            }).fetchall()
+            rows = s.execute(
+                sql,
+                {
+                    "start_ts": start_timestamp,
+                    "end_ts": end_timestamp,
+                },
+            ).fetchall()
 
         if not rows:
             print(f"[ERROR] No data found between {start_timestamp} and {end_timestamp}")
@@ -77,7 +80,7 @@ class DBUtils:
         """
         sql = text("""
             SELECT metric_name, mean, std_dev
-            FROM baseline
+            FROM baseline_metrics
         """)
 
         with self._sf() as s:
@@ -92,7 +95,7 @@ class DBUtils:
             name = str(row[0]).strip()
             try:
                 mean = float(row[1]) if row[1] is not None else None
-                std  = float(row[2]) if row[2] is not None else None
+                std = float(row[2]) if row[2] is not None else None
                 if mean is not None and std is not None:
                     baseline[name] = (mean, max(std, 1e-6))
                 else:
@@ -133,10 +136,16 @@ class DBUtils:
                  :station_name, :metric_name, :model_name)
         """)
 
-        records = patterns_df[[
-            "actual_timestamp", "predicted_timestamp", "predicted_value",
-            "station_name", "metric_name", "model_name",
-        ]].to_dict(orient="records")
+        records = patterns_df[
+            [
+                "actual_timestamp",
+                "predicted_timestamp",
+                "predicted_value",
+                "station_name",
+                "metric_name",
+                "model_name",
+            ]
+        ].to_dict(orient="records")
 
         with self._sf() as s:
             s.execute(sql, records)
@@ -162,8 +171,15 @@ class DBUtils:
                 model_name=model_name,
             )
 
-    def _write_db(self, actual_timestamp, predicted_timestamp, predicted_value,
-                  station_name, metric_name, model_name):
+    def _write_db(
+        self,
+        actual_timestamp,
+        predicted_timestamp,
+        predicted_value,
+        station_name,
+        metric_name,
+        model_name,
+    ):
         sql = text("""
             INSERT INTO model_predictions
                 (actual_timestamp, predicted_timestamp, predicted_value,
@@ -173,12 +189,15 @@ class DBUtils:
                  :station_name, :metric_name, :model_name)
         """)
         with self._sf() as s:
-            s.execute(sql, {
-                "actual_timestamp":    actual_timestamp,
-                "predicted_timestamp": predicted_timestamp,
-                "predicted_value":     predicted_value,
-                "station_name":        station_name,
-                "metric_name":         metric_name,
-                "model_name":          model_name,
-            })
+            s.execute(
+                sql,
+                {
+                    "actual_timestamp": actual_timestamp,
+                    "predicted_timestamp": predicted_timestamp,
+                    "predicted_value": predicted_value,
+                    "station_name": station_name,
+                    "metric_name": metric_name,
+                    "model_name": model_name,
+                },
+            )
             s.commit()

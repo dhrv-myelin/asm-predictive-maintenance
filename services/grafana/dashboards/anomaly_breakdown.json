@@ -1,0 +1,171 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 3,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 21,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.4.0",
+      "repeat": "metric_name",
+      "repeatDirection": "h",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": true,
+          "rawQuery": true,
+          "rawSql": "WITH starts AS (\n  SELECT timestamp AS start_time\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'upstream_waiting_time'\n),\n\nends AS (\n  SELECT timestamp AS end_time\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'exit_stopper_raising_time'\n),\n\ncycle AS (\n  SELECT\n    s.start_time,\n    MIN(e.end_time) AS end_time\n  FROM starts s\n  JOIN ends e\n    ON e.end_time > s.start_time\n  GROUP BY s.start_time\n),\n\nselected_cycle AS (\n  SELECT *\n  FROM cycle\n  WHERE start_time <= CAST(NULLIF('${anomaly_time}', '') AS timestamptz)\n    AND end_time >= CAST(NULLIF('${anomaly_time}', '') AS timestamptz)\n  LIMIT 1\n)\n\nSELECT\n  p.timestamp AS time,\n  p.metric_name,\n  p.value\nFROM process_metrics p\nJOIN selected_cycle c\n  ON p.timestamp BETWEEN c.start_time AND c.end_time\nWHERE p.station_name = 'ced_station'\nORDER BY p.timestamp, p.metric_name;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH starts AS (\n  SELECT timestamp AS start_time\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'upstream_waiting_time'\n),\n\nends AS (\n  SELECT timestamp AS end_time\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'exit_stopper_raising_time'\n),\n\ncycle AS (\n  SELECT\n    s.start_time,\n    MIN(e.end_time) AS end_time\n  FROM starts s\n  JOIN ends e\n    ON e.end_time > s.start_time\n  GROUP BY s.start_time\n),\n\nselected_cycle AS (\n  SELECT *\n  FROM cycle\n  ORDER BY ABS(EXTRACT(EPOCH FROM (\n    start_time - CAST(NULLIF('${anomaly_time}', '') AS timestamptz)\n  )))\n  LIMIT 1\n)\n\nSELECT\n  p.timestamp AS time,\n  p.metric_name,\n  p.value\nFROM process_metrics p\nJOIN selected_cycle c\n  ON p.timestamp BETWEEN c.start_time AND c.end_time\nWHERE p.station_name = 'ced_station'\nORDER BY p.timestamp, p.metric_name;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Panel Title",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "anomaly_time",
+        "options": [],
+        "query": "",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Anomaly Breakdown",
+  "uid": "bfgv77w1umjuoa",
+  "version": 18,
+  "weekStart": ""
+}

@@ -114,7 +114,7 @@ target:
       save_name: ced_machine__health_score
       model_type: sklearn
       required_features:
-        #INFO: there are some extra in process logic sheet. i have only copied what was from mamba to make sure
+        # ced_maintenance
         - ced_maintenance__maint_between_glue_purge_delay
         - ced_maintenance__maint_between_nozzle_clean_delay
         - ced_maintenance__maint_glue_purging_time
@@ -123,11 +123,12 @@ target:
         - ced_maintenance__maint_post_glue_purge_delay
         - ced_maintenance__maint_post_nozzle_clean_delay
         - ced_maintenance__maintenance_waiting_time
+        # ced_station
         - ced_station__barcode_scanning_time
         - ced_station__between_cavities_delay
         - ced_station__dispensing_time
         - ced_station__downstream_waiting_time
-        - ced_station__entry_stopper_eval_delay
+        # REMOVED: ced_station__entry_stopper_eval_delay  ← not in DB
         - ced_station__entry_stopper_lowering_time
         - ced_station__entry_stopper_raising_time
         - ced_station__exit_stopper_lowering_time
@@ -151,12 +152,34 @@ target:
         - ced_station__pre_sfc_query_delay
         - ced_station__sfc_conn_time
         - ced_station__sfc_query_processing_time
-        - ced_station__upstream_waiting_time
+        # REMOVED: ced_station__upstream_waiting_time  ← not in DB
+        # gantry_positioning (NEW)
+        - gantry_positioning__gantry_safety_positioning_time
+        # system
         - system__Mode_value
         - system__Online_value
         - system__Priority_value
         - system__TestSeriesID_value
         - system__cam_uv_glue_sn
+        # cavity start points (NEW — 6 cavities × 3 axes)
+        - system__cavity_1_dispenser_start_point_a_value
+        - system__cavity_1_dispenser_start_point_x_value
+        - system__cavity_1_dispenser_start_point_y_value
+        - system__cavity_2_dispenser_start_point_a_value
+        - system__cavity_2_dispenser_start_point_x_value
+        - system__cavity_2_dispenser_start_point_y_value
+        - system__cavity_3_dispenser_start_point_a_value
+        - system__cavity_3_dispenser_start_point_x_value
+        - system__cavity_3_dispenser_start_point_y_value
+        - system__cavity_4_dispenser_start_point_a_value
+        - system__cavity_4_dispenser_start_point_x_value
+        - system__cavity_4_dispenser_start_point_y_value
+        - system__cavity_5_dispenser_start_point_a_value
+        - system__cavity_5_dispenser_start_point_x_value
+        - system__cavity_5_dispenser_start_point_y_value
+        - system__cavity_6_dispenser_start_point_a_value
+        - system__cavity_6_dispenser_start_point_x_value
+        - system__cavity_6_dispenser_start_point_y_value
         - system__cm_vendor_value
         - system__cycle_time_value
         - system__dispense_height_value
@@ -171,6 +194,7 @@ target:
         - system__glue_weight_lower
         - system__glue_weight_upper
         - system__glue_weight_value
+        - system__main_valve_temp       # NEW
         - system__nozzle_temp_lower
         - system__nozzle_temp_upper
         - system__nozzle_temp_value
@@ -185,38 +209,36 @@ target:
         - system__single_dot_valve2_upper
         - system__single_dot_valve2_value
         - system__striking_time_value
+        - system__sub_valve_temp        # NEW
         - system__tossing_lower
         - system__tossing_upper
         - system__tossing_value
+        - system__unique_pallet_count   # NEW
         - timestamp
 
       load_path:
         "saved_models/ced_machine__health_score/model.joblib"
 
-        #INFO: this is for dataloader.
       history_window: 1
       stride: 1
       prediction_window: 1
       mode: offline
 
-      #INFO: these are filled in health score class init
       arch:
-        smoothing_window: 5 # was 20 — too large relative to dataset size
+        smoothing_window: 5
         n_estimators: 100
         contamination: "auto"
         drift_percentile: 5
         breakdown_sensitivity: 3.0
         random_state: 42
 
-        #HACK: right now train params arent used in the model class. need to add tem to the correct class train func
       train_params:
         n_estimators: 300
         max_depth: 6
         learning_rate: 0.05
-
-        train_split: 0.7,
-        val_split: 0.2,
-        test_split: 0.1,
+        train_split: 0.7
+        val_split: 0.2
+        test_split: 0.1
 
       analysis_types: [score]
     #=================================================================================

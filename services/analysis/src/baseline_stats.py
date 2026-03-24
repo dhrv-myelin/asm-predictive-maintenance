@@ -23,16 +23,13 @@ warnings.filterwarnings("ignore")
 
 ALLOWED_METRICS = {
     "entry_stopper_lowering_time",
-    "pallet_movein_time",
     "movein_to_entry_stopper_up_delay",
     "entry_stopper_raising_time",
     "pallet_clamping_time",
     "pallet_lifting_time",
-    "dispensing_time",
     "inspection_time",
     "pallet_unclamping_time",
     "pallet_lowering_time",
-    "downstream_waiting_time",
     "exit_stopper_lowering_time",
     "pallet_moveout_time",
 }

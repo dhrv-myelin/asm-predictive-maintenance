@@ -48,7 +48,7 @@ class LogicEngine:
             self._reset_system()
             return 
         
-        if event['type'] == 'ENTRY_STOPPER_DOWN_START':
+        if event['type'] == 'ENTRY_STOPPER_DOWN_START' and self.inventory[target_id].current_state != "IDLE" and self.inventory[target_id].current_state != "ENTRY_STOPPER_DOWN_EVAL":
             print("[DEBUG] New Station start event detected. Reseting station at timestamp : ", timestamp)
             self._reset_system(station_to_reset=event['target'])
 

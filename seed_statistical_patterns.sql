@@ -63,14 +63,7 @@ VALUES
 (48, 'Variance Growth',    'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                            'pallet_lowering_time',             'pneumatic_actuator'),
 (49, 'Slow Drift',         'Seal wear and lubrication thinning. Review seal life rating and maintenance interval.',                                                                                                     'pallet_lowering_time',             'pneumatic_actuator'),
 
--- actuator: downstream_waiting_time
-(50, 'Trend Acceleration', 'Friction consuming pressure margin. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                                                        'downstream_waiting_time',          'pneumatic_actuator'),
-(51, 'Step Jump',          'Stiction onset or flow restriction. Check exhaust port contamination, piston rod seal lip rollover, needle valve partial closure.',                                                         'downstream_waiting_time',          'pneumatic_actuator'),
-(52, 'Recovery Cycles',    'Thermal cycling reducing grease film. Check duty cycle vs rating, measure barrel temperature, verify grease grade.',                                                                        'downstream_waiting_time',          'pneumatic_actuator'),
-(53, 'Random Spikes',      'Solenoid valve contamination or sticking spool. Inspect air quality (particles/moisture) and valve seals.',                                                                                 'downstream_waiting_time',          'pneumatic_actuator'),
-(54, 'Baseline Shift',     'Supply pressure change or new restriction. Check air lines, supply pressure at actuator port, upstream valves.',                                                                            'downstream_waiting_time',          'pneumatic_actuator'),
-(55, 'Variance Growth',    'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                            'downstream_waiting_time',          'pneumatic_actuator'),
-(56, 'Slow Drift',         'Seal wear and lubrication thinning. Review seal life rating and maintenance interval.',                                                                                                     'downstream_waiting_time',          'pneumatic_actuator'),
+
 
 -- actuator: pallet_moveout_time
 (57, 'Trend Acceleration', 'Friction consuming pressure margin. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                                                        'pallet_moveout_time',              'stepper'),
@@ -97,13 +90,13 @@ VALUES
 (70, 'Slow Drift',           'Progressive wear or lubrication loss increasing rolling resistance. Check roller bearings, belt condition, and lubrication schedule.',                                                    'pallet_movein_time',               'stepper'),
 
 -- stepper: exit_stopper_lowering_time
-(71, 'Trend Acceleration',   'Friction approaching motor torque limit. Inspect conveyor rollers, pallet underside wear, belt tension, and motor temperature.',                                                          'exit_stopper_lowering_time',       'stepper'),
-(72, 'Step Jump',            'Local mechanical obstruction or seized roller creating higher drag. Manually rotate rollers, check debris or pallet interference along travel path.',                                     'exit_stopper_lowering_time',       'stepper'),
-(73, 'Recovery Cycles',      'Thermal effects in motor or drivetrain increasing drag during sustained operation. Check motor case temperature, duty cycle, and lubrication condition.',                                 'exit_stopper_lowering_time',       'stepper'),
-(74, 'Random Spikes',        'Transient pallet interference, vibration, or electrical noise affecting sensor or drive. Correlate timestamps with nearby machine events and inspect sensors and cabling.',               'exit_stopper_lowering_time',       'stepper'),
-(75, 'Periodic Oscillation', 'Rotating mechanical defect (eccentric pulley, worn roller, belt irregularity). Inspect rollers and pulleys for periodic drag or misalignment.',                                          'exit_stopper_lowering_time',       'stepper'),
-(76, 'Variance Growth',      'Inconsistent friction due to contamination, roller wear, or pallet condition variation. Inspect rails/rollers for debris and verify pallet bottom surfaces.',                             'exit_stopper_lowering_time',       'stepper'),
-(77, 'Slow Drift',           'Progressive wear or lubrication loss increasing rolling resistance. Check roller bearings, belt condition, and lubrication schedule.',                                                    'exit_stopper_lowering_time',       'stepper'),
+(71, 'Trend Acceleration',   'Friction approaching motor torque limit. Inspect conveyor rollers, pallet underside wear, belt tension, and motor temperature.',                                                          'exit_stopper_lowering_time',       'pneumatic_actuator'),
+(72, 'Step Jump',            'Local mechanical obstruction or seized roller creating higher drag. Manually rotate rollers, check debris or pallet interference along travel path.',                                     'exit_stopper_lowering_time',       'pneumatic_actuator'),
+(73, 'Recovery Cycles',      'Thermal effects in motor or drivetrain increasing drag during sustained operation. Check motor case temperature, duty cycle, and lubrication condition.',                                 'exit_stopper_lowering_time',       'pneumatic_actuator'),
+(74, 'Random Spikes',        'Transient pallet interference, vibration, or electrical noise affecting sensor or drive. Correlate timestamps with nearby machine events and inspect sensors and cabling.',               'exit_stopper_lowering_time',       'pneumatic_actuator'),
+(75, 'Periodic Oscillation', 'Rotating mechanical defect (eccentric pulley, worn roller, belt irregularity). Inspect rollers and pulleys for periodic drag or misalignment.',                                          'exit_stopper_lowering_time',       'pneumatic_actuator'),
+(76, 'Variance Growth',      'Inconsistent friction due to contamination, roller wear, or pallet condition variation. Inspect rails/rollers for debris and verify pallet bottom surfaces.',                             'exit_stopper_lowering_time',       'pneumatic_actuator'),
+(77, 'Slow Drift',           'Progressive wear or lubrication loss increasing rolling resistance. Check roller bearings, belt condition, and lubrication schedule.',                                                    'exit_stopper_lowering_time',       'pneumatic_actuator'),
 
 -- ============================================================
 -- SERVO METRICS

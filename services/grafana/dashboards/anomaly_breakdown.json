@@ -53,7 +53,52 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "boolean"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "applyToRow": false,
+                  "mode": "gradient",
+                  "type": "color-background",
+                  "wrapText": false
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "match": "true",
+                      "result": {
+                        "color": "red",
+                        "index": 0,
+                        "text": "ANOMALY"
+                      }
+                    },
+                    "type": "special"
+                  },
+                  {
+                    "options": {
+                      "match": "false",
+                      "result": {
+                        "color": "light-green",
+                        "index": 1,
+                        "text": "NORMAL"
+                      }
+                    },
+                    "type": "special"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 21,
@@ -72,6 +117,7 @@
           ],
           "show": false
         },
+        "frameIndex": 1,
         "showHeader": true
       },
       "pluginVersion": "11.4.0",
@@ -85,7 +131,7 @@
           },
           "editorMode": "code",
           "format": "table",
-          "hide": false,
+          "hide": true,
           "rawQuery": true,
           "rawSql": "WITH selected_cycle AS (\n  SELECT\n    s.timestamp AS start_time,\n    (\n      SELECT MIN(e.timestamp)\n      FROM process_metrics e\n      WHERE e.station_name = 'ced_station'\n        AND e.metric_name = 'exit_stopper_raising_time'\n        AND e.timestamp > s.timestamp\n    ) AS end_time\n  FROM process_metrics s\n  WHERE s.station_name = 'ced_station'\n    AND s.metric_name = 'upstream_waiting_time'\n  ORDER BY ABS(EXTRACT(EPOCH FROM (\n    s.timestamp - CAST(NULLIF('${anomaly_time}', '') AS timestamptz)\n  )))\n  LIMIT 1\n)\n\nSELECT DISTINCT ON (p.timestamp, p.metric_name)\n  p.timestamp AS time,\n  p.metric_name,\n  p.value\nFROM process_metrics p\nJOIN selected_cycle c\n  ON p.timestamp BETWEEN c.start_time AND c.end_time\nWHERE p.station_name = 'ced_station'\nORDER BY p.timestamp, p.metric_name;",
           "refId": "C",
@@ -106,9 +152,51 @@
             ],
             "limit": 50
           }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH selected_cycle AS (\n  SELECT\n    s.timestamp AS start_time,\n    (\n      SELECT MIN(e.timestamp)\n      FROM process_metrics e\n      WHERE e.station_name = 'ced_station'\n        AND e.metric_name = 'exit_stopper_raising_time'\n        AND e.timestamp > s.timestamp\n    ) AS end_time\n  FROM process_metrics s\n  WHERE s.station_name = 'ced_station'\n    AND s.metric_name = 'upstream_waiting_time'\n    AND s.timestamp <= CAST(NULLIF('${anomaly_time}', '') AS timestamptz)\n   ORDER BY s.timestamp DESC\n  LIMIT 1\n)\n\nSELECT DISTINCT ON (p.timestamp, p.metric_name)\n  p.timestamp AS time,\n  p.metric_name,\n  p.value\nFROM process_metrics p\nJOIN selected_cycle c\n  ON p.timestamp BETWEEN c.start_time AND c.end_time\nWHERE p.station_name = 'ced_station'\nORDER BY p.timestamp, p.metric_name;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Panel Title",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "ucl_value": false
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
       "type": "table"
     }
   ],
@@ -119,8 +207,8 @@
     "list": [
       {
         "current": {
-          "text": "2026-02-02T04:03:47.787Z",
-          "value": "2026-02-02T04:03:47.787Z"
+          "text": "2026-02-07T09:05:35.977Z",
+          "value": "2026-02-07T09:05:35.977Z"
         },
         "name": "anomaly_time",
         "options": [],
@@ -137,6 +225,6 @@
   "timezone": "browser",
   "title": "Anomaly Breakdown",
   "uid": "bfgv77w1umjuoa",
-  "version": 3,
+  "version": 8,
   "weekStart": ""
 }

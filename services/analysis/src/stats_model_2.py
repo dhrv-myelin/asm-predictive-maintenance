@@ -64,7 +64,6 @@ BASELINE_REF_FRAC = 0.20
 
 ALLOWED_METRICS = {
     "entry_stopper_lowering_time",
-    "movein_to_entry_stopper_up_delay",
     "entry_stopper_raising_time",
     "pallet_clamping_time",
     "pallet_lifting_time",

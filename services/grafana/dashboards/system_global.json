@@ -140,7 +140,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -6094,7 +6094,7 @@
         "x": 12,
         "y": 88
       },
-      "id": 37,
+      "id": 58,
       "options": {
         "legend": {
           "calcs": [],
@@ -6118,7 +6118,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_a_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_a_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_a_value'\n    -- Removed the value <= 998 filter here\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_a_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",  -- Gap instead of exclusion\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -6392,7 +6392,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_x_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_x_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_x_value'\n    -- Removed the value <= 998 filter here\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_x_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",  -- Gap instead of exclusion\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -6666,7 +6666,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_y_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_y_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_y_value'\n    -- Removed the value <= 998 filter here\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_1_dispenser_start_point_y_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",  -- Gap instead of exclusion\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -6940,7 +6940,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_2_dispenser_start_point_a_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_2_dispenser_start_point_a_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_2_dispenser_start_point_a_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_2_dispenser_start_point_a_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -7214,7 +7214,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_2_dispenser_start_point_x_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_2_dispenser_start_point_x_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_2_dispenser_start_point_x_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_2_dispenser_start_point_x_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -7488,7 +7488,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_2_dispenser_start_point_y_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_2_dispenser_start_point_y_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_2_dispenser_start_point_y_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_2_dispenser_start_point_y_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -7762,7 +7762,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_3_dispenser_start_point_a_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_3_dispenser_start_point_a_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_3_dispenser_start_point_a_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_3_dispenser_start_point_a_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -8036,7 +8036,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_3_dispenser_start_point_x_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_3_dispenser_start_point_x_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_3_dispenser_start_point_x_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_3_dispenser_start_point_x_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -8310,7 +8310,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_3_dispenser_start_point_y_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_3_dispenser_start_point_y_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_3_dispenser_start_point_y_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_3_dispenser_start_point_y_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -8584,7 +8584,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_4_dispenser_start_point_a_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_4_dispenser_start_point_a_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_4_dispenser_start_point_a_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_4_dispenser_start_point_a_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -8858,7 +8858,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_4_dispenser_start_point_x_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_4_dispenser_start_point_x_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_4_dispenser_start_point_x_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_4_dispenser_start_point_x_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -9132,7 +9132,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_4_dispenser_start_point_y_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_4_dispenser_start_point_y_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_4_dispenser_start_point_y_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_4_dispenser_start_point_y_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -9406,7 +9406,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_5_dispenser_start_point_a_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_5_dispenser_start_point_a_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_5_dispenser_start_point_a_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_5_dispenser_start_point_a_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -9680,7 +9680,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_5_dispenser_start_point_x_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_5_dispenser_start_point_x_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_5_dispenser_start_point_x_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_5_dispenser_start_point_x_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -9954,7 +9954,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_5_dispenser_start_point_y_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_5_dispenser_start_point_y_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_5_dispenser_start_point_y_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_5_dispenser_start_point_y_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -10228,7 +10228,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_6_dispenser_start_point_a_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_6_dispenser_start_point_a_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_6_dispenser_start_point_a_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_6_dispenser_start_point_a_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -10502,7 +10502,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_6_dispenser_start_point_x_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_6_dispenser_start_point_x_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_6_dispenser_start_point_x_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_6_dispenser_start_point_x_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -10521,6 +10521,14 @@
             ],
             "limit": 50
           }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refId": "B"
         }
       ],
       "title": "Cavity 6 dispenser start point x value",
@@ -10776,7 +10784,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n\n  SELECT timestamp, value\n\n  FROM process_metrics\n\n  WHERE $__timeFilter(timestamp)\n\n    AND station_name = 'system'\n\n    AND metric_name = 'cavity_6_dispenser_start_point_y_value'\n\n),\n \nbaseline AS (\n\n  SELECT mean, std_dev\n\n  FROM baseline_metrics\n\n  WHERE station_name = 'system'\n\n    AND metric_name = 'cavity_6_dispenser_start_point_y_value'\n\n  LIMIT 1\n\n)\n \nSELECT\n\n  f.timestamp AS time,\n\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n\n  b.mean AS \"Mean\",\n \n  CASE\n\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n\n      OR f.value < (b.mean - 3 * b.std_dev)\n\n    THEN f.value\n\n    ELSE NULL\n\n  END AS \"Anomaly\"\n \nFROM filtered f\n\nCROSS JOIN baseline b\n\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cavity_6_dispenser_start_point_y_value'\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cavity_6_dispenser_start_point_y_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n  CASE WHEN f.value >= 998 THEN NULL ELSE f.value END AS \"value\",\n\n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n\n  CASE\n    WHEN f.value >= 998 THEN NULL                         -- ← added guard\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n\nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -11687,13 +11695,13 @@
     ]
   },
   "time": {
-    "from": "now-90d",
-    "to": "now"
+    "from": "2026-01-14T03:58:35.401Z",
+    "to": "2026-02-22T17:08:14.553Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "System — Global",
   "uid": "afg9euxwb9f5sf",
-  "version": 3,
+  "version": 21,
   "weekStart": ""
 }

@@ -16,82 +16,111 @@
 # =============================================================================
 
 # ALL_AVAILABLE_FEATURES:
-# - system__count
-# - shuttle_station__shuttle_pre_scan_time
-# - shuttle_station__shuttle_scan_success_time
-# - shuttle_station__shuttle_post_scan_delay
-# - shuttle_station__shuttle_carrier_motion_time
-# - shuttle_station__shuttle_stopper_lowering_time
-# - shuttle_station__shuttle_pallet_release_time
-# - shuttle_station__shuttle_stopper_rising_time
-# - shuttle_station__shuttle_idle_time
-# - system__cycle_time/
-# - l1_buffer_a__buffer_holding_time
-# - l1_buffer_a__buffer_idle_time
-# - l1_buffer_a__buffer_pallet_release_time
-# - l1_buffer_a__buffer_stopper_lowering_time
-# - l1_buffer_a__buffer_stopper_rising_time
-# - l1_buffer_b__buffer_holding_and_pre_stopper_down_time
-# - l1_buffer_b__buffer_idle_time
-# - l1_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
-# - l1_dispenser__machine_idle_time
-# - l1_dispenser__dispenser_entry_unclamp_time
-# - l1_dispenser__dispenser_delay_post_entry_unclamp
-# - l1_dispenser__dispenser_pallet_lifting_1_time
-# - l1_dispenser__dispenser_entry_clamping_time
-# - l1_dispenser__dispenser_delay_post_clamping
-# - l1_dispenser__dispenser_pallet_stopper_releasing_time
-# - l1_dispenser__dispenser_delay_pre_gantry_positioning
-# - l1_dispenser__dispenser_gantry_positioning_time
-# - l1_dispenser__dispenser_dispensing_time
-# - l1_dispenser__dispenser_pallet_unpositioning_time
-# - l1_dispenser__dispenser_pallet_stopper_locking_time
-# - l1_dispenser__dispenser_pre_exit_unclamping
-# - l1_dispenser__dispenser_exit_unclamping
-# - l1_dispenser__dispenser_post_exit_unclamp
-# - l1_dispenser__dispenser_pallet_lowering_1
-# - l1_dispenser__dispenser_stopper_lowering
-# - l1_dispenser__dispenser_pallet_releasing
-# - l1_dispenser__dispenser_stopper_rasing
-# - l1_inspection__inspection_idle_time
-# - l1_inspection__inspection_lifter_rising_time
-# - l1_inspection__inspection_gantry_positioning_time
-# - l1_inspection__inspection_core_vision_system_time
-# - l1_inspection__inspection_post_vision_check_delay
-# - l1_inspection__inspection_lifter_lowering_time
-# - l1_inspection__inspection_pallet_releasing_time
-# - l2_buffer_a__buffer_holding_and_pre_stopper_down_time
-# - l2_buffer_a__buffer_idle_time
-# - l2_buffer_a__buffer_pallet_release_and_pre_stopper_up_time
-# - l2_buffer_b__buffer_holding_and_pre_stopper_down_time
-# - l2_buffer_b__buffer_idle_time
-# - l2_buffer_b__buffer_pallet_release_and_pre_stopper_up_time
-# - l2_dispenser__machine_idle_time
-# - l2_dispenser__dispenser_entry_unclamp_time
-# - l2_dispenser__dispenser_delay_post_entry_unclamp
-# - l2_dispenser__dispenser_pallet_lifting_1_time
-# - l2_dispenser__dispenser_entry_clamping_time
-# - l2_dispenser__dispenser_delay_post_clamping
-# - l2_dispenser__dispenser_pallet_stopper_releasing_time
-# - l2_dispenser__dispenser_delay_pre_gantry_positioning
-# - l2_dispenser__dispenser_gantry_positioning_time
-# - l2_dispenser__dispenser_dispensing_time
-# - l2_dispenser__dispenser_pallet_unpositioning_time
-# - l2_dispenser__dispenser_pallet_stopper_locking_time
-# - l2_dispenser__dispenser_pre_exit_unclamping
-# - l2_dispenser__dispenser_exit_unclamping
-# - l2_dispenser__dispenser_post_exit_unclamp
-# - l2_dispenser__dispenser_pallet_lowering_1
-# - l2_dispenser__dispenser_stopper_lowering
-# - l2_dispenser__dispenser_pallet_releasing
-# - l2_dispenser__dispenser_stopper_rasing
-# - l2_inspection__inspection_idle_time
-# - l2_inspection__inspection_lifter_rising_time
-# - l2_inspection__inspection_gantry_positioning_time
-# - l2_inspection__inspection_core_vision_system_time
-# - l2_inspection__inspection_post_vision_check_delay
-# - l2_inspection__inspection_lifter_lowering_time
-# - l2_inspection__inspection_pallet_releasing_time
+# - ced_maintenance__maint_between_glue_purge_delay
+# - ced_maintenance__maint_between_nozzle_clean_delay
+# - ced_maintenance__maint_glue_purging_time
+# - ced_maintenance__maint_move_to_safe_time
+# - ced_maintenance__maint_nozzle_cleaning_time
+# - ced_maintenance__maint_post_glue_purge_delay
+# - ced_maintenance__maint_post_nozzle_clean_delay
+# - ced_maintenance__maintenance_waiting_time
+# - ced_station__barcode_scanning_time
+# - ced_station__cavity_1_dispensing_time
+# - ced_station__cavity_2_dispensing_time
+# - ced_station__cavity_3_dispensing_time
+# - ced_station__cavity_4_dispensing_time
+# - ced_station__cavity_5_dispensing_time
+# - ced_station__cavity_6_dispensing_time
+# - ced_station__downstream_waiting_time
+# - ced_station__entry_stopper_eval_delay
+# - ced_station__entry_stopper_lowering_time
+# - ced_station__entry_stopper_raising_time
+# - ced_station__exit_stopper_lowering_time
+# - ced_station__exit_stopper_raising_time
+# - ced_station__inspection_time
+# - ced_station__movein_to_entry_stopper_up_delay
+# - ced_station__pallet_clamping_time
+# - ced_station__pallet_lifting_time
+# - ced_station__pallet_lowering_time
+# - ced_station__pallet_movein_time
+# - ced_station__pallet_moveout_time
+# - ced_station__pallet_unclamping_time
+# - ced_station__pdca_conn_time
+# - ced_station__pdca_upload_time
+# - ced_station__post_pallet_lifting_delay
+# - ced_station__pre_cavity_2_dispensing_delay
+# - ced_station__pre_cavity_3_dispensing_delay
+# - ced_station__pre_cavity_4_dispensing_delay
+# - ced_station__pre_cavity_5_dispensing_delay
+# - ced_station__pre_cavity_6_dispensing_delay
+# - ced_station__pre_clamping_delay
+# - ced_station__pre_dispensing_delay
+# - ced_station__pre_inspection_delay
+# - ced_station__pre_pallet_lifting_delay
+# - ced_station__pre_pallet_lowering_delay
+# - ced_station__pre_sfc_query_delay
+# - ced_station__sfc_conn_time
+# - ced_station__sfc_query_processing_time
+# - ced_station__upstream_waiting_time
+# - gantry_positioning__gantry_safety_positioning_time
+# - system__Mode_value
+# - system__Online_value
+# - system__Priority_value
+# - system__TestSercycle_timeiesID_value
+# - system__TestSeriesID_value
+# - system__cam_uv_glue_sn
+# - system__cavity_1_dispenser_start_point_a_value
+# - system__cavity_1_dispenser_start_point_x_value
+# - system__cavity_1_dispenser_start_point_y_value
+# - system__cavity_2_dispenser_start_point_a_value
+# - system__cavity_2_dispenser_start_point_x_value
+# - system__cavity_2_dispenser_start_point_y_value
+# - system__cavity_3_dispenser_start_point_a_value
+# - system__cavity_3_dispenser_start_point_x_value
+# - system__cavity_3_dispenser_start_point_y_value
+# - system__cavity_4_dispenser_start_point_a_value
+# - system__cavity_4_dispenser_start_point_x_value
+# - system__cavity_4_dispenser_start_point_y_value
+# - system__cavity_5_dispenser_start_point_a_value
+# - system__cavity_5_dispenser_start_point_x_value
+# - system__cavity_5_dispenser_start_point_y_value
+# - system__cavity_6_dispenser_start_point_a_value
+# - system__cavity_6_dispenser_start_point_x_value
+# - system__cavity_6_dispenser_start_point_y_value
+# - system__cm_vendor_value
+# - system__cycle_time_value
+# - system__dispense_height_value
+# - system__dispense_speed_value
+# - system__dispense_voltage_value
+# - system__gantry_cpk_x_lower
+# - system__gantry_cpk_x_upper
+# - system__gantry_cpk_x_value
+# - system__gantry_cpk_y_lower
+# - system__gantry_cpk_y_upper
+# - system__gantry_cpk_y_value
+# - system__glue_weight_lower
+# - system__glue_weight_upper
+# - system__glue_weight_value
+# - system__main_valve_temp
+# - system__nozzle_temp_lower
+# - system__nozzle_temp_upper
+# - system__nozzle_temp_value
+# - system__operator_id_value
+# - system__pressure_value
+# - system__pulse_value
+# - system__raising_time_value
+# - system__single_dot_valve1_lower
+# - system__single_dot_valve1_upper
+# - system__single_dot_valve1_value
+# - system__single_dot_valve2_lower
+# - system__single_dot_valve2_upper
+# - system__single_dot_valve2_value
+# - system__striking_time_value
+# - system__sub_valve_temp
+# - system__tossing_lower
+# - system__tossing_upper
+# - system__tossing_value
+# - system__unique_pallet_count
 # - timestamp
 
 global:
@@ -114,72 +143,45 @@ target:
       save_name: ced_machine__health_score
       model_type: sklearn
       required_features:
-        # ced_maintenance
-        - ced_maintenance__maint_between_glue_purge_delay
-        - ced_maintenance__maint_between_nozzle_clean_delay
-        - ced_maintenance__maint_glue_purging_time
-        - ced_maintenance__maint_move_to_safe_time
-        - ced_maintenance__maint_nozzle_cleaning_time
-        - ced_maintenance__maint_post_glue_purge_delay
-        - ced_maintenance__maint_post_nozzle_clean_delay
-        - ced_maintenance__maintenance_waiting_time
-        # ced_station
-        - ced_station__barcode_scanning_time
-        - ced_station__between_cavities_delay
-        - ced_station__dispensing_time
+        - ced_station__upstream_waiting_time
+        - ced_station__cavity_1_dispensing_time
+        - ced_station__cavity_2_dispensing_time
+        - ced_station__cavity_3_dispensing_time
+        - ced_station__cavity_4_dispensing_time
+        - ced_station__cavity_5_dispensing_time
+        - ced_station__cavity_6_dispensing_time
         - ced_station__downstream_waiting_time
-        # REMOVED: ced_station__entry_stopper_eval_delay  ← not in DB
-        - ced_station__entry_stopper_lowering_time
-        - ced_station__entry_stopper_raising_time
         - ced_station__exit_stopper_lowering_time
         - ced_station__exit_stopper_raising_time
-        - ced_station__inspection_time
-        - ced_station__movein_to_entry_stopper_up_delay
-        - ced_station__pallet_clamping_time
-        - ced_station__pallet_lifting_time
         - ced_station__pallet_lowering_time
-        - ced_station__pallet_movein_time
         - ced_station__pallet_moveout_time
         - ced_station__pallet_unclamping_time
         - ced_station__pdca_conn_time
-        - ced_station__pdca_upload_time
-        - ced_station__post_pallet_lifting_delay
-        - ced_station__pre_clamping_delay
+        - ced_station__pre_cavity_2_dispensing_delay
+        - ced_station__pre_cavity_3_dispensing_delay
+        - ced_station__pre_cavity_4_dispensing_delay
+        - ced_station__pre_cavity_5_dispensing_delay
+        - ced_station__pre_cavity_6_dispensing_delay
         - ced_station__pre_dispensing_delay
-        - ced_station__pre_inspection_delay
-        - ced_station__pre_pallet_lifting_delay
         - ced_station__pre_pallet_lowering_delay
         - ced_station__pre_sfc_query_delay
         - ced_station__sfc_conn_time
         - ced_station__sfc_query_processing_time
-        # REMOVED: ced_station__upstream_waiting_time  ← not in DB
-        # gantry_positioning (NEW)
+        - ced_station__barcode_scanning_time
+        - ced_station__post_pallet_lifting_delay
+        - ced_station__pallet_clamping_time
+        - ced_station__pallet_lifting_time
+        - ced_station__pre_clamping_delay
+        - ced_station__pre_pallet_lifting_delay
+        - ced_station__entry_stopper_eval_delay
+        - ced_station__entry_stopper_raising_time
+        - ced_station__movein_to_entry_stopper_up_delay
+        - ced_station__pallet_movein_time
+        - ced_station__entry_stopper_lowering_time
         - gantry_positioning__gantry_safety_positioning_time
-        # system
         - system__Mode_value
         - system__Online_value
         - system__Priority_value
-        - system__TestSeriesID_value
-        - system__cam_uv_glue_sn
-        # cavity start points (NEW — 6 cavities × 3 axes)
-        - system__cavity_1_dispenser_start_point_a_value
-        - system__cavity_1_dispenser_start_point_x_value
-        - system__cavity_1_dispenser_start_point_y_value
-        - system__cavity_2_dispenser_start_point_a_value
-        - system__cavity_2_dispenser_start_point_x_value
-        - system__cavity_2_dispenser_start_point_y_value
-        - system__cavity_3_dispenser_start_point_a_value
-        - system__cavity_3_dispenser_start_point_x_value
-        - system__cavity_3_dispenser_start_point_y_value
-        - system__cavity_4_dispenser_start_point_a_value
-        - system__cavity_4_dispenser_start_point_x_value
-        - system__cavity_4_dispenser_start_point_y_value
-        - system__cavity_5_dispenser_start_point_a_value
-        - system__cavity_5_dispenser_start_point_x_value
-        - system__cavity_5_dispenser_start_point_y_value
-        - system__cavity_6_dispenser_start_point_a_value
-        - system__cavity_6_dispenser_start_point_x_value
-        - system__cavity_6_dispenser_start_point_y_value
         - system__cm_vendor_value
         - system__cycle_time_value
         - system__dispense_height_value
@@ -194,10 +196,6 @@ target:
         - system__glue_weight_lower
         - system__glue_weight_upper
         - system__glue_weight_value
-        - system__main_valve_temp       # NEW
-        - system__nozzle_temp_lower
-        - system__nozzle_temp_upper
-        - system__nozzle_temp_value
         - system__operator_id_value
         - system__pressure_value
         - system__pulse_value
@@ -209,11 +207,32 @@ target:
         - system__single_dot_valve2_upper
         - system__single_dot_valve2_value
         - system__striking_time_value
-        - system__sub_valve_temp        # NEW
         - system__tossing_lower
         - system__tossing_upper
         - system__tossing_value
-        - system__unique_pallet_count   # NEW
+        - system__unique_pallet_count
+        # - system__cavity_2_dispenser_start_point_a_value
+        # - system__cavity_2_dispenser_start_point_x_value
+        # - system__cavity_2_dispenser_start_point_y_value
+        # - system__cavity_3_dispenser_start_point_a_value
+        # - system__cavity_3_dispenser_start_point_x_value
+        # - system__cavity_3_dispenser_start_point_y_value
+        # - system__cavity_5_dispenser_start_point_a_value
+        # - system__cavity_5_dispenser_start_point_x_value
+        # - system__cavity_5_dispenser_start_point_y_value
+        # - system__cavity_1_dispenser_start_point_a_value
+        # - system__cavity_1_dispenser_start_point_x_value
+        # - system__cavity_1_dispenser_start_point_y_value
+        # - system__cavity_4_dispenser_start_point_a_value
+        # - system__cavity_4_dispenser_start_point_x_value
+        # - system__cavity_4_dispenser_start_point_y_value
+        # - system__cavity_6_dispenser_start_point_a_value
+        # - system__cavity_6_dispenser_start_point_x_value
+        # - system__cavity_6_dispenser_start_point_y_value
+        - system__nozzle_temp_lower
+        - system__nozzle_temp_upper
+        - system__nozzle_temp_value
+        - system__cam_uv_glue_sn
         - timestamp
 
       load_path:

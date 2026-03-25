@@ -128,7 +128,7 @@ def inference_loop(data_handler, model, db_util):
 
 def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
     rows = db_util.fetch_data(start_ts, end_ts)
-
+    print(f"[DEBUG] Last UTC timestamp in Rows fetched : {rows[-1].timestamp}")
     if not rows:
         return
 

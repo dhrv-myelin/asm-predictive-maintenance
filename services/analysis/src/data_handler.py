@@ -19,8 +19,27 @@ _ALL_END_KEYS: set[str] = {
     "system__Mode_value",
     "system__Online_value",
     "system__Priority_value",
+    "system__TestSercycle_timeiesID_value",
     "system__TestSeriesID_value",
     "system__cam_uv_glue_sn",
+    "system__cavity_1_dispenser_start_point_a_value",
+    "system__cavity_1_dispenser_start_point_x_value",
+    "system__cavity_1_dispenser_start_point_y_value",
+    "system__cavity_2_dispenser_start_point_a_value",
+    "system__cavity_2_dispenser_start_point_x_value",
+    "system__cavity_2_dispenser_start_point_y_value",
+    "system__cavity_3_dispenser_start_point_a_value",
+    "system__cavity_3_dispenser_start_point_x_value",
+    "system__cavity_3_dispenser_start_point_y_value",
+    "system__cavity_4_dispenser_start_point_a_value",
+    "system__cavity_4_dispenser_start_point_x_value",
+    "system__cavity_4_dispenser_start_point_y_value",
+    "system__cavity_5_dispenser_start_point_a_value",
+    "system__cavity_5_dispenser_start_point_x_value",
+    "system__cavity_5_dispenser_start_point_y_value",
+    "system__cavity_6_dispenser_start_point_a_value",
+    "system__cavity_6_dispenser_start_point_x_value",
+    "system__cavity_6_dispenser_start_point_y_value",
     "system__cm_vendor_value",
     "system__cycle_time_value",
     "system__dispense_height_value",
@@ -35,6 +54,7 @@ _ALL_END_KEYS: set[str] = {
     "system__glue_weight_lower",
     "system__glue_weight_upper",
     "system__glue_weight_value",
+    "system__main_valve_temp",
     "system__nozzle_temp_lower",
     "system__nozzle_temp_upper",
     "system__nozzle_temp_value",
@@ -49,25 +69,23 @@ _ALL_END_KEYS: set[str] = {
     "system__single_dot_valve2_upper",
     "system__single_dot_valve2_value",
     "system__striking_time_value",
+    "system__sub_valve_temp",
     "system__tossing_lower",
     "system__tossing_upper",
     "system__tossing_value",
+    "system__unique_pallet_count",
     "timestamp",
 }
 
 # All known L1 keys (excluding 'timestamp')
 _ALL_L1_KEYS: set[str] = {
-    "ced_maintenance__maint_between_glue_purge_delay",
-    "ced_maintenance__maint_between_nozzle_clean_delay",
-    "ced_maintenance__maint_glue_purging_time",
-    "ced_maintenance__maint_move_to_safe_time",
-    "ced_maintenance__maint_nozzle_cleaning_time",
-    "ced_maintenance__maint_post_glue_purge_delay",
-    "ced_maintenance__maint_post_nozzle_clean_delay",
-    "ced_maintenance__maintenance_waiting_time",
     "ced_station__barcode_scanning_time",
-    "ced_station__between_cavities_delay",
-    "ced_station__dispensing_time",
+    "ced_station__cavity_1_dispensing_time",
+    "ced_station__cavity_2_dispensing_time",
+    "ced_station__cavity_3_dispensing_time",
+    "ced_station__cavity_4_dispensing_time",
+    "ced_station__cavity_5_dispensing_time",
+    "ced_station__cavity_6_dispensing_time",
     "ced_station__downstream_waiting_time",
     "ced_station__entry_stopper_eval_delay",
     "ced_station__entry_stopper_lowering_time",
@@ -85,6 +103,11 @@ _ALL_L1_KEYS: set[str] = {
     "ced_station__pdca_conn_time",
     "ced_station__pdca_upload_time",
     "ced_station__post_pallet_lifting_delay",
+    "ced_station__pre_cavity_2_dispensing_delay",
+    "ced_station__pre_cavity_3_dispensing_delay",
+    "ced_station__pre_cavity_4_dispensing_delay",
+    "ced_station__pre_cavity_5_dispensing_delay",
+    "ced_station__pre_cavity_6_dispensing_delay",
     "ced_station__pre_clamping_delay",
     "ced_station__pre_dispensing_delay",
     "ced_station__pre_inspection_delay",
@@ -94,10 +117,20 @@ _ALL_L1_KEYS: set[str] = {
     "ced_station__sfc_conn_time",
     "ced_station__sfc_query_processing_time",
     "ced_station__upstream_waiting_time",
+    "gantry_positioning__gantry_safety_positioning_time",
 }
 
 # All known L2 keys (excluding 'timestamp')
-_ALL_L2_KEYS: set[str] = {""}
+_ALL_L2_KEYS: set[str] = {
+    "ced_maintenance__maint_between_glue_purge_delay",
+    "ced_maintenance__maint_between_nozzle_clean_delay",
+    "ced_maintenance__maint_glue_purging_time",
+    "ced_maintenance__maint_move_to_safe_time",
+    "ced_maintenance__maint_nozzle_cleaning_time",
+    "ced_maintenance__maint_post_glue_purge_delay",
+    "ced_maintenance__maint_post_nozzle_clean_delay",
+    "ced_maintenance__maintenance_waiting_time",
+}
 
 
 def _build_template(keys: list[str], sentinel=-1) -> dict:
@@ -319,7 +352,7 @@ class DataHandler:
             # Replace stray sentinels with NA
             row_df = row_df.replace(-1, pd.NA)
             # row_df = row_df.fillna(-1)
-            print("[DEBUG] Completed one cycle, appending to DataHandler df")
+            print(f"[DEBUG] Completed one cycle (End timestamp : {merged["timestamp"]}), appending to DataHandler df")
             self.df = (
                 pd.concat([self.df, row_df], ignore_index=True)
                 if not self.df.empty

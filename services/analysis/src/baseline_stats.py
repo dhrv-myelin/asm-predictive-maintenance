@@ -31,6 +31,17 @@ ALLOWED_METRICS = {
     "pallet_lowering_time",
     "exit_stopper_lowering_time",
     "pallet_moveout_time",
+    "cavity_1_dispensing_time",
+    "cavity_2_dispensing_time",
+    "cavity_3_dispensing_time",
+    "cavity_4_dispensing_time",
+    "cavity_5_dispensing_time",
+    "cavity_6_dispensing_time",
+    "pre_cavity_2_dispensing_delay",
+    "pre_cavity_3_dispensing_delay",
+    "pre_cavity_4_dispensing_delay",
+    "pre_cavity_5_dispensing_delay",
+    "pre_cavity_6_dispensing_delay",
 }
 
 STEP_WINDOW       = 10

@@ -128,7 +128,7 @@ class DBUtils:
             return
 
         sql = text("""
-            INSERT INTO patterns
+            INSERT INTO model_predictions
                 (actual_timestamp, predicted_timestamp, predicted_value,
                  station_name, metric_name, model_name)
             VALUES

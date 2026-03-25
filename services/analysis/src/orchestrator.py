@@ -18,8 +18,8 @@ from sqlalchemy.orm import sessionmaker
 from zoneinfo import ZoneInfo
 
 # Stats pipeline imports
-from baseline_stats import analyse_metric, build_config
-#from models.stats_model_2 import run_pattern_pipeline, print_summary
+from baseline_stats import analyse_metric, build_config, ALLOWED_METRICS 
+from stats_model_2 import run_pattern_pipeline, print_summary
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -156,25 +156,36 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
 def run_stats_pipeline(db_util: DBUtils) -> None:
     """
     1. Pull process_metrics (full history) and baseline from DB
-    2. Build per-metric config via baseline_stats logic (in-memory, no JSON file)
-    3. Run stats_model_2 pattern detectors
-    4. Push results to the `patterns` table
+    2. Filter to ALLOWED_METRICS only
+    3. Build per-metric config via baseline_stats logic (in-memory, no JSON file)
+    4. Run stats_model_2 pattern detectors
+    5. Push results to the `patterns` table
     """
-    logger.info("📊 [Stats] Fetching process_metrics from DB...")
+    logger.info(" [Stats] Fetching process_metrics from DB...")
     df = db_util.fetch_all_process_metrics()
 
     if df.empty:
-        logger.error("❌ [Stats] process_metrics is empty — aborting stats pipeline")
+        logger.error(" [Stats] process_metrics is empty — aborting stats pipeline")
         return
 
-    logger.info("📊 [Stats] %d rows fetched across %d days",
-                len(df), df["timestamp"].dt.date.nunique())
+    #  Filter BEFORE groupby loop — only allowed metrics proceed
+    df = df[df["metric_name"].isin(ALLOWED_METRICS)]
 
-    logger.info("📊 [Stats] Fetching baseline from DB...")
+    if df.empty:
+        logger.error(" [Stats] No rows remain after ALLOWED_METRICS filter — aborting stats pipeline")
+        return
+
+    logger.info(" [Stats] %d rows fetched across %d days for %d metrics: %s",
+                len(df),
+                df["timestamp"].dt.date.nunique(),
+                df["metric_name"].nunique(),
+                df["metric_name"].unique().tolist())
+
+    logger.info(" [Stats] Fetching baseline from DB...")
     baseline = db_util.fetch_baseline()  # dict: {metric_name: (mean, std)}
 
     # ── Build metric config in-memory (mirrors baseline_stats.main()) ──────────
-    logger.info("📊 [Stats] Building per-metric config...")
+    logger.info(" [Stats] Building per-metric config...")
     results = []
     for (station, metric), _ in df.groupby(["station_name", "metric_name"]):
         r = analyse_metric(metric, station, df, baseline)
@@ -198,9 +209,6 @@ def run_stats_pipeline(db_util: DBUtils) -> None:
     db_util.insert_patterns(patterns_df)
 
     logger.info("✅ [Stats] Pipeline complete — %d pattern windows written", len(patterns_df))
-
-
-# ====================== main =============================
 
 
 def main():
@@ -275,8 +283,8 @@ def main():
     if not DATABASE_URL:
         raise RuntimeError("DATABASE_URL is not set in config")
 
-    mlflow.set_tracking_uri(args.mlflow_uri)
-    mlflow.set_experiment(args.experiment)
+    # mlflow.set_tracking_uri(args.mlflow_uri)
+    # mlflow.set_experiment(args.experiment)
 
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(bind=engine)
@@ -284,15 +292,15 @@ def main():
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            logger.info("✅ Database connection successful")
+            logger.info("Database connection successful")
             inspector = inspect(engine)
             tables = inspector.get_table_names(schema=cfg["global"]["db"].get("schema"))
             if tables:
-                logger.info("📦 Tables found: %s", tables)
+                logger.info(" Tables found: %s", tables)
             else:
                 logger.warning("⚠️ No tables found in schema")
     except Exception:
-        logger.exception("❌ Database connection failed")
+        logger.exception("Database connection failed")
         raise
 
     def session_factory():

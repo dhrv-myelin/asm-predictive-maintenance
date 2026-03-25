@@ -140,7 +140,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 5,
   "links": [],
   "panels": [
     {
@@ -224,6 +224,10 @@
               {
                 "id": "custom.showPoints",
                 "value": "never"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
               }
             ]
           },
@@ -479,7 +483,8 @@
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "multi",
+          "hoverProximity": 10,
+          "mode": "single",
           "sort": "none"
         }
       },
@@ -11687,13 +11692,13 @@
     ]
   },
   "time": {
-    "from": "now-90d",
-    "to": "now"
+    "from": "2026-02-01T18:30:00.000Z",
+    "to": "2026-02-02T18:29:59.000Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "System — Global",
   "uid": "afg9euxwb9f5sf",
-  "version": 3,
+  "version": 2,
   "weekStart": ""
 }

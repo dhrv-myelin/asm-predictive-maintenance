@@ -71,6 +71,7 @@ ALLOWED_METRICS = {
     "pallet_unclamping_time",
     "pallet_lowering_time",
     "exit_stopper_lowering_time",
+    "exit_stopper_raising_time",  
     "pallet_moveout_time",
     "cavity_1_dispensing_time",
     "cavity_2_dispensing_time",
@@ -78,11 +79,6 @@ ALLOWED_METRICS = {
     "cavity_4_dispensing_time",
     "cavity_5_dispensing_time",
     "cavity_6_dispensing_time",
-    "pre_cavity_2_dispensing_delay",
-    "pre_cavity_3_dispensing_delay",
-    "pre_cavity_4_dispensing_delay",
-    "pre_cavity_5_dispensing_delay",
-    "pre_cavity_6_dispensing_delay",
 }
 
 # ──────────────────────────────────────────────
@@ -333,10 +329,10 @@ def detect_periodic_oscillation(
 _BASE_DETECTORS = [
     ("Random spikes", detect_random_spikes),
     ("Step jumps", detect_step_jumps),
-    ("Slow drift", detect_slow_drift),
-    ("Variance growth", detect_variance_growth),
+    # ("Slow drift", detect_slow_drift),
+    # ("Variance growth", detect_variance_growth),
     ("Trend acceleration", detect_trend_acceleration),
-    ("Baseline shift", detect_baseline_shift),
+    # ("Baseline shift", detect_baseline_shift),
     ("Increasing outlier frequency", detect_increasing_outlier_frequency),
 ]
 

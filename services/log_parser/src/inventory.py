@@ -31,7 +31,6 @@ class Station:
 
         # To store cycle count and pallet serial number
         self.cycle_count = 1
-        self.pallet_serial_number = None
 
     def set_state(self, new_state, timestamp):
         """
@@ -46,6 +45,7 @@ class Station:
         # If we return to IDLE or EMPTY, the pallet has physically left
         if new_state in ["IDLE", "EMPTY"]:
             self.active_pallet_id = None
+            self.cycle_count += 1
         
         # Reset metric timers that are state-specific if needed
         # (Logic handled in Engine usually, but good to know state changed)

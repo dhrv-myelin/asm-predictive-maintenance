@@ -93,8 +93,6 @@ class DBUtils:
         baseline = {}
         for row in rows:
             name = str(row[0]).strip()
-            print(row)
-            a=1/0
             try:
                 mean = float(row[1]) if row[1] is not None else None
                 std = float(row[2]) if row[2] is not None else None

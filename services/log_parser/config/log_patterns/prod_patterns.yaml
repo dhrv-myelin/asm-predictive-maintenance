@@ -46,7 +46,7 @@
   "event_type": "SCAN_START"
   "target_id": "ced_station"
 - "name": "barcode_read_success"
-  regex: '^Barcode读取成功[：:]\s*(?P<sn>[A-Za-z0-9\-\._]+)$'
+  regex: '^Barcode读取成功[：:]\s*(?P<pallet_id>[A-Za-z0-9\-\._]+)$'
   "event_type": "BARCODE_READ_SUCCESS"
   "target_id": "ced_station"
 - "name": "Scan Done"

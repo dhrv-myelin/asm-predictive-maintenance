@@ -147,7 +147,7 @@
         - "event": "CAVITY_MOVE_DONE"
           "next_state": "POST_DISPENSING"
           "metrics":
-          - "name": "dispensing_time"
+          - "name": "cavity_{idx}_dispensing_time"
             "type": "duration_seconds"
             "export": true
         - "event": "PALLET_UNCLAMP_START"
@@ -157,7 +157,7 @@
         - "event": "CAVITY_MOVE_START"
           "next_state": "DISPENSING"
           "metrics":
-          - "name": "between_cavities_delay"
+          - "name": "pre_cavity_{idx}_dispensing_delay"
             "type": "duration_seconds"
             "export": true
         - "event": "INSPECTION_MOVE_START"

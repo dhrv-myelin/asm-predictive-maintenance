@@ -254,7 +254,7 @@ class LogicEngine:
             if trans['event'] == event['type']:
                 print(f"[DEBUG]: Attempting transition {trans['event']} for Station {station.id} in State {station.current_state}")
                 if self._check_hardware_prereqs(station, trans):
-                    self._execute_transition(station, trans, timestamp)
+                    self._execute_transition(station, trans, timestamp, event.get('payload',None))
                     return True
         return False
 
@@ -294,11 +294,11 @@ class LogicEngine:
                     self._execute_transition(station, trans, timestamp)
                     return
 
-    def _execute_transition(self, station, transition, timestamp):
+    def _execute_transition(self, station, transition, timestamp, payload=None):
         """Update the state for the station and generate metrics and inferences."""
         # A. Metrics (Exit Old State)
         curr_def = station.logic_template['states'][station.current_state]
-        self._generate_metrics(station, curr_def, transition, timestamp)
+        self._generate_metrics(station, curr_def, transition, timestamp, payload)
         
         # B. Inference
         if 'state_inference' in transition:
@@ -340,7 +340,7 @@ class LogicEngine:
         for key, value in inference_dict.items():
             self.virtual_state_map[station.id][key] = value
 
-    def _generate_metrics(self, station, state_def, transition, timestamp):
+    def _generate_metrics(self, station, state_def, transition, timestamp, payload):
         """
         Calculates values based on Config and adds to Buffer.
         """
@@ -355,6 +355,8 @@ class LogicEngine:
         for m_conf in metrics_config:
             m_name = m_conf['name']
             m_type = m_conf['type']
+            if 'idx' in payload:
+                m_name = m_name.format(idx=payload['idx'])
             value = None
 
             if m_type == 'duration_seconds':

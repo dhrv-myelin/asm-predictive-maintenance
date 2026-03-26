@@ -90,6 +90,9 @@ class Model:
         real_time_inference(window_df)  -> list[float]
     """
 
+    def __repr__(self):
+        print("model name is {self.model_name}")
+
     def __init__(self, data_handler, model, config, target_name):
         self.data_handler = data_handler
         self.model_name = model

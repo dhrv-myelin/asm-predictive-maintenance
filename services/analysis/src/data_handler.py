@@ -352,7 +352,7 @@ class DataHandler:
             # Replace stray sentinels with NA
             row_df = row_df.replace(-1, pd.NA)
             # row_df = row_df.fillna(-1)
-            print(f"[DEBUG] Completed one cycle (End timestamp : {merged["timestamp"]}), appending to DataHandler df")
+            print(f"[DEBUG] Completed one cycle (End timestamp : {merged['timestamp']}), appending to DataHandler df")
             self.df = (
                 pd.concat([self.df, row_df], ignore_index=True)
                 if not self.df.empty

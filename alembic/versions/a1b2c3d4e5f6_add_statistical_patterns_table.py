@@ -29,4 +29,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_table('statistical_patterns')
+    op.execute('DROP TABLE IF EXISTS statistical_patterns;') #wasn't working for op.drop_table had to use op.execute with sql query

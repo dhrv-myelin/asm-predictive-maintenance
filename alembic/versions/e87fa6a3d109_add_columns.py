@@ -37,7 +37,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     # reverse in opposite order
 
-    op.drop_column('model_predictions', 'patterns')
-
-    op.drop_column('process_metrics', 'pallet_serial_number')
-    op.drop_column('process_metrics', 'cycle_count')
+    op.execute('ALTER TABLE model_predictions DROP COLUMN IF EXISTS patterns;') #wasn't working for op.drop_column had to use op.execute with sql query
+    op.execute('ALTER TABLE process_metrics DROP COLUMN IF EXISTS pallet_serial_number;')
+    op.execute('ALTER TABLE process_metrics DROP COLUMN IF EXISTS cycle_count;')

@@ -375,13 +375,13 @@ class LogParser:
         """
         Explode a 给PDCA发送:_{...} block into one normalised event per data row.
         block_lines[0] is the opener; block_lines[1:] are the raw data rows.
-
-        Deduplication: rows that are identical except for pallet_id are emitted
-        only once (first occurrence).  After all rows, one final 'PDCA_UNIQUE_PALLETS'
-        event carries the count of unique pallet_ids seen in the block.
+        Deduplication: rows that are identical (same keys + same values, ignoring pallet_id)
+        are emitted only once. If the same key shape appears again with a DIFFERENT value,
+        it is emitted with a suffix (_value_2, _value_3, etc.) on all _value keys.
+        After all rows, one final 'PDCA_UNIQUE_PALLETS' event carries the count of
+        unique pallet_ids seen in the block.
         """
         adapter: CEDAdapter = self.adapter  # type: ignore[assignment]
-
         event_type_map = {
             'start':   'CED_START',
             'dut_pos': 'CED_DUT_POS',
@@ -390,10 +390,12 @@ class LogParser:
             'submit':  'CED_SUBMIT',
         }
 
-        seen_payloads: set[tuple] = set()   # fingerprints of already-emitted rows
-        unique_pallet_ids: set[str] = set() # all pallet_ids encountered
+        # key_shape: (record_type, frozenset of keys excluding pallet_id)
+        # maps to a list of value_fingerprints already emitted for that shape
+        seen_by_shape: dict[tuple, list[tuple]] = {}
+        unique_pallet_ids: set[str] = set()
 
-        for raw_row in block_lines[1:]:      # skip opener at index 0
+        for raw_row in block_lines[1:]:
             row = adapter.parse_data_row(raw_row)
             if row is None:
                 continue
@@ -404,14 +406,34 @@ class LogParser:
             if pallet_id:
                 unique_pallet_ids.add(pallet_id)
 
-            # Build a fingerprint that ignores pallet_id so that identical rows
-            # from different pallets are treated as duplicates.
-            payload_without_pid = {k: v for k, v in row.items() if k != 'pallet_id'}
-            fingerprint = (record_type, tuple(sorted(payload_without_pid.items())))
+            # Explicitly exclude pallet_id from both shape and value checks
+            payload_without_pid = {
+                k: v for k, v in row.items()
+                if k != 'pallet_id'
+            }
 
-            if fingerprint in seen_payloads:
-                continue                    # duplicate – skip
-            seen_payloads.add(fingerprint)
+            key_shape         = (record_type, frozenset(payload_without_pid.keys()))
+            value_fingerprint = tuple(sorted(payload_without_pid.items()))
+
+            prior_values = seen_by_shape.setdefault(key_shape, [])
+
+            if value_fingerprint in prior_values:
+                # Exact duplicate (same keys + same values) — skip entirely
+                continue
+
+            # New value for this key shape — determine occurrence index
+            occurrence = len(prior_values) + 1  # 1 = first, 2 = second distinct value, ...
+            prior_values.append(value_fingerprint)
+
+            if occurrence == 1:
+                # First time this key shape appears — emit payload as-is
+                payload = row
+            else:
+                # Same key shape, different values — suffix all _value keys with occurrence index
+                payload = {
+                    (f"{k}_{occurrence}" if k.endswith('_value') else k): v
+                    for k, v in row.items()
+                }
 
             yield epoch, {
                 "type":           event_type_map.get(record_type, 'CED_UNKNOWN'),
@@ -419,7 +441,7 @@ class LogParser:
                 "level":          channel,
                 "destination":    None,
                 "state_resolver": {},
-                "payload":        row,       # pallet_id still present, record_type removed
+                "payload":        payload,
                 "raw_line":       raw_row,
             }
 
@@ -432,7 +454,6 @@ class LogParser:
             "state_resolver": {},
             "payload":        {
                 "unique_pallet_count": len(unique_pallet_ids),
-                # "pallet_ids":          sorted(unique_pallet_ids),
             },
             "raw_line":       None,
         }

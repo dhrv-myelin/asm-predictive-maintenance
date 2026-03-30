@@ -48,6 +48,7 @@ class LogicEngine:
             self._reset_system()
             return 
         
+        #TODO: Fix this hardcode
         if event['type'] == 'ENTRY_STOPPER_DOWN_START' and self.inventory[target_id].current_state != "IDLE" and self.inventory[target_id].current_state != "ENTRY_STOPPER_DOWN_EVAL":
             print("[DEBUG] New Station start event detected. Reseting station at timestamp : ", timestamp)
             self._reset_system(station_to_reset=event['target'])
@@ -72,18 +73,19 @@ class LogicEngine:
             self._push_raw_metrics(event,timestamp)
             return
         
-        if event['type'] == "EXIT_STOPPER_DOWN_DONE":
-            self.inventory['ced_station'].cycle_count += 1
-            self.inventory['ced_station'].pallet_serial_number = None
+        # if event['type'] == "EXIT_STOPPER_DOWN_DONE":
+        #     self.inventory['ced_station'].cycle_count += 1
+        #     self.inventory['ced_station'].active_pallet_id = None
 
-        if event['type'] == "BARCODE_READ_SUCCESS":
-            print("[DEBUG] Read barcode sn : ", payload.get('sn',''))
-            self.inventory['ced_station'].pallet_serial_number = payload.get('sn','')
+        # if event['type'] == "BARCODE_READ_SUCCESS":
+        #     print("[DEBUG] Read barcode sn : ", payload.get('sn',''))
+        #     self.inventory['ced_station'].active_pallet_id = payload.get('sn','')
 
         # if event["type"] == "ERROR_LOG":
         #     print("ENGINE SAW ERROR_LOG")
         #     self._stream_error(timestamp, event)
         #     return
+
         if (event.get('level','') == "error") or (event.get('level','') == "warning"):
             self._stream_error(timestamp, event)
             return
@@ -231,7 +233,7 @@ class LogicEngine:
             unit="units",
             context="EXIT",
             cycle_count = self.inventory['ced_station'].cycle_count,
-            pallet_serial_number = self.inventory['ced_station'].pallet_serial_number,
+            pallet_serial_number = self.inventory['ced_station'].active_pallet_id,
         )
 
         if self.viz:
@@ -368,7 +370,7 @@ class LogicEngine:
 
             if value is not None:
                 # Stream immediately to database
-                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state, self.inventory['ced_station'].cycle_count, self.inventory['ced_station'].pallet_serial_number)
+                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state, self.inventory['ced_station'].cycle_count, self.inventory['ced_station'].active_pallet_id)
     
     def _push_raw_metrics(self, event, timestamp):
 
@@ -408,7 +410,7 @@ class LogicEngine:
                 unit=payload.get('unit', None),
                 context=event.get('type'),
                 cycle_count = self.inventory['ced_station'].cycle_count,
-                pallet_serial_number = self.inventory['ced_station'].pallet_serial_number,
+                pallet_serial_number = self.inventory['ced_station'].active_pallet_id,
             )
 
 

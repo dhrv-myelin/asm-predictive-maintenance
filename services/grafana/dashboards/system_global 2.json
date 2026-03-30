@@ -492,6 +492,7 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": true,
           "rawQuery": true,
           "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cycle_time_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cycle_time_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
           "refId": "A",
@@ -524,6 +525,35 @@
           "rawQuery": true,
           "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cycle_time_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'cycle_time_value',\n      'cycle_time_value_2',\n      'cycle_time_value_3',\n      'cycle_time_value_4',\n      'cycle_time_value_5',\n      'cycle_time_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cycle_time_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'cycle_time_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'cycle_time_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'cycle_time_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'cycle_time_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'cycle_time_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'cycle_time_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
+          "refId": "C",
           "sql": {
             "columns": [
               {
@@ -604,7 +634,7 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "pressurepa"
         },
         "overrides": [
           {
@@ -867,6 +897,81 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -876,7 +981,7 @@
         "x": 0,
         "y": 16
       },
-      "id": 59,
+      "id": 110,
       "options": {
         "legend": {
           "calcs": [],
@@ -899,8 +1004,9 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'pressure_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'pressure_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'pressure_value',\n      'pressure_value_2',\n      'pressure_value_3',\n      'pressure_value_4',\n      'pressure_value_5',\n      'pressure_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'pressure_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'pressure_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'pressure_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'pressure_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'pressure_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'pressure_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'pressure_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -951,6 +1057,12 @@
         }
       ],
       "title": "Pressure Value",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -1681,6 +1793,81 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -1690,7 +1877,7 @@
         "x": 0,
         "y": 24
       },
-      "id": 61,
+      "id": 105,
       "options": {
         "legend": {
           "calcs": [],
@@ -1713,8 +1900,9 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'Online_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'Online_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'Online_value',\n      'Online_value_2',\n      'Online_value_3',\n      'Online_value_4',\n      'Online_value_5',\n      'Online_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'Online_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'Online_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'Online_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'Online_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'Online_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'Online_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'Online_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1764,7 +1952,13 @@
           }
         }
       ],
-      "title": "Online Value",
+      "title": "Online Value ",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -2088,6 +2282,81 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -2097,7 +2366,7 @@
         "x": 12,
         "y": 24
       },
-      "id": 62,
+      "id": 106,
       "options": {
         "legend": {
           "calcs": [],
@@ -2120,8 +2389,9 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'dispense_speed_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'dispense_speed_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'dispense_speed_value',\n      'dispense_speed_value_2',\n      'dispense_speed_value_3',\n      'dispense_speed_value_4',\n      'dispense_speed_value_5',\n      'dispense_speed_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'dispense_speed_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'dispense_speed_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'dispense_speed_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'dispense_speed_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'dispense_speed_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'dispense_speed_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'dispense_speed_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -2171,1228 +2441,13 @@
           }
         }
       ],
-      "title": "Dispense Speed Value ",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "fixedColor": "#37872D",
-            "mode": "fixed"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "value"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#37872D",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "UCL (+3σ)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1F60C4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              },
-              {
-                "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 7
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "LCL (-3σ)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1F60C4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#FF9830",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "anomaly_time"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#F2495C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "always"
-              },
-              {
-                "id": "custom.pointSize",
-                "value": 8
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 0
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "points"
-              },
-              {
-                "id": "custom.spanNulls",
-                "value": false
-              },
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "targetBlank": true,
-                    "title": "anomaly breakdown",
-                    "url": "/d/bfgv77w1umjuoa/anomaly-breakdown?orgId=1&var-anomaly_time=${__value.time:date:iso}&var-metric_name=${__field.name}"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "bb_upper"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1f61c4a6",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "line"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "bb_lower"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1f61c4b5",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rolling_mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-purple",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 32
-      },
-      "id": 63,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.4.0",
-      "targets": [
+      "title": "Dispense Speed Value",
+      "transformations": [
         {
-          "datasource": {
-            "type": "postgres",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'glue_weight_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'glue_weight_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'glue_weight_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
-          "refId": "B",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
+          "id": "merge",
+          "options": {}
         }
       ],
-      "title": "Glue Weight Value",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "fixedColor": "#37872D",
-            "mode": "fixed"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "value"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#37872D",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "UCL (+3σ)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1F60C4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              },
-              {
-                "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 7
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "LCL (-3σ)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1F60C4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#FF9830",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "anomaly_time"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#F2495C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "always"
-              },
-              {
-                "id": "custom.pointSize",
-                "value": 8
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 0
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "points"
-              },
-              {
-                "id": "custom.spanNulls",
-                "value": false
-              },
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "targetBlank": true,
-                    "title": "anomaly breakdown",
-                    "url": "/d/bfgv77w1umjuoa/anomaly-breakdown?orgId=1&var-anomaly_time=${__value.time:date:iso}&var-metric_name=${__field.name}"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "bb_upper"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1f61c4a6",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "line"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "bb_lower"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1f61c4b5",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rolling_mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-purple",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 32
-      },
-      "id": 64,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'striking_time_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'striking_time_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'striking_time_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
-          "refId": "B",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Striking Time Value",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "fixedColor": "#37872D",
-            "mode": "fixed"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "celsius"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "value"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#37872D",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "UCL (+3σ)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1F60C4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              },
-              {
-                "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 7
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "LCL (-3σ)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1F60C4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#FF9830",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "anomaly_time"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#F2495C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "always"
-              },
-              {
-                "id": "custom.pointSize",
-                "value": 8
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 0
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "points"
-              },
-              {
-                "id": "custom.spanNulls",
-                "value": false
-              },
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "targetBlank": true,
-                    "title": "anomaly breakdown",
-                    "url": "/d/bfgv77w1umjuoa/anomaly-breakdown?orgId=1&var-anomaly_time=${__value.time:date:iso}&var-metric_name=${__field.name}"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "bb_upper"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1f61c4a6",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "line"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "bb_lower"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1f61c4b5",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rolling_mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-purple",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 40
-      },
-      "id": 65,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'nozzle_temp_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'nozzle_temp_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'nozzle_temp_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
-          "refId": "B",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Nozzle Temp Value",
       "type": "timeseries"
     },
     {
@@ -3716,16 +2771,91 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 40
+        "x": 0,
+        "y": 32
       },
-      "id": 66,
+      "id": 112,
       "options": {
         "legend": {
           "calcs": [],
@@ -3748,8 +2878,9 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'single_dot_valve2_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'single_dot_valve2_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'glue_weight_value',\n      'glue_weight_value_2',\n      'glue_weight_value_3',\n      'glue_weight_value_4',\n      'glue_weight_value_5',\n      'glue_weight_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'glue_weight_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'glue_weight_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'glue_weight_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'glue_weight_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'glue_weight_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'glue_weight_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'glue_weight_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -3778,7 +2909,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'single_dot_valve2_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'glue_weight_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "B",
           "sql": {
             "columns": [
@@ -3799,7 +2930,13 @@
           }
         }
       ],
-      "title": "Single Dot Value 2 Value",
+      "title": "Glue Weight Value ",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -3860,7 +2997,7 @@
               }
             ]
           },
-          "unit": "UNIT"
+          "unit": "s"
         },
         "overrides": [
           {
@@ -4123,16 +3260,91 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 48
+        "x": 12,
+        "y": 32
       },
-      "id": 68,
+      "id": 107,
       "options": {
         "legend": {
           "calcs": [],
@@ -4155,8 +3367,1476 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'cam_uv_glue_sn'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cam_uv_glue_sn'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'striking_time_value',\n      'striking_time_value_2',\n      'striking_time_value_3',\n      'striking_time_value_4',\n      'striking_time_value_5',\n      'striking_time_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'striking_time_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'striking_time_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'striking_time_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'striking_time_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'striking_time_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'striking_time_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'striking_time_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'striking_time_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Striking Time Value",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 7
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_time"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "anomaly breakdown",
+                    "url": "/d/bfgv77w1umjuoa/anomaly-breakdown?orgId=1&var-anomaly_time=${__value.time:date:iso}&var-metric_name=${__field.name}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1f61c4a6",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1f61c4b5",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
+      "id": 102,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'nozzle_temp_value',\n      'nozzle_temp_value_2',\n      'nozzle_temp_value_3',\n      'nozzle_temp_value_4',\n      'nozzle_temp_value_5',\n      'nozzle_temp_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'nozzle_temp_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'nozzle_temp_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'nozzle_temp_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'nozzle_temp_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'nozzle_temp_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'nozzle_temp_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'nozzle_temp_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'nozzle_temp_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Nozzle Temp Value",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "massmg"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 7
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_time"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "anomaly breakdown",
+                    "url": "/d/bfgv77w1umjuoa/anomaly-breakdown?orgId=1&var-anomaly_time=${__value.time:date:iso}&var-metric_name=${__field.name}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1f61c4a6",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1f61c4b5",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      },
+      "id": 109,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'single_dot_valve2_value',\n      'single_dot_valve2_value_2',\n      'single_dot_valve2_value_3',\n      'single_dot_valve2_value_4',\n      'single_dot_valve2_value_5',\n      'single_dot_valve2_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'single_dot_valve2_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve2_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve2_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve2_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve2_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve2_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve2_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'single_dot_valve2_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Single Dot Value 2 Value ",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "unit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 7
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_time"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "anomaly breakdown",
+                    "url": "/d/bfgv77w1umjuoa/anomaly-breakdown?orgId=1&var-anomaly_time=${__value.time:date:iso}&var-metric_name=${__field.name}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1f61c4a6",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1f61c4b5",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "id": 113,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'cam_uv_glue_sn',\n      'cam_uv_glue_sn_2',\n      'cam_uv_glue_sn_3',\n      'cam_uv_glue_sn_4',\n      'cam_uv_glue_sn_5',\n      'cam_uv_glue_sn_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'cam_uv_glue_sn'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'cam_uv_glue_sn'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'cam_uv_glue_sn_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'cam_uv_glue_sn_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'cam_uv_glue_sn_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'cam_uv_glue_sn_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'cam_uv_glue_sn_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -4206,7 +4886,13 @@
           }
         }
       ],
-      "title": "Cam uv Glue Sn",
+      "title": "Cam UV Glue SN",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -4937,6 +5623,81 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -4946,7 +5707,7 @@
         "x": 0,
         "y": 56
       },
-      "id": 71,
+      "id": 104,
       "options": {
         "legend": {
           "calcs": [],
@@ -4969,8 +5730,9 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'dispense_voltage_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'dispense_voltage_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'dispense_voltage_value',\n      'dispense_voltage_value_2',\n      'dispense_voltage_value_3',\n      'dispense_voltage_value_4',\n      'dispense_voltage_value_5',\n      'dispense_voltage_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'dispense_voltage_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'dispense_voltage_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'dispense_voltage_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'dispense_voltage_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'dispense_voltage_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'dispense_voltage_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'dispense_voltage_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -5020,7 +5782,13 @@
           }
         }
       ],
-      "title": "Dispense Voltage Value ",
+      "title": "Dispense Voltage Value",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -5344,6 +6112,81 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -5353,7 +6196,7 @@
         "x": 12,
         "y": 56
       },
-      "id": 70,
+      "id": 103,
       "options": {
         "legend": {
           "calcs": [],
@@ -5376,8 +6219,9 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'tossing_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'tossing_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'tossing_value',\n      'tossing_value_2',\n      'tossing_value_3',\n      'tossing_value_4',\n      'tossing_value_5',\n      'tossing_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'tossing_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'tossing_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'tossing_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'tossing_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'tossing_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'tossing_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'tossing_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -5428,413 +6272,12 @@
         }
       ],
       "title": "Tossing Value",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "fixedColor": "#37872D",
-            "mode": "fixed"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "ms"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "value"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#37872D",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "UCL (+3σ)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1F60C4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              },
-              {
-                "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 7
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "LCL (-3σ)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1F60C4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#FF9830",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "never"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "solid"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "anomaly_time"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#F2495C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "always"
-              },
-              {
-                "id": "custom.pointSize",
-                "value": 8
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 0
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "points"
-              },
-              {
-                "id": "custom.spanNulls",
-                "value": false
-              },
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "targetBlank": true,
-                    "title": "anomaly breakdown",
-                    "url": "/d/bfgv77w1umjuoa/anomaly-breakdown?orgId=1&var-anomaly_time=${__value.time:date:iso}&var-metric_name=${__field.name}"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "bb_upper"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1f61c4a6",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.drawStyle",
-                "value": "line"
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "bb_lower"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1f61c4b5",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rolling_mean"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-purple",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 64
-      },
-      "id": 72,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.4.0",
-      "targets": [
+      "transformations": [
         {
-          "datasource": {
-            "type": "postgres",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'pulse_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'pulse_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'pulse_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
-          "refId": "B",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
+          "id": "merge",
+          "options": {}
         }
       ],
-      "title": "Pulse Value",
       "type": "timeseries"
     },
     {
@@ -6158,16 +6601,91 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
+        "x": 0,
         "y": 64
       },
-      "id": 73,
+      "id": 115,
       "options": {
         "legend": {
           "calcs": [],
@@ -6190,8 +6708,498 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'operator_id_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'operator_id_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'pulse_value',\n      'pulse_value_2',\n      'pulse_value_3',\n      'pulse_value_4',\n      'pulse_value_5',\n      'pulse_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'pulse_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'pulse_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'pulse_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'pulse_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'pulse_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'pulse_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'pulse_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'pulse_value'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Pulse Value",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "unit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 7
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "anomaly_time"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "anomaly breakdown",
+                    "url": "/d/bfgv77w1umjuoa/anomaly-breakdown?orgId=1&var-anomaly_time=${__value.time:date:iso}&var-metric_name=${__field.name}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1f61c4a6",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1f61c4b5",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 64
+      },
+      "id": 100,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'operator_id_value',\n      'operator_id_value_2',\n      'operator_id_value_3',\n      'operator_id_value_4',\n      'operator_id_value_5',\n      'operator_id_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'operator_id_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'operator_id_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'operator_id_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'operator_id_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'operator_id_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'operator_id_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'operator_id_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -6241,7 +7249,13 @@
           }
         }
       ],
-      "title": "operator id value ",
+      "title": "Operator Id Value",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -6565,6 +7579,81 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -6574,7 +7663,7 @@
         "x": 0,
         "y": 72
       },
-      "id": 74,
+      "id": 111,
       "options": {
         "legend": {
           "calcs": [],
@@ -6597,8 +7686,9 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'gantry_cpk_x_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'gantry_cpk_x_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'gantry_cpk_x_value',\n      'gantry_cpk_x_value_2',\n      'gantry_cpk_x_value_3',\n      'gantry_cpk_x_value_4',\n      'gantry_cpk_x_value_5',\n      'gantry_cpk_x_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'gantry_cpk_x_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_x_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_x_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_x_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_x_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_x_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_x_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -6648,7 +7738,13 @@
           }
         }
       ],
-      "title": "Gantry CPK X Value",
+      "title": "Gantry CPK X Value ",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -6972,6 +8068,81 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -6981,7 +8152,7 @@
         "x": 12,
         "y": 72
       },
-      "id": 75,
+      "id": 101,
       "options": {
         "legend": {
           "calcs": [],
@@ -7004,8 +8175,9 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'single_dot_valve1_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'single_dot_valve1_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'single_dot_valve1_value',\n      'single_dot_valve1_value_2',\n      'single_dot_valve1_value_3',\n      'single_dot_valve1_value_4',\n      'single_dot_valve1_value_5',\n      'single_dot_valve1_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'single_dot_valve1_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve1_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve1_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve1_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve1_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve1_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'single_dot_valve1_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -7055,7 +8227,13 @@
           }
         }
       ],
-      "title": "Single Dot Value 1 Value",
+      "title": "Single Dot Value 1 Value ",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -7379,6 +8557,81 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -7413,7 +8666,7 @@
           "format": "time_series",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'raising_time_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'raising_time_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'raising_time_value',\n      'raising_time_value_2',\n      'raising_time_value_3',\n      'raising_time_value_4',\n      'raising_time_value_5',\n      'raising_time_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'raising_time_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'raising_time_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'raising_time_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'raising_time_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'raising_time_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'raising_time_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'raising_time_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -7793,6 +9046,81 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -7802,7 +9130,7 @@
         "x": 12,
         "y": 80
       },
-      "id": 77,
+      "id": 114,
       "options": {
         "legend": {
           "calcs": [],
@@ -7825,8 +9153,9 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'dispense_height_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'dispense_height_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'dispense_height_value',\n      'dispense_height_value_2',\n      'dispense_height_value_3',\n      'dispense_height_value_4',\n      'dispense_height_value_5',\n      'dispense_height_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'dispense_height_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'dispense_height_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'dispense_height_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'dispense_height_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'dispense_height_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'dispense_height_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'dispense_height_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -7876,7 +9205,13 @@
           }
         }
       ],
-      "title": "Dispense Height Value ",
+      "title": "Dispense Height Value",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -8200,6 +9535,81 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Block 5"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -8209,7 +9619,7 @@
         "x": 0,
         "y": 88
       },
-      "id": 78,
+      "id": 108,
       "options": {
         "legend": {
           "calcs": [],
@@ -8232,8 +9642,9 @@
           },
           "editorMode": "code",
           "format": "time_series",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'gantry_cpk_y_value'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'gantry_cpk_y_value'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS anomaly_time\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value, metric_name\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name IN (\n      'gantry_cpk_y_value',\n      'gantry_cpk_y_value_2',\n      'gantry_cpk_y_value_3',\n      'gantry_cpk_y_value_4',\n      'gantry_cpk_y_value_5',\n      'gantry_cpk_y_value_6'\n    )\n),\n\nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'system'\n    AND metric_name = 'gantry_cpk_y_value'\n  LIMIT 1\n)\n\nSELECT\n  f.timestamp AS time,\n\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_y_value'   THEN f.value ELSE NULL END) AS \"Block 1\",\n\n  MAX(b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  MAX(b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  MAX(b.mean)                  AS \"Mean\",\n\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_y_value_2' THEN f.value ELSE NULL END) AS \"Block 2\",\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_y_value_3' THEN f.value ELSE NULL END) AS \"Block 3\",\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_y_value_4' THEN f.value ELSE NULL END) AS \"Block 4\",\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_y_value_5' THEN f.value ELSE NULL END) AS \"Block 5\",\n  MAX(CASE WHEN f.metric_name = 'gantry_cpk_y_value_6' THEN f.value ELSE NULL END) AS \"Block 6\",\n\n  MAX(CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END) AS anomaly_time\n\nFROM filtered f\nCROSS JOIN baseline b\nGROUP BY f.timestamp\nORDER BY f.timestamp;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -8283,7 +9694,13 @@
           }
         }
       ],
-      "title": "Gantry CPK Y Value",
+      "title": "Gantry CPK Y Value ",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
       "type": "timeseries"
     },
     {
@@ -16807,7 +18224,7 @@
           },
           "editorMode": "code",
           "format": "table",
-          "hide": false,
+          "hide": true,
           "rawQuery": true,
           "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'system'\n    AND metric_name = 'unique_pallet_count'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "B",
@@ -16830,7 +18247,7 @@
           }
         }
       ],
-      "title": "Unique Pallet Count",
+      "title": "Units Per Pallet Count",
       "type": "timeseries"
     }
   ],
@@ -16898,13 +18315,13 @@
     ]
   },
   "time": {
-    "from": "2026-01-14T03:58:35.401Z",
-    "to": "2026-02-22T17:08:14.553Z"
+    "from": "2026-02-15T16:55:23.266Z",
+    "to": "2026-03-12T14:57:29.507Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "System — Global",
   "uid": "afg9euxwb9f5sf",
-  "version": 29,
+  "version": 37,
   "weekStart": ""
 }

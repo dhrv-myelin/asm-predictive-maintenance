@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 3,
   "links": [],
   "panels": [
     {
@@ -6249,7 +6249,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "value"
+              "options": "dispensing_time"
             },
             "properties": [
               {
@@ -6261,18 +6261,22 @@
               },
               {
                 "id": "custom.lineWidth",
-                "value": 3
+                "value": 2
               },
               {
                 "id": "custom.showPoints",
-                "value": "never"
+                "value": "always"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "UCL (+3σ)"
+              "options": "ucl"
             },
             "properties": [
               {
@@ -6298,7 +6302,7 @@
               },
               {
                 "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
+                "value": "lcl"
               },
               {
                 "id": "custom.fillOpacity",
@@ -6309,7 +6313,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "LCL (-3σ)"
+              "options": "lcl"
             },
             "properties": [
               {
@@ -6338,7 +6342,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Mean"
+              "options": "mean"
             },
             "properties": [
               {
@@ -6371,7 +6375,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Anomaly"
+              "options": "anomaly"
             },
             "properties": [
               {
@@ -6494,7 +6498,7 @@
         "x": 0,
         "y": 64
       },
-      "id": 46,
+      "id": 48,
       "options": {
         "legend": {
           "calcs": [],
@@ -6511,14 +6515,15 @@
       "targets": [
         {
           "datasource": {
-            "type": "postgres",
+            "type": "grafana-postgresql-datasource",
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "format": "time_series",
+          "format": "table",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'between_cavities_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'between_cavities_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
-          "refId": "A",
+          "rawSql": "WITH metrics AS (\n  SELECT UNNEST(ARRAY[\n    'cavity_1_dispensing_time',\n    'cavity_2_dispensing_time',\n    'cavity_3_dispensing_time',\n    'cavity_4_dispensing_time',\n    'cavity_5_dispensing_time',\n    'cavity_6_dispensing_time',\n    'pre_cavity_2_dispensing_delay',\n    'pre_cavity_3_dispensing_delay',\n    'pre_cavity_4_dispensing_delay',\n    'pre_cavity_5_dispensing_delay',\n    'pre_cavity_6_dispensing_delay'\n  ]) AS metric_name\n),\n \ncycles AS (\n  SELECT DISTINCT cycle_count\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n),\n \ngrid AS (\n  SELECT c.cycle_count, m.metric_name\n  FROM cycles c\n  CROSS JOIN metrics m\n),\n \nvalues_per_metric AS (\n  SELECT\n    cycle_count,\n    metric_name,\n    MAX(value) AS value,\n    MAX(timestamp) AS timestamp\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name IN (\n      'cavity_1_dispensing_time',\n      'cavity_2_dispensing_time',\n      'cavity_3_dispensing_time',\n      'cavity_4_dispensing_time',\n      'cavity_5_dispensing_time',\n      'cavity_6_dispensing_time',\n      'pre_cavity_2_dispensing_delay',\n      'pre_cavity_3_dispensing_delay',\n      'pre_cavity_4_dispensing_delay',\n      'pre_cavity_5_dispensing_delay',\n      'pre_cavity_6_dispensing_delay'\n    )\n  GROUP BY cycle_count, metric_name\n),\n \ncycle_data AS (\n  SELECT\n    MAX(v.timestamp) AS time,\n    SUM(COALESCE(v.value, 0)) AS dispense_time\n  FROM grid g\n  LEFT JOIN values_per_metric v\n    ON g.cycle_count = v.cycle_count\n   AND g.metric_name = v.metric_name\n  GROUP BY g.cycle_count\n),\n \nbaseline AS (\n  SELECT\n    AVG(dispense_time) AS mean,\n    STDDEV_SAMP(dispense_time) AS std\n  FROM cycle_data\n)\n \nSELECT\n  c.time,\n  c.dispense_time,\n  b.mean,\n  b.mean + 3 * b.std AS ucl,\n  b.mean - 3 * b.std AS lcl,\n \n  -- 🔥 anomaly detection\n  CASE\n    WHEN c.dispense_time > (b.mean + 3 * b.std)\n      OR c.dispense_time < (b.mean - 3 * b.std)\n    THEN c.dispense_time\n    ELSE NULL\n  END AS Anomaly\n \nFROM cycle_data c\nCROSS JOIN baseline b\nORDER BY c.time;",
+          "refId": "D",
           "sql": {
             "columns": [
               {
@@ -6546,8 +6551,8 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'between_cavities_delay'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
-          "refId": "B",
+          "rawSql": "WITH metrics AS (\n  SELECT UNNEST(ARRAY[\n    'cavity_1_dispensing_time',\n    'cavity_2_dispensing_time',\n    'cavity_3_dispensing_time',\n    'cavity_4_dispensing_time',\n    'cavity_5_dispensing_time',\n    'cavity_6_dispensing_time',\n    'pre_cavity_2_dispensing_delay',\n    'pre_cavity_3_dispensing_delay',\n    'pre_cavity_4_dispensing_delay',\n    'pre_cavity_5_dispensing_delay',\n    'pre_cavity_6_dispensing_delay'\n  ]) AS metric_name\n),\n \ncycles AS (\n  SELECT DISTINCT cycle_count\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n),\n \ngrid AS (\n  SELECT c.cycle_count, m.metric_name\n  FROM cycles c\n  CROSS JOIN metrics m\n),\n \nvalues_per_metric AS (\n  SELECT\n    cycle_count,\n    metric_name,\n    MAX(value) AS value,\n    MAX(timestamp) AS timestamp\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name IN (\n      'cavity_1_dispensing_time',\n      'cavity_2_dispensing_time',\n      'cavity_3_dispensing_time',\n      'cavity_4_dispensing_time',\n      'cavity_5_dispensing_time',\n      'cavity_6_dispensing_time',\n      'pre_cavity_2_dispensing_delay',\n      'pre_cavity_3_dispensing_delay',\n      'pre_cavity_4_dispensing_delay',\n      'pre_cavity_5_dispensing_delay',\n      'pre_cavity_6_dispensing_delay'\n    )\n  GROUP BY cycle_count, metric_name\n),\n \ncycle_data AS (\n  SELECT\n    MAX(v.timestamp) AS time,\n    SUM(COALESCE(v.value, 0)) AS dispense_time\n  FROM grid g\n  LEFT JOIN values_per_metric v\n    ON g.cycle_count = v.cycle_count\n   AND g.metric_name = v.metric_name\n  GROUP BY g.cycle_count\n),\n \nrolling AS (\n  SELECT\n    time,\n    dispense_time,\n    AVG(dispense_time) OVER (\n      ORDER BY time\n      ROWS BETWEEN 20 PRECEDING AND CURRENT ROW\n    ) AS rolling_mean,\n    STDDEV_SAMP(dispense_time) OVER (\n      ORDER BY time\n      ROWS BETWEEN 20 PRECEDING AND CURRENT ROW\n    ) AS rolling_std\n  FROM cycle_data\n)\n \nSELECT\n  time,\n  dispense_time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "A",
           "sql": {
             "columns": [
               {
@@ -6567,7 +6572,7 @@
           }
         }
       ],
-      "title": "Between Cavaties Delay",
+      "title": "Dispensing Time",
       "type": "timeseries"
     },
     {
@@ -7264,7 +7269,7 @@
         "x": 0,
         "y": 72
       },
-      "id": 48,
+      "id": 49,
       "options": {
         "legend": {
           "calcs": [],
@@ -7287,7 +7292,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'dispensing_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'dispensing_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'inspection_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'inspection_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -7316,7 +7321,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'dispensing_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'inspection_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "B",
           "sql": {
             "columns": [
@@ -7337,7 +7342,7 @@
           }
         }
       ],
-      "title": "Dispensing Time",
+      "title": "Inspection Time",
       "type": "timeseries"
     },
     {
@@ -7774,7 +7779,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -7800,7 +7806,7 @@
               },
               {
                 "id": "custom.lineWidth",
-                "value": 3
+                "value": 2
               },
               {
                 "id": "custom.showPoints",
@@ -8033,7 +8039,7 @@
         "x": 0,
         "y": 80
       },
-      "id": 49,
+      "id": 51,
       "options": {
         "legend": {
           "calcs": [],
@@ -8056,7 +8062,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'inspection_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'inspection_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pdca_conn_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'pdca_conn_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -8085,7 +8091,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'inspection_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pdca_conn_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "B",
           "sql": {
             "columns": [
@@ -8106,7 +8112,7 @@
           }
         }
       ],
-      "title": "Inspection Time",
+      "title": "Pdca Conn Time",
       "type": "timeseries"
     },
     {
@@ -8158,7 +8164,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -8542,7 +8549,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -8568,7 +8576,7 @@
               },
               {
                 "id": "custom.lineWidth",
-                "value": 2
+                "value": 3
               },
               {
                 "id": "custom.showPoints",
@@ -8801,7 +8809,7 @@
         "x": 0,
         "y": 88
       },
-      "id": 51,
+      "id": 53,
       "options": {
         "legend": {
           "calcs": [],
@@ -8824,7 +8832,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pdca_conn_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'pdca_conn_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'sfc_conn_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'sfc_conn_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -8853,7 +8861,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pdca_conn_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'sfc_conn_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "B",
           "sql": {
             "columns": [
@@ -8874,7 +8882,7 @@
           }
         }
       ],
-      "title": "Pdca Conn Time",
+      "title": "Sfc Conn Time",
       "type": "timeseries"
     },
     {
@@ -8926,7 +8934,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -9310,7 +9319,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -9569,7 +9579,7 @@
         "x": 0,
         "y": 96
       },
-      "id": 53,
+      "id": 55,
       "options": {
         "legend": {
           "calcs": [],
@@ -9592,7 +9602,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'sfc_conn_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'sfc_conn_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'sfc_query_processing_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'sfc_query_processing_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -9621,7 +9631,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'sfc_conn_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'sfc_query_processing_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "B",
           "sql": {
             "columns": [
@@ -9642,7 +9652,7 @@
           }
         }
       ],
-      "title": "Sfc Conn Time",
+      "title": "Sfc Query Processing Time",
       "type": "timeseries"
     },
     {
@@ -9694,7 +9704,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -10078,7 +10089,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -10337,7 +10349,7 @@
         "x": 0,
         "y": 104
       },
-      "id": 55,
+      "id": 57,
       "options": {
         "legend": {
           "calcs": [],
@@ -10360,7 +10372,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'sfc_query_processing_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'sfc_query_processing_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'downstream_waiting_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'downstream_waiting_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -10389,7 +10401,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'sfc_query_processing_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'downstream_waiting_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "B",
           "sql": {
             "columns": [
@@ -10410,7 +10422,7 @@
           }
         }
       ],
-      "title": "Sfc Query Processing Time",
+      "title": "Downstream Waiting Time",
       "type": "timeseries"
     },
     {
@@ -10462,7 +10474,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -10846,7 +10859,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -11105,7 +11119,7 @@
         "x": 0,
         "y": 112
       },
-      "id": 57,
+      "id": 58,
       "options": {
         "legend": {
           "calcs": [],
@@ -11128,7 +11142,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'downstream_waiting_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'downstream_waiting_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_1_dispensing_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'cavity_1_dispensing_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -11157,7 +11171,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'downstream_waiting_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_1_dispensing_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
           "refId": "B",
           "sql": {
             "columns": [
@@ -11178,7 +11192,3857 @@
           }
         }
       ],
-      "title": "Downstream Waiting Time",
+      "title": "Cavity 1 Dispensing Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 112
+      },
+      "id": 59,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_2_dispensing_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'cavity_2_dispensing_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_2_dispensing_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Cavity 2 Dispensing Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 120
+      },
+      "id": 60,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_3_dispensing_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'cavity_3_dispensing_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_3_dispensing_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Cavity 3 Dispensing Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 120
+      },
+      "id": 61,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_4_dispensing_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'cavity_4_dispensing_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_4_dispensing_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Cavity 4 Dispensing Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 128
+      },
+      "id": 62,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_5_dispensing_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'cavity_5_dispensing_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_5_dispensing_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Cavity 5 Dispensing Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 128
+      },
+      "id": 63,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_6_dispensing_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'cavity_6_dispensing_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'cavity_6_dispensing_time'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Cavity 6 Dispensing Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 136
+      },
+      "id": 64,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_2_dispensing_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_2_dispensing_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_2_dispensing_delay'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Pre Cavity 2 Dispensing Delay",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 136
+      },
+      "id": 66,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_3_dispensing_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_3_dispensing_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_3_dispensing_delay'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Pre Cavity 3 Dispensing Delay ",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 144
+      },
+      "id": 65,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_4_dispensing_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_4_dispensing_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_4_dispensing_delay'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Pre Cavity 4 Dispensing Delay ",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 144
+      },
+      "id": 67,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_5_dispensing_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_5_dispensing_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_5_dispensing_delay'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Pre Cavity 5 Dispensing Delay",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#37872D",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL (+3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "LCL (-3σ)"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL (-3σ)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "solid"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    8,
+                    4
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_upper"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Upper Bound (+3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bb_lower"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Rolling Lower Bound (-3σ)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rolling_mean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 152
+      },
+      "id": 68,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_6_dispensing_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_6_dispensing_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n  SELECT\n    timestamp AS time,\n    value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_station'\n    AND metric_name = 'pre_cavity_6_dispensing_delay'\n),\nrolling AS (\n  SELECT\n    time,\n    AVG(value)         OVER w AS rolling_mean,\n    STDDEV_SAMP(value) OVER w AS rolling_std\n  FROM base\n  WINDOW w AS (\n    ORDER BY time\n    RANGE BETWEEN ${rolling_window:sqlstring}::interval PRECEDING\n    AND CURRENT ROW\n  )\n)\nSELECT\n  time,\n  rolling_mean,\n  rolling_mean + 3 * rolling_std AS bb_upper,\n  rolling_mean - 3 * rolling_std AS bb_lower\nFROM rolling\nORDER BY time;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Pre Cavity 6 Dispensing Delay",
       "type": "timeseries"
     }
   ],
@@ -11248,13 +15112,13 @@
     ]
   },
   "time": {
-    "from": "2026-02-01T18:30:00.000Z",
-    "to": "2026-03-10T18:29:59.000Z"
+    "from": "2026-02-26T17:46:05.195Z",
+    "to": "2026-03-12T12:40:22.275Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Ced Station — Process Metrics",
   "uid": "ced-station-metrics",
-  "version": 45,
+  "version": 9,
   "weekStart": ""
 }

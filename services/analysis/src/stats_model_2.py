@@ -61,6 +61,7 @@ def _get(cfg: dict, metric: str, key: str):
 # ──────────────────────────────────────────────
 STEP_WINDOW = 10
 BASELINE_REF_FRAC = 0.20
+_SPIKE_MASK_CAP = 8.0
 
 ALLOWED_METRICS = {
     # "entry_stopper_lowering_time",

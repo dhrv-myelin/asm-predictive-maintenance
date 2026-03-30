@@ -63,23 +63,24 @@ STEP_WINDOW = 10
 BASELINE_REF_FRAC = 0.20
 
 ALLOWED_METRICS = {
-    "entry_stopper_lowering_time",
-    "entry_stopper_raising_time",
-    "pallet_clamping_time",
-    "pallet_lifting_time",
-    "inspection_time",
-    "pallet_unclamping_time",
-    "pallet_lowering_time",
-    "exit_stopper_lowering_time",
+    # "entry_stopper_lowering_time",
+    # "entry_stopper_raising_time",
+    # "pallet_clamping_time",
+    # "pallet_lifting_time",
+    # "inspection_time",
+    # "pallet_unclamping_time",
+    # "pallet_lowering_time",
+    # "exit_stopper_lowering_time",
     "exit_stopper_raising_time",  
-    "pallet_moveout_time",
-    "cavity_1_dispensing_time",
-    "cavity_2_dispensing_time",
-    "cavity_3_dispensing_time",
-    "cavity_4_dispensing_time",
-    "cavity_5_dispensing_time",
-    "cavity_6_dispensing_time",
+    "pallet_movein_time",
+    # "cavity_1_dispensing_time",
+    # "cavity_2_dispensing_time",
+    # "cavity_3_dispensing_time",
+    # "cavity_4_dispensing_time",
+    # "cavity_5_dispensing_time",
+    # "cavity_6_dispensing_time",
 }
+
 
 def load_baseline(baseline_csv_path: str) -> dict:
     df = pd.read_csv(baseline_csv_path)
@@ -155,11 +156,10 @@ def _find_persistent_events(
     Return (start_ts, end_ts) spans where `condition` is True for at least
     `min_readings` consecutive readings.
 
-    This is the single persistence gate shared by baseline-shift and
-    variance-growth.  min_readings comes from diagnostic.py (stored in
-    metric_config.json as "anomaly_min_readings") and is calibrated to
-    approximately 15 minutes of data at the observed reading rate, so no
-    time-based hardcoding is needed here.
+    This is the single persistence gate shared by all detectors.
+    min_readings comes from diagnostic.py (stored in metric_config.json as
+    "anomaly_min_readings") and is calibrated to approximately 10 minutes of
+    data at the observed reading rate, so no time-based hardcoding is needed.
     """
     events      = []
     in_run      = False
@@ -205,77 +205,106 @@ def detect_random_spikes(df, bm, bs, cfg, metric):
     spike_z is calibrated by diagnostic.py to the p99.9 z-score across all
     training days, so only readings far outside what baseline.csv says is
     normal are flagged.
+
+    NOTE: spike_z is intentionally NOT capped here — this detector uses it
+    as a detection threshold, not a masking threshold.
     """
     spike_z = _get(cfg, metric, "spike_z")
     z = (df["value"] - bm).abs() / bs
     return [(t, t) for t in df[z > spike_z]["timestamp"]]
 
-
 def detect_step_jumps(df, bm, bs, cfg, metric):
-    """
-    Abrupt, permanent level change.  The window before and after a reading
-    must both be stable (std < stability_ratio * bs) but differ by more than
-    step_sigma_mult * bs.  bs comes from baseline.csv.
-    """
     if len(df) < 2 * STEP_WINDOW + 1:
         return []
-    sigma_mult      = _get(cfg, metric, "step_sigma_mult")
+
+    sigma_mult      = _get(cfg, metric, "step_sigma_mult")  # stays 4.0
     stability_ratio = _get(cfg, metric, "stability_ratio")
-    abrupt_mult     = _get(cfg, metric, "abrupt_mult")
+    win             = int(_get(cfg, metric, "short_window"))
+    spike_z         = min(_get(cfg, metric, "spike_z"), _SPIKE_MASK_CAP)
 
-    step_indices = []
-    for i in range(STEP_WINDOW, len(df) - STEP_WINDOW):
-        before = df["value"].iloc[i - STEP_WINDOW : i]
-        after  = df["value"].iloc[i : i + STEP_WINDOW]
-        if (
-            abs(after.mean() - before.mean()) > sigma_mult * bs
-            and before.std() < stability_ratio * bs
-            and after.std()  < stability_ratio * 1.5 * bs   # relaxed — post-step window is noisier
-            # abrupt_mult check removed — the mean-difference check is sufficient
-        ):
-            step_indices.append(i)
+    # Same reasoning: a permanent step just needs to hold for a few readings
+    # after the confirm window, not 10 min. short_window // 6 ≈ 3 readings.
+    STEP_MIN_READINGS = max(win // 6, 3)
 
-    filtered, last = [], -STEP_WINDOW
-    for idx in step_indices:
-        if idx - last > STEP_WINDOW:
-            filtered.append(idx)
-            last = idx
-    return [(df["timestamp"].iloc[i], df["timestamp"].iloc[i]) for i in filtered]
-
-def detect_variance_growth(df, bm, bs, cfg, metric):
-    var_mult     = _get(cfg, metric, "variance_mult")
-    min_readings = int(_get(cfg, metric, "anomaly_min_readings"))
-    win          = int(_get(cfg, metric, "detector_window"))
-    spike_z      = _get(cfg, metric, "spike_z")
-
-    # Spike-excluded rolling stats
     z     = (df["value"] - bm).abs() / bs
     clean = df["value"].where(z <= spike_z)
 
-    half = max(win // 2, 5)
-    roll_std  = clean.rolling(win, min_periods=half).std().ffill().fillna(bs)
-    roll_mean = clean.rolling(win, min_periods=half).mean().ffill().fillna(bm)
+    gap         = max(win // 2, 3)   # unchanged
+    confirm_win = win                # unchanged
+    half_win    = max(win // 2, 5)
 
-    # Use a SHORT window to detect if the mean is actively transitioning
-    short_win  = max(win // 6, 5)
-    roll_mean_short = clean.rolling(short_win, min_periods=max(short_win//2,3)).mean().ffill().fillna(bm)
-    roll_mean_prev  = roll_mean_short.shift(short_win)
+    total_span = win + gap + confirm_win
+    if len(df) < total_span + STEP_MIN_READINGS:
+        return []
 
-    # How much is the short mean moving right now?
-    mean_velocity = (roll_mean_short - roll_mean_prev).abs()
+    condition = pd.Series(False, index=df.index)
 
-    threshold = var_mult * bs
+    for i in range(win, len(df) - gap - confirm_win):
+        before  = clean.iloc[i - win : i].dropna()
+        confirm = clean.iloc[i + gap : i + gap + confirm_win].dropna()
 
-    # Guard 1: mean must be near baseline (not a level shift)
-    mean_near_baseline = (roll_mean - bm).abs() <= 2.0 * bs
+        if len(before) < half_win or len(confirm) < half_win:
+            continue
 
-    # Guard 2: mean must NOT be actively transitioning
-    # If mean_velocity > 0.5*bs, the window is straddling a transition edge
-    not_transitioning = mean_velocity <= 0.5 * bs
+        mean_before  = before.mean()
+        mean_confirm = confirm.mean()
+        jump_size    = abs(mean_confirm - mean_before)
 
-    condition = (roll_std > threshold) & mean_near_baseline & not_transitioning
+        if jump_size < sigma_mult * bs:
+            continue
+
+        before_std  = before.std() if len(before) > 1 else 0.0
+        confirm_std = confirm.std() if len(confirm) > 1 else 0.0
+
+        if before_std  > stability_ratio * jump_size:
+            continue
+        if confirm_std > stability_ratio * jump_size:
+            continue
+
+        condition.iloc[i] = True
+
+    return _find_persistent_events(condition, df["timestamp"], STEP_MIN_READINGS)
+ 
+def detect_variance_growth(df, bm, bs, cfg, metric):
+    var_mult     = _get(cfg, metric, "variance_mult")
+    win_long     = int(_get(cfg, metric, "detector_window"))
+    win_short    = int(_get(cfg, metric, "short_window"))
+
+    # Variance bursts are short-lived — using anomaly_min_readings (18, ~10 min)
+    # means the MAD must stay elevated for 10 consecutive minutes. Real variance
+    # bursts peak briefly. Use short_window // 6 floored at 3 (~1-2 min).
+    min_readings = max(int(_get(cfg, metric, "short_window")) // 6, 3)
+
+    win_short = max(min(win_short, win_long // 2), 5)
+    half_long  = max(win_long  // 2, 5)
+    half_short = max(win_short // 2, 3)
+
+    MAD_TO_STD = 1.4826
+    def _mad(x): return np.median(np.abs(x - np.median(x)))
+
+    rolling_mad_short = (
+        df["value"].rolling(win_short, min_periods=half_short)
+        .apply(_mad, raw=True).mul(MAD_TO_STD).ffill().fillna(bs)
+    )
+    rolling_mad_long = (
+        df["value"].rolling(win_long, min_periods=half_long)
+        .apply(_mad, raw=True).mul(MAD_TO_STD).ffill().fillna(bs)
+    )
+    roll_mean_long = (
+        df["value"].rolling(win_long, min_periods=half_long)
+        .mean().ffill().fillna(bm)
+    )
+
+    noise_elevated = (
+        (rolling_mad_short > var_mult * bs) |
+        (rolling_mad_long  > var_mult * bs * 0.75)
+    )
+    mean_near_baseline = (roll_mean_long - bm).abs() <= 3.5 * bs
+    condition = noise_elevated & mean_near_baseline
 
     return _find_persistent_events(condition, df["timestamp"], min_readings)
+
+
 
 def detect_slow_drift(df, bm, bs, cfg, metric):
     drift_thresh = _get(cfg, metric, "drift_thresh")
@@ -283,18 +312,20 @@ def detect_slow_drift(df, bm, bs, cfg, metric):
     min_readings = int(_get(cfg, metric, "anomaly_min_readings"))
     spike_z      = _get(cfg, metric, "spike_z")
 
-    # Mask spikes with a tighter threshold — periodic pulses 
-    # at 3σ corrupt the slope even if spike_z is 8+
     mask_z = min(spike_z, 3.0)
     z      = (df["value"] - bm).abs() / bs
-    clean  = df["value"].where(z <= mask_z)   # NaN out pulses
+    clean  = df["value"].where(z <= mask_z)
 
     drifting = pd.Series(False, index=df.index)
 
-    for i in range(win, len(df)):
-        window_clean = clean.iloc[i - win: i].dropna()
+    # FIX 1: track slope sign over consecutive windows to require monotonicity
+    prev_slope_sign = 0
+    sign_streak     = 0
+    MONOTONE_MIN    = max(min_readings // 3, 2)  # slope direction must be stable
 
-        # Need at least half the window to be non-spike readings
+    for i in range(win, len(df)):
+        window_clean = clean.iloc[i - win : i].dropna()
+
         if len(window_clean) < win // 2:
             continue
 
@@ -303,15 +334,36 @@ def detect_slow_drift(df, bm, bs, cfg, metric):
             x, window_clean.values.reshape(-1, 1)
         ).coef_[0][0]
 
-        # Normalised: total drift in σ over full window
-        normalised = abs(slope) * win / bs
-
-        # Extra guard: the window mean (spike-excluded) must 
-        # itself be moving — not just jitter around baseline
+        normalised  = abs(slope) * win / bs
         window_mean = window_clean.mean()
+
+        # FIX 2: tighten mean_moving guard from 0.1σ → 0.5σ
+        # A genuine drift must move the window mean meaningfully away from baseline.
+        # 0.1σ is so loose that a single spike contaminates the window mean enough
+        # to pass. 0.5σ requires a sustained shift in the signal level.
         mean_moving = abs(window_mean - bm) > 0.5 * bs
 
-        if normalised > drift_thresh and mean_moving:
+        # FIX 3: require that the spike-free window mean is ALSO shifted,
+        # not just the raw window mean (which the spike alone can shift).
+        # Count non-NaN readings near baseline — if >80% are near baseline,
+        # the "drift" is being driven by a minority of elevated readings (spikes).
+        non_spike_vals = window_clean.dropna()
+        near_baseline_frac = ((non_spike_vals - bm).abs() < 0.3 * bs).mean()
+        not_spike_dominated = near_baseline_frac < 0.75  # most readings must be off-baseline
+
+        # FIX 4: monotonicity check — slope direction must be consistent
+        cur_sign = int(np.sign(slope))
+        if cur_sign == prev_slope_sign:
+            sign_streak += 1
+        else:
+            sign_streak  = 1
+        prev_slope_sign = cur_sign
+        direction_stable = sign_streak >= MONOTONE_MIN
+
+        if (normalised > drift_thresh
+                and mean_moving
+                and not_spike_dominated
+                and direction_stable):
             drifting.iloc[i] = True
 
     return _find_persistent_events(drifting, df["timestamp"], min_readings)
@@ -325,37 +377,66 @@ def detect_trend_acceleration(df, bm, bs, cfg, metric):
         if abs(coeffs[0]) > accel_thresh else []
     )
 
+
 def _spike_cleaned_rolling(series, bm, bs, spike_z_thresh, win):
     """
     Compute rolling mean and std with spike readings replaced by NaN
     before the rolling operation, so spikes don't poison subsequent windows.
+    spike_z_thresh should already be capped by the caller (_SPIKE_MASK_CAP).
     """
-    z = (series - bm).abs() / bs
+    z     = (series - bm).abs() / bs
     clean = series.where(z <= spike_z_thresh)   # NaN out spikes
-    
-    half = max(win // 2, 3)
+
+    half      = max(win // 2, 3)
     roll_mean = clean.rolling(win, min_periods=half).mean()
     roll_std  = clean.rolling(win, min_periods=half).std()
-    
+
     # Forward-fill so we don't get NaN gaps from isolated spike removals
-    roll_mean = roll_mean.fillna(method='ffill').fillna(bm)
-    roll_std  = roll_std.fillna(method='ffill').fillna(bs)
-    
+    roll_mean = roll_mean.ffill().fillna(bm)
+    roll_std  = roll_std.ffill().fillna(bs)
+
     return roll_mean, roll_std
+
+
 def detect_baseline_shift(df, bm, bs, cfg, metric):
+    """
+    Dual-window baseline shift detector.
+
+    Short window (~10 min) is the fast-react channel: fires quickly after a
+    shift starts.  Long window (~60 min) is the confirmation channel: must
+    agree in direction or be partially there.
+
+    Key fixes:
+    1. spike_z capped at _SPIKE_MASK_CAP (8σ) before use as the rolling-
+       window mask threshold. When training data is very clean, diagnostic.py
+       may calibrate spike_z as high as 47σ — at that level clean.where()
+       passes every reading through, so shifted values are never excluded and
+       the rolling mean never converges to the true shifted level.
+       Capping at 8σ restores correct behaviour: isolate genuine spike readings
+       so they don't contaminate the mean, while keeping sustained level-shift
+       readings (3–6σ) visible so the rolling mean reflects the new level.
+
+    2. Stability condition relaxed: roll_std < deviation * 1.5  (was 0.9).
+       During a V-dip the rolling std is elevated while the window clips the
+       transition edge. 0.9 was rejecting genuine shifts; 1.5 allows the
+       detector to fire while the mean is saturating at the new level.
+    """
     shift_sigma       = _get(cfg, metric, "baseline_shift_sigma")
     shift_sigma_short = _get(cfg, metric, "baseline_shift_sigma_short")
     min_readings      = int(_get(cfg, metric, "anomaly_min_readings"))
     win_long          = int(_get(cfg, metric, "detector_window"))
     win_short         = int(_get(cfg, metric, "short_window"))
 
-    win_short = max(min(win_short, win_long // 2), 5)
+    win_short  = max(min(win_short, win_long // 2), 5)
     half_long  = max(win_long  // 2, 5)
     half_short = max(win_short // 2, 3)
 
-    spike_z = _get(cfg, metric, "spike_z")
-    z       = (df["value"] - bm).abs() / bs
-    clean   = df["value"].where(z <= spike_z)
+    # Cap spike_z so very high values from clean training data don't make
+    # the spike-exclusion masking inert.
+    spike_z = min(_get(cfg, metric, "spike_z"), _SPIKE_MASK_CAP)
+
+    z     = (df["value"] - bm).abs() / bs
+    clean = df["value"].where(z <= spike_z)
 
     roll_mean_long  = clean.rolling(win_long,  min_periods=half_long ).mean().ffill().fillna(bm)
     roll_mean_short = clean.rolling(win_short, min_periods=half_short).mean().ffill().fillna(bm)
@@ -370,8 +451,8 @@ def detect_baseline_shift(df, bm, bs, cfg, metric):
     # Condition 1: short mean has moved far enough from baseline
     mean_shifted_short = deviation_short > threshold_short
 
-    # Condition 2: short window is stable (not mid-transition noise)
-    # 1.5x is generous — during a V-dip the short window std is elevated
+    # Condition 2: short window is stable (not mid-transition noise).
+    # 1.5x is generous — during a V-dip the short window std is elevated.
     is_stable_short = roll_std_short < deviation_short * 1.5
 
     # Condition 3: long mean confirms same direction or is on its way
@@ -382,10 +463,16 @@ def detect_baseline_shift(df, bm, bs, cfg, metric):
     condition = mean_shifted_short & is_stable_short & direction_confirmed
 
     return _find_persistent_events(condition, df["timestamp"], min_readings)
+
+
 def detect_increasing_outlier_frequency(df, bm, bs, cfg, metric):
     """
     Second half of the day has significantly more spikes than the first half.
     spike_z and outlier_freq_mult both come from diagnostic.py / baseline.csv.
+
+    NOTE: spike_z is intentionally NOT capped here — this detector uses it
+    as a detection threshold (what counts as an outlier), not a masking
+    threshold. The training-calibrated value defines the outlier boundary.
     """
     spike_z   = _get(cfg, metric, "spike_z")
     freq_mult = _get(cfg, metric, "outlier_freq_mult")
@@ -561,4 +648,3 @@ def print_summary(out):
     )
     print("=" * 60)
     return out
-

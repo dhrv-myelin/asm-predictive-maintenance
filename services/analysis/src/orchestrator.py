@@ -16,7 +16,7 @@ from sklearn.preprocessing import RobustScaler
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from zoneinfo import ZoneInfo
-
+from typing import Optional
 # Stats pipeline imports
 from baseline_stats import analyse_metric, build_config, ALLOWED_METRICS 
 from stats_model_2 import run_pattern_pipeline, print_summary

@@ -29,7 +29,7 @@ class Station:
         # Structure: {'cycle_time': start_timestamp}
         self.metric_timers = {} 
 
-        # To store cycle count and pallet serial number
+        # To store cycle count
         self.cycle_count = 1
 
     def set_state(self, new_state, timestamp):

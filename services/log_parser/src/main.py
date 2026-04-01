@@ -217,7 +217,7 @@ def main():
     parser.add_argument('--input', default='data/machine_logs.txt')
     parser.add_argument('--once', action='store_true', help='Process file to the end and exit')
     parser.add_argument('--viz', action='store_true')
-    parser.add_argument('--patterns', default='config/log_patterns/prod_patterns.yaml')
+    parser.add_argument('--patterns', default='config/CED/log_patterns/prod_patterns.yaml')
     parser.add_argument('--no-db', action='store_true', help='Disable database (fallback to CSV)')
     parser.add_argument('--machine', choices=['GDM', 'CED'], default='CED', help='Indicates which Machine the logs are from (GDM/CED)')
     parser.add_argument(
@@ -232,12 +232,12 @@ def main():
     # 1. Load Configuration
     print("Loading Configs...")
     try:
-        graph_config = load_yaml("config/machine_graph.yaml")
-        logic_config = load_yaml("config/process_logic.yaml")
+        graph_config = load_yaml(f"config/{args.machine}/machine_graph.yaml")
+        logic_config = load_yaml(f"config/{args.machine}/process_logic.yaml")
         
-        print("Loading Hardware Maps...")
-        io_config = load_json("config/IOConfig.json")
-        gantry_config = load_json("config/GantryConfig.json")
+        # print("Loading Hardware Maps...")
+        # io_config = load_json(f"config/{args.machine}/IOConfig.json")
+        # gantry_config = load_json(f"config/{args.machine}/GantryConfig.json")
     except FileNotFoundError as e:
         print(f"CRITICAL ERROR: Missing config file. {e}")
         sys.exit(1)
@@ -283,10 +283,10 @@ def main():
     viz = None
     if args.viz:
         print(f"Initializing Visualizer with Base Time: {start_time_str}")   
-        viz = VizAdapter("config/viz_resources.yaml", start_time_str=start_time_str)
+        viz = VizAdapter(f"config/{args.machine}/viz_resources.yaml", start_time_str=start_time_str)
 
     # 5. Initialize Engine
-    resolver = TagResolver("config/machine_graph.yaml")
+    resolver = TagResolver(f"config/{args.machine}/machine_graph.yaml")
 
     engine = LogicEngine(
         inventory=inventory, 

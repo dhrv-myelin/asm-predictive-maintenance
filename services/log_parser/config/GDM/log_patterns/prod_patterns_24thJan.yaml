@@ -1,4 +1,4 @@
-version: "2.0"
+version: "2.0" # For 24th January 2026 Data
 description: "Updated Stage 1 Logic: System Metrics and Granular Shuttle Control"
 
 patterns:

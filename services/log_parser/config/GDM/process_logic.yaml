@@ -1,0 +1,493 @@
+version: "1.0"
+description: "Updated Shuttle Station Process Logic"
+
+definitions:
+  # ==========================================
+  # 1. SHUTTLE STATION (High-Granularity Logic)
+  # ==========================================
+  shuttle_station:
+    initial_state: "IDLE"
+    states:
+      IDLE:
+        transitions:
+          - event: "PALLET_ARRIVAL"
+            next_state: "PRE_SCANNING"
+            metrics:
+              - name: "shuttle_idle_time"
+                type: "duration_seconds"
+                description: "Time spent in IDLE state"
+            transition_stage: "arrival"
+          # - event: "AT_BARCODE"
+          #   next_state: "SCANNING"
+          #   metrics:
+          #     - name: "shuttle_idle_time"
+          #       type: "duration_seconds"
+          #       description: "Time spent in IDLE state"
+          #   transition_stage: "arrival"
+          - event: "CARRIER_STARTED"
+            next_state: "IDLE"
+
+      PRE_SCANNING:
+            
+        transitions:
+          - event: "AT_BARCODE"
+            next_state: "SCANNING"
+            metrics:
+              - name: "shuttle_pre_scan_time"
+                type: "duration_seconds"
+                description: "Time spent in pre-scan state before barcode is reached"
+
+      SCANNING:
+            
+        transitions:
+          - event: "SCAN_SUCCESS"
+            next_state: "POST_SCANNING"
+            metrics:
+              - name: "shuttle_scan_success_time"
+                type: "duration_seconds"
+                description: "Time taken to successfully scan a pallet"
+
+          - event: "SCAN_ATTEMPT_FAIL"
+            next_state: "SCANNING"
+            action: "increment_retry_counter"
+          - event: "SCAN_FAILURE"
+            next_state: "POST_SCANNING"
+            description: "Move to post-scan even on failure for manual handling"
+
+      POST_SCANNING:
+        transitions:
+          - event: "CARRIER_STARTED"
+            next_state: "CARRIER_MOTION"
+            metrics:
+              - name: "shuttle_post_scan_delay"
+                type: "duration_seconds"
+                description: "Delay after scanning before carrier motion starts"
+            transition_stage: "handover_prep"
+
+      CARRIER_MOTION:
+        transitions:
+          - event: "STOPPER_DOWN_START"
+            next_state: "STOPPER_LOWERING"
+            metrics:
+              - name: "shuttle_carrier_motion_time"
+                type: "duration_seconds"
+                description: "Time taken for carrier to move pallet to the available line"
+
+      STOPPER_LOWERING:
+            
+        transitions:
+          - event: "STOPPER_DOWN_DONE"
+            next_state: "PALLET_RELEASING"
+            metrics:
+              - name: "shuttle_stopper_lowering_time"
+                type: "duration_seconds"
+                description: "Time taken for stopper to lower"
+
+      PALLET_RELEASING:
+        transitions:
+          - event: "STOPPER_UP_START"
+            next_state: "STOPPER_RAISING"
+            metrics:
+              - name: "shuttle_pallet_release_time"
+                type: "duration_seconds"
+                description: "Time taken for stopper to release pallet"
+                
+
+      STOPPER_RAISING:
+        transitions:
+          - event: "STOPPER_UP_DONE"
+            next_state: "IDLE"
+            metrics:
+              - name: "shuttle_stopper_rising_time"
+                type: "duration_seconds"
+                description: "Time taken for stopper to raise back up"
+            state_inference:
+              sensors.presence: false
+              actuators.stopper_up: true
+            transition_stage: "handover"
+
+  # ==========================================
+  # 2. BUFFER STANDARD
+  # ==========================================
+  buffer_standard:
+    initial_state: "IDLE"
+    states:
+      IDLE:
+        transitions:
+          - event: "PALLET_ARRIVAL"
+            next_state: "HOLDING"
+            metrics:
+              - name: "buffer_idle_time"
+                type: "duration_seconds"
+                description: "Time buffer is empty"
+            transition_stage: "arrival"
+            state_inference:
+              sensors.presence: true
+              actuators.stopper_up: true
+
+      HOLDING:
+        transitions:
+          - event: "STOPPER_DOWN_START"
+            next_state: "STOPPER_LOWERING"
+            metrics:
+              - name: "buffer_holding_time"
+                type: "duration_seconds"
+                description: "Time pallet spends holding in buffer"
+            state_inference:
+              actuators.stopper_down: true
+              actuators.stopper_up: false
+          - event: "STOPPER_KEEPING_DOWN"
+            next_state: "PALLET_RELEASING"
+            metrics:
+              - name: "buffer_holding_and_pre_stopper_down_time"
+                type: "duration_seconds"
+                description: "Time pallet spends holding in buffer"
+            transition_stage: "handover_prep"
+            state_inference:
+              actuators.stopper_down: true
+              actuators.stopper_up: false
+      
+      STOPPER_LOWERING:
+        transitions:
+          - event: "STOPPER_DOWN_DONE"
+            next_state: "PALLET_RELEASING"
+            metrics:
+              - name: "buffer_stopper_lowering_time"
+                type: "duration_seconds"
+                description: "Time taken for stopper to lower"
+            transition_stage: "handover_prep"
+            state_inference:
+              actuators.stopper_down: true
+              actuators.stopper_up: false
+
+      PALLET_RELEASING:
+        transitions:
+          - event: "STOPPER_UP_START"
+            next_state: "STOPPER_RAISING"
+            metrics:
+              - name: "buffer_pallet_release_time"
+                type: "duration_seconds"
+                description: "Time taken to release pallet"
+            state_inference:
+              sensors.presence: false
+              actuators.stopper_down: false
+              actuators.stopper_up: true
+          - event: "STOPPER_KEEPING_UP"
+            next_state: "IDLE"
+            metrics:
+              - name: "buffer_pallet_release_and_pre_stopper_up_time"
+                type: "duration_seconds"
+                description: "Time taken to release pallet"
+            transition_stage: "handover"
+            state_inference:
+              sensors.presence: false
+              actuators.stopper_down: false
+              actuators.stopper_up: true
+
+      STOPPER_RAISING:
+        transitions:
+          - event: "STOPPER_UP_DONE"
+            next_state: "IDLE"
+            metrics:
+              - name: "buffer_stopper_rising_time"
+                type: "duration_seconds"
+                description: "Time taken for stopper to rise back up"
+            transition_stage: "handover"
+            state_inference:
+              sensors.presence: false
+              actuators.stopper_down: false
+              actuators.stopper_up: true              
+  # ==========================================
+  # 3. DISPENSER STANDARD
+  # ==========================================
+  dispenser_standard:
+    initial_state: "IDLE"
+    states:
+      IDLE:
+        transitions:
+          - event: "UNCLAMP_START"
+            next_state: "ENTRY_UNCLAMPING"
+            metrics:
+              - name: "machine_idle_time"
+                type: "duration_seconds"
+                description: "Efficiency metric: Time spent doing nothing"
+            transition_stage: "arrival"
+            state_inference:
+              sensors.presence: true
+
+      ENTRY_UNCLAMPING:
+        transitions:
+          - event: "UNCLAMP_DONE"
+            next_state: "POST_ENTRY_UNCLAMP"
+            metrics:
+              - name: "dispenser_entry_unclamp_time"
+                type: "duration_seconds"
+                export: true
+            state_inference:
+              actuators.clamp_lock: true
+              actuators.clamp_unlock: false
+
+      POST_ENTRY_UNCLAMP:
+        transitions:
+          - event: "PALLET_ZPOS_1_START"
+            next_state: "PALLET_LIFTING_1"
+            metrics:
+              - name: "dispenser_delay_post_entry_unclamp"
+                type: "duration_seconds"
+                export: true
+          - event: "UNCLAMP_START"
+            next_state: "ENTRY_UNCLAMPING"
+            state_inference:
+              actuators.clamp_lock: true
+              actuators.clamp_unlock: false
+      
+      PALLET_LIFTING_1:
+        transitions:
+          - event: "CLAMP_START"
+            next_state: "ENTRY_CLAMPING"
+            metrics:
+              - name: "dispenser_pallet_lifting_1_time"
+                type: "duration_seconds"
+                export: true
+
+      ENTRY_CLAMPING:
+        transitions:
+          - event: "CLAMP_DONE"
+            next_state: "PALLET_STOPPER_PREP"
+            metrics:
+              - name: "dispenser_entry_clamping_time"
+                type: "duration_seconds"
+                export: true
+
+      PALLET_STOPPER_PREP:
+        transitions:
+          - event: "PALLET_STOPPER_OUT_START"
+            next_state: "PALLET_STOPPER_RELEASING"
+            metrics:
+              - name: "dispenser_delay_post_clamping"
+                type: "duration_seconds"
+                export: true
+
+      PALLET_STOPPER_RELEASING:
+        transitions:
+          - event: "PALLET_STOPPER_OUT_DONE"
+            next_state: "GANTRY_PREP"
+            metrics:
+              - name: "dispenser_pallet_stopper_releasing_time"
+                type: "duration_seconds"
+                export: true
+
+      GANTRY_PREP:
+        transitions:
+          - event: "COMBINED_POSITIONING_START"
+            next_state: "COMBINED_POSITIONING"    
+            metrics:
+              - name: "dispenser_delay_pre_gantry_positioning"
+                type: "duration_seconds"
+                export: true
+
+      COMBINED_POSITIONING:
+        transitions:
+          - event: "COMBINED_POSITIONING_END"
+            next_state: "DISPENSING"
+            metrics:
+              - name: "dispenser_gantry_positioning_time"
+                type: "duration_seconds"
+                export: true
+
+      DISPENSING:
+        transitions:
+          - event: "PALLET_ZPOS_1_START"
+            next_state: "PALLET_LOWERING_1"
+            metrics:
+              - name: "dispenser_dispensing_time"
+                type: "duration_seconds"
+                export: true
+
+      PALLET_LOWERING_1:
+        transitions:
+          - event: "PALLET_STOPPER_IN_START"
+            next_state: "PALLET_STOPPER_LOCKING"
+            metrics:
+              - name: "dispenser_pallet_unpositioning_time"
+                type: "duration_seconds"
+                export: true
+
+      PALLET_STOPPER_LOCKING:
+        transitions:
+          - event: "PALLET_STOPPER_IN_DONE"
+            next_state: "PRE_EXIT_UNCLAMPING"  
+            metrics:
+              - name: "dispenser_pallet_stopper_locking_time"
+                type: "duration_seconds"
+                export: true
+
+      PRE_EXIT_UNCLAMPING:
+        transitions:
+          - event: "UNCLAMP_START"
+            next_state: "EXIT_UNCLAMPING"
+            metrics:
+              - name: "dispenser_pre_exit_unclamping"
+                type: "duration_seconds"
+                export: true
+            state_inference:
+              actuators.clamp_lock: false
+              actuators.clamp_unlock: true
+
+      EXIT_UNCLAMPING:
+        transitions:
+          - event: "UNCLAMP_DONE"
+            next_state: "POST_EXIT_UNCLAMP"
+            metrics:
+              - name: "dispenser_exit_unclamping"
+                type: "duration_seconds"
+                export: true
+            state_inference:
+              actuators.stopper_down: true
+              actuators.stopper_up: false
+
+      POST_EXIT_UNCLAMP:
+        transitions:
+          - event: "PALLET_ZPOS_0_START"
+            next_state: "PALLET_LOWERING_0"
+            metrics:
+              - name: "dispenser_post_exit_unclamp"
+                type: "duration_seconds"
+                export: true
+            transition_stage: "handover_prep"
+            state_inference:
+              sensors.presence: false
+              actuators.stopper_down: false
+              actuators.stopper_up: true
+          - event: "UNCLAMP_START"
+            next_state: "EXIT_UNCLAMPING"
+            state_inference:
+              actuators.clamp_lock: false
+              actuators.clamp_unlock: true
+
+      PALLET_LOWERING_0:
+        transitions:
+          - event: "STOPPER_DOWN_START"
+            next_state: "STOPPER_LOWERING" 
+            metrics:
+              - name: "dispenser_pallet_lowering_1"
+                type: "duration_seconds"
+                export: true
+
+      STOPPER_LOWERING:
+        transitions:
+          - event: "STOPPER_DOWN_DONE"
+            next_state: "PALLET_RELEASING"   
+            metrics:
+              - name: "dispenser_stopper_lowering"
+                type: "duration_seconds"
+                export: true
+
+      PALLET_RELEASING:
+        transitions:
+          - event: "STOPPER_UP_START"
+            next_state: "STOPPER_RAISING"
+            metrics:
+              - name: "dispenser_pallet_releasing"
+                type: "duration_seconds"
+                export: true
+
+      STOPPER_RAISING:
+        transitions:
+          - event: "STOPPER_UP_DONE"
+            next_state: "IDLE"  
+            metrics:
+              - name: "dispenser_stopper_rasing"
+                type: "duration_seconds"
+                export: true
+            transition_stage: "handover"
+
+  # ==========================================
+  # 4. INSPECTION STANDARD
+  # ==========================================
+  inspection_standard:
+    initial_state: "IDLE"
+    states:
+      IDLE:
+        transitions:
+          - event: "LIFTER_KEEPING_UP"
+            next_state: "GANTRY_PREP"
+            metrics:
+              - name: "inspection_idle_time"
+                type: "duration_seconds"
+            transition_stage: "arrival"
+            state_inference:
+               sensors.presence_l1: true
+
+      GANTRY_PREP:
+        transitions:
+          - event: "GANTRY_POSITIONING_START"
+            next_state: "GANTRY_POSITIONING"
+            metrics:
+              - name: "inspection_lifter_rising_time"
+                type: "duration_seconds"
+
+      GANTRY_POSITIONING:
+        transitions:
+          - event: "GANTRY_POSITIONING_DONE"
+            next_state: "INSPECTION"
+            metrics:
+              - name: "inspection_gantry_positioning_time"
+                type: "duration_seconds"
+
+      INSPECTION:
+        transitions:
+          - event: "INSPECTION_DONE"
+            next_state: "POST_INSPECTION"
+            metrics:
+              - name: "inspection_core_vision_system_time"
+                type: "duration_seconds"
+            state_inference:
+               sensors.presence_l1: false
+               sensors.presence_l2: false
+
+      POST_INSPECTION:
+        transitions:
+          - event: "LIFTER_KEEPING_DOWN"
+            next_state: "POST_LIFTER_DOWN"
+            metrics:
+              - name: "inspection_post_vision_check_delay"
+                type: "duration_seconds"
+            transition_stage: "handover_prep"
+
+      POST_LIFTER_DOWN:
+        transitions:
+          - event: "STOPPER_KEEPING_DOWN"
+            next_state: "PALLET_RELEASING"
+            metrics:
+              - name: "inspection_lifter_lowering_time"
+                type: "duration_seconds"
+            state_inference:
+               sensors.presence_l1: false
+               sensors.presence_l2: false
+      
+      PALLET_RELEASING:
+        transitions:
+          - event: "STOPPER_KEEPING_UP"
+            next_state: "IDLE"
+            metrics:
+              - name: "inspection_pallet_releasing_time"
+                type: "duration_seconds"
+            transition_stage: "handover"
+            state_inference:
+               sensors.presence_l1: false
+               sensors.presence_l2: false
+
+
+  # ==========================================
+  # 5. SINK
+  # ==========================================
+
+  exit_sink:
+    initial_state: "ACTIVE"
+    states:
+      ACTIVE:
+        transitions:
+          - event: "PALLET_ARRIVAL"
+            next_state: "ACTIVE"
+            action: "destroy_pallet"

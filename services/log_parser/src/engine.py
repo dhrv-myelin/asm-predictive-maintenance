@@ -74,12 +74,12 @@ class LogicEngine:
             return
         
         # if event['type'] == "EXIT_STOPPER_DOWN_DONE":
-        #     self.inventory['ced_station'].cycle_count += 1
-        #     self.inventory['ced_station'].active_pallet_id = None
+        #     self.inventory.get('ced_station', {}).cycle_count += 1
+        #     self.inventory.get('ced_station', {}).active_pallet_id = None
 
         # if event['type'] == "BARCODE_READ_SUCCESS":
         #     print("[DEBUG] Read barcode sn : ", payload.get('sn',''))
-        #     self.inventory['ced_station'].active_pallet_id = payload.get('sn','')
+        #     self.inventory.get('ced_station', {}).active_pallet_id = payload.get('sn','')
 
         # if event["type"] == "ERROR_LOG":
         #     print("ENGINE SAW ERROR_LOG")
@@ -223,7 +223,8 @@ class LogicEngine:
     def _record_completion(self, station, pallet_id, timestamp):
         # 1. Increment the internal counter
         self.throughput_count += 1
-        
+
+        #TODO: Fix this hardcode
         # 2. Stream to database immediately
         self._stream_metric(
             timestamp=timestamp,
@@ -232,8 +233,8 @@ class LogicEngine:
             value=self.throughput_count,
             unit="units",
             context="EXIT",
-            cycle_count = self.inventory['ced_station'].cycle_count,
-            pallet_serial_number = self.inventory['ced_station'].active_pallet_id,
+            cycle_count = self.inventory.get('ced_station', {}).get('cycle_count', None),
+            pallet_serial_number = self.inventory.get('ced_station', {}).get('active_pallet_id', None),
         )
 
         if self.viz:
@@ -367,11 +368,11 @@ class LogicEngine:
                     value = timestamp - station.state_entry_time
             
             # Future types: 'snapshot_value' (from payload), 'counter'
-
+            #TODO: Fix this hardcode
             if value is not None:
                 # Stream immediately to database
-                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state, self.inventory['ced_station'].cycle_count, self.inventory['ced_station'].active_pallet_id)
-    
+                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state, self.inventory.get('ced_station', {}).get('cycle_count', None), self.inventory.get('ced_station', {}).get('active_pallet_id', None))
+
     def _push_raw_metrics(self, event, timestamp):
 
         SKIP_KEYS = {'pallet_id', 'unit', 'carrier_sn', 'position', 'version'}
@@ -388,7 +389,7 @@ class LogicEngine:
             return value
 
         payload = event.get('payload', {})
-
+        #TODO: Generalize this hardcode
         if 'cavity_number' in payload:
             temp_payload = {}
             for key in payload:
@@ -409,8 +410,8 @@ class LogicEngine:
                 value=value,
                 unit=payload.get('unit', None),
                 context=event.get('type'),
-                cycle_count = self.inventory['ced_station'].cycle_count,
-                pallet_serial_number = self.inventory['ced_station'].active_pallet_id,
+                cycle_count = self.inventory.get('ced_station', {}).get('cycle_count', None),
+                pallet_serial_number = self.inventory.get('ced_station', {}).get('active_pallet_id', None),
             )
 
 

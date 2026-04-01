@@ -217,7 +217,7 @@ def main():
     parser.add_argument('--input', default='data/machine_logs.txt')
     parser.add_argument('--once', action='store_true', help='Process file to the end and exit')
     parser.add_argument('--viz', action='store_true')
-    parser.add_argument('--patterns', default='config/CED/log_patterns/prod_patterns.yaml')
+    parser.add_argument('--patterns', default=None)
     parser.add_argument('--no-db', action='store_true', help='Disable database (fallback to CSV)')
     parser.add_argument('--machine', choices=['GDM', 'CED'], default='CED', help='Indicates which Machine the logs are from (GDM/CED)')
     parser.add_argument(
@@ -295,6 +295,8 @@ def main():
     )
 
     # 6. Initialize Parser
+    if args.patterns is None:
+        args.patterns = f"config/{args.machine}/log_patterns/prod_patterns.yaml"
     print(f"Loading Patterns from: {args.patterns}")
     if not os.path.exists(args.patterns):
         print(f"CRITICAL: Pattern file not found at {args.patterns}")

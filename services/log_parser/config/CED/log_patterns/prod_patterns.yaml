@@ -1,10 +1,6 @@
 "version": "2.0"
 "description": "Auto-generated log parsing patterns"
 "patterns":
-- "name": "System Reset"
-  "regex": "Application initialized\\s*$"
-  "event_type": "SYSTEM_RESET"
-  "target_id": "Global/System"
 - "name": "Entry Stopper Down Start"
   "regex": "^前阻挡顶升气缸电磁阀\\s*[\\[［]OFF[\\]］]$"
   "event_type": "ENTRY_STOPPER_DOWN_START"

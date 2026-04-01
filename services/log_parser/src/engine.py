@@ -233,8 +233,8 @@ class LogicEngine:
             value=self.throughput_count,
             unit="units",
             context="EXIT",
-            cycle_count = self.inventory.get('ced_station', {}).get('cycle_count', None),
-            pallet_serial_number = self.inventory.get('ced_station', {}).get('active_pallet_id', None),
+            cycle_count = self.inventory.get(station.id, {}).cycle_count,
+            pallet_serial_number = self.inventory.get(station.id, {}).active_pallet_id,
         )
 
         if self.viz:
@@ -371,7 +371,7 @@ class LogicEngine:
             #TODO: Fix this hardcode
             if value is not None:
                 # Stream immediately to database
-                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state, self.inventory.get('ced_station', {}).get('cycle_count', None), self.inventory.get('ced_station', {}).get('active_pallet_id', None))
+                self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state, self.inventory.get(station.id, {}).cycle_count, self.inventory.get(station.id, {}).active_pallet_id)
 
     def _push_raw_metrics(self, event, timestamp):
 
@@ -410,8 +410,8 @@ class LogicEngine:
                 value=value,
                 unit=payload.get('unit', None),
                 context=event.get('type'),
-                cycle_count = self.inventory.get('ced_station', {}).get('cycle_count', None),
-                pallet_serial_number = self.inventory.get('ced_station', {}).get('active_pallet_id', None),
+                cycle_count = self.inventory.get('ced_station', {}).cycle_count,
+                pallet_serial_number = self.inventory.get('ced_station', {}).active_pallet_id,
             )
 
 
@@ -466,12 +466,12 @@ class LogicEngine:
         current_state = state_resolver.get('current_state')
         logic_type = state_resolver.get('logic_type')
 
-        ### WARNING : Assumes and matches station based on FIFO logic of Log line entry
         if logic_type == "filter_expected_pallet_id_state":
             for station_id, station in self.inventory.items():
                 if station.current_state == current_state and station.expected_pallet_id == payload.get('pallet_id'):
                     return station_id
 
+        ### WARNING : Assumes and matches station based on FIFO logic of Log line entry
         if logic_type == "filter_station_type_state_oldest":
             oldest_matched = {}
             for station_id, station in self.inventory.items():                

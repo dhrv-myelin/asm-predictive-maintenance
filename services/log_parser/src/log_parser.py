@@ -273,10 +273,10 @@ class LogParser:
         epoch, channel, content = parsed
 
         if '] ERROR ' in line_text:
-            yield epoch, self._sentinel_event("ERROR_LOG", "ERROR", line_text)
+            yield epoch, self._sentinel_event("ERROR_LOG", "error", line_text)
             return
         if '] WARN  ' in line_text:
-            yield epoch, self._sentinel_event("WARN_LOG", "WARN", line_text)
+            yield epoch, self._sentinel_event("WARN_LOG", "warning", line_text)
             return
 
         for pattern in self.patterns:

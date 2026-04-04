@@ -14,16 +14,24 @@ patterns:
     regex: "Pallet detected\\. Count = (?P<count>\\d+)"
     event_type: "CYCLE_COUNT"
     target_id: "system"
+    state_resolver:
+      # logic_type: "filter_station_type_state_oldest"
+      target: "shuttle_station"  
+      # current_state: "PRE_SCANNING"
 
   - name: "Global Cycle Time"
     regex: "CycleTime for pallet (?P<pallet_id>\\S+): (?P<cycle_time>[0-9]+(?:\\.[0-9]+)?) sec"
     event_type: "CYCLE_TIME"
     target_id: "system"
+    state_resolver:
+      target: "exit_sink"  
 
   - name: "Global Metrics Update"
     regex: "Updated metrics => TotalPallets:\\s*(?P<total_pallets>\\d+),\\s*TotalUnits:\\s*(?P<total_units>\\d+),\\s*OK:\\s*(?P<ok_pallets>\\d+),\\s*NG:\\s*(?P<ng_pallets>\\d+),\\s*Yield:\\s*(?P<yield>[\\d.]+)%,\\s*Rolling UPH:\\s*(?P<rolling_uph>\\d+),\\s*TotalTime:\\s*(?P<total_time>[\\d.]+)"
     event_type: "UPDATED_METRICS"
     target_id: "system"
+    state_resolver:
+      target: "exit_sink"  
 
   # ==========================================
   # 2. SHUTTLE STATION

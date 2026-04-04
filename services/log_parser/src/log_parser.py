@@ -2,7 +2,6 @@ import re
 import yaml
 from datetime import datetime, date
 
-
 # ─────────────────────────────────────────────
 #  BASE ADAPTER  (defines the contract)
 # ─────────────────────────────────────────────
@@ -20,7 +19,6 @@ class MachineAdapter:
         doesn't look like a log header.
         """
         raise NotImplementedError
-
 
 # ─────────────────────────────────────────────
 #  GDM ADAPTER
@@ -244,7 +242,6 @@ class LogParser:
                     'state_resolver': p.get('state_resolver', {}),
                     'mapping':        p.get('value_mapping', {}),
                     'event_details':        p.get('event_details', ""),
-                    'value_mapping':        p.get('value_mapping', {}),
                     'unit':        p.get('unit', ""),
                 })
             except re.error as e:
@@ -357,9 +354,9 @@ class LogParser:
                 if (pattern['target_id'] == 'error') or (pattern['target_id'] == 'warning'):
                     groups = pmatch.groupdict()
 
-                    # Apply value_mapping translations before formatting
-                    if 'value_mapping' in pattern:
-                        for group_name, mapping in pattern['value_mapping'].items():
+                    # Apply mapping translations before formatting
+                    if 'mapping' in pattern:
+                        for group_name, mapping in pattern['mapping'].items():
                             if group_name in groups and groups[group_name] in mapping:
                                 groups[group_name] = mapping[groups[group_name]]
                                 
@@ -440,7 +437,9 @@ class LogParser:
                 "target":         'system',
                 "level":          channel,
                 "destination":    None,
-                "state_resolver": {},
+                "state_resolver": {
+                    "target": "ced_station",
+                },
                 "payload":        payload,
                 "raw_line":       raw_row,
             }
@@ -451,7 +450,9 @@ class LogParser:
             "target":         'system',
             "level":          channel,
             "destination":    None,
-            "state_resolver": {},
+            "state_resolver": {
+                "target": "ced_station",
+            },
             "payload":        {
                 "unique_pallet_count": len(unique_pallet_ids),
             },
@@ -479,7 +480,7 @@ class LogParser:
         mapped_payload = groups.copy()
         for key, value in mapped_payload.items():
             if key in pattern.get('mapping', {}):
-                mapped_payload[key] = pattern['mapping'][key].get(value, value)
+                mapped_payload[key] = pattern['mapping'][key].get(str(value), value)
 
         # Resolve target
         target = pattern.get('target_id')

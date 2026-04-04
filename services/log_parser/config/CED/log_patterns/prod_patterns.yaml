@@ -478,3 +478,5 @@
       "4": "cavity_4_dispenser_start_point"
       "5": "cavity_5_dispenser_start_point"
       "6": "cavity_6_dispenser_start_point"
+  state_resolver:
+    target: "ced_station"

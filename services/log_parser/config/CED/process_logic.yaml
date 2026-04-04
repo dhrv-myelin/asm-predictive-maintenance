@@ -216,6 +216,7 @@
           - "name": "downstream_waiting_time"
             "type": "duration_seconds"
             "export": true
+          transition_stage: "handover_prep"
       "EXIT_STOPPER_LOWERING":
         "transitions":
         - "event": "EXIT_STOPPER_DOWN_DONE"
@@ -240,6 +241,7 @@
           - "name": "exit_stopper_raising_time"
             "type": "duration_seconds"
             "export": true
+          transition_stage: "handover"
             
   # ====================================================================================
   # 2. CED Maintenance : Virtual; Does not Actually exist

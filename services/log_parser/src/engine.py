@@ -205,6 +205,7 @@ class LogicEngine:
     def _prepare_handover(self, station, dest_id):
         """Prepares for handover by setting the destination node's expected pallet id. This is essential as the current pallet id could be lost or overwritten if something else is already entering this station. In case of routing stations, essential to set the current_destination as it could be lost post this preparation, so we always set it regardless of routing/non-routing stations. TO BE CALLED ONLY IF TRANSITION_STAGE == 'handover_prep'"""
         self.inventory[dest_id].expected_pallet_id = station.active_pallet_id
+        self.inventory[dest_id].cycle_count = station.cycle_count
         station.current_destination = dest_id
         print(f"[DEBUG]: 🚚 HANDOVER PREP FOR {station.id} -> {dest_id} | Pallet: {station.active_pallet_id}")
 
@@ -221,10 +222,10 @@ class LogicEngine:
         station.current_destination = None
 
     def _record_completion(self, station, pallet_id, timestamp):
+        # print("[DEBUG] Recording completion for pallet_id : ", pallet_id, " at station : ", station.id, " with timestamp : ", timestamp,  " and cyclecount : ", station.cycle_count)
         # 1. Increment the internal counter
         self.throughput_count += 1
 
-        #TODO: Fix this hardcode
         # 2. Stream to database immediately
         self._stream_metric(
             timestamp=timestamp,
@@ -368,7 +369,6 @@ class LogicEngine:
                     value = timestamp - station.state_entry_time
             
             # Future types: 'snapshot_value' (from payload), 'counter'
-            #TODO: Fix this hardcode
             if value is not None:
                 # Stream immediately to database
                 self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state, self.inventory.get(station.id, {}).cycle_count, self.inventory.get(station.id, {}).active_pallet_id)
@@ -376,6 +376,9 @@ class LogicEngine:
     def _push_raw_metrics(self, event, timestamp):
 
         SKIP_KEYS = {'pallet_id', 'unit', 'carrier_sn', 'position', 'version'}
+
+        cycle_count_station = self._state_based_target_resolver(state_resolver=event.get('state_resolver', {}), payload=None)
+        print(f"[DEBUG] Resolved {cycle_count_station} to pick cycle count and pallet serial number for raw metric streaming.")
 
         def normalize(value):
             if isinstance(value, str):
@@ -410,8 +413,8 @@ class LogicEngine:
                 value=value,
                 unit=payload.get('unit', None),
                 context=event.get('type'),
-                cycle_count = self.inventory.get('ced_station', {}).cycle_count,
-                pallet_serial_number = self.inventory.get('ced_station', {}).active_pallet_id,
+                cycle_count = self.inventory.get(cycle_count_station, {}).cycle_count,
+                pallet_serial_number = self.inventory.get(cycle_count_station, {}).active_pallet_id,
             )
 
 
@@ -465,6 +468,9 @@ class LogicEngine:
         target_type = state_resolver.get('target_type')
         current_state = state_resolver.get('current_state')
         logic_type = state_resolver.get('logic_type')
+
+        if 'target' in state_resolver:
+            return state_resolver['target']
 
         if logic_type == "filter_expected_pallet_id_state":
             for station_id, station in self.inventory.items():

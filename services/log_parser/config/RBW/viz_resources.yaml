@@ -1,0 +1,32 @@
+description: "MVP Visualization: Simple Primitive Blocks"
+version: "1.0"
+
+# ==========================================
+# UNIT CONVENTION
+# ==========================================
+metadata:
+  units: "meters"
+  coordinate_system: "Z-Up" # Z is height (standard in Robotics/Rerun/Digital Twins)
+
+resources:
+  # ==========================================
+  # ENTRY: SHUTTLE
+  # ==========================================
+  ced_station:
+    # ID matches machine_graph.yaml
+    position: [0.0, 0.0, 0.0]  # X, Y, Z
+    shape: "box"
+    size: [1.2, 1.5, 0.2]      # Width, Depth, Height
+    color: [180, 180, 180]     # Light Grey
+    label_offset: [0.0, 0.0, 0.5] # Where to draw text label
+
+  # ==========================================
+  # EXIT
+  # ==========================================
+
+  exit_sink:
+    position: [10.0, 0.0, 0.0]
+    shape: "box"
+    size: [0.5, 3.0, 0.1]      # Thin strip
+    color: [50, 50, 50]        # Dark Grey
+    label_offset: [0.0, 0.0, 0.5]

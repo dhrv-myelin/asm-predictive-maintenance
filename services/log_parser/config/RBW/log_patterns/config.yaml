@@ -1,0 +1,523 @@
+# HG109 Minimal Auditor Config
+header_regex: '^\[(?P<timestamp>\d{2}:\d{2}:\d{2}\.\d+)\]\|\[(?P<level>\w+)\]\|(?P<content>.*)'
+
+patterns:
+  # 1. THE TRIGGER: This event signals the start of a production cycle
+  - name: product_arrival
+    regex: '^Received product in place signal\.\.\.$'
+    event_type: PRODUCT_ARRIVAL
+    details: 'New tray/product detected at the working station. Cycle starts.'
+
+  # 2. THE COMMAND: Move Z-axis to production height
+  - name: z_axis_prod_cmd
+    regex: '^UP Production:(?P<target_height>-?\d+\.?\d*)$'
+    event_type: Z_AXIS_PROD_CMD
+    details: 'Commanded Z-axis to production height: {target_height}mm'
+
+  # 3. THE FEEDBACK: Confirming the physical position
+  # Note: This uses the Chinese full-width colon '：' found in your logs
+  - name: z_axis_feedback
+    regex: '^Welding Z-axis position:\s*read pos：(?P<actual>-?\d+\.?\d*)\s*send pos：(?P<target>-?\d+\.?\d*)$'
+    event_type: Z_AXIS_FEEDBACK
+    details: 'Z-Axis Position - Target: {target}, Actual: {actual}'
+
+# 4. THE LOCK: Engaging the pneumatic clamps
+  - name: clamp_cylinder
+    regex: '^Clamp the cylinder in place\.\.\.$'
+    event_type: CLAMP_CYLINDER
+    details: 'Pneumatic cylinders engaged to lock the tray into the welding fixture.'
+
+# 5. THE SYNC: Ensuring the data buffer is clear before moving
+  - name: data_exchange_wait
+    regex: '^Waiting for the completion of the previous data exchange task$'
+    event_type: DATA_EXCHANGE_WAIT
+    details: 'Software synchronization: Waiting for data handshake to finish.'
+
+# 6. THE TRAVEL: Commanding the gantry to travel to a specific workstation
+  - name: gantry_move_cmd
+    # This regex captures the X, Z, Mirror1, and Mirror2 coordinates
+    regex: '^Move Pos:(?P<x>-?\d+\.?\d*),(?P<z>-?\d+\.?\d*),(?P<m1>-?\d+\.?\d*),(?P<m2>-?\d+\.?\d*)$'
+    event_type: GANTRY_MOVE_CMD
+    details: 'Gantry commanded to move. X:{x}, Z:{z}, M1:{m1}, M2:{m2}'
+
+# 7. THE VERIFICATION: Confirming the X-axis reached its destination
+  - name: x_axis_feedback
+    regex: '^Welding X-axis position:\s*read pos：(?P<actual>-?\d+\.?\d*)\s*send pos：(?P<target>-?\d+\.?\d*)$'
+    event_type: X_AXIS_FEEDBACK
+    details: 'X-Axis Position Verification - Target: {target}, Actual: {actual}'
+
+# 8. THE PRECISION: Confirming the first laser mirror is calibrated
+  - name: mirror_1_feedback
+    regex: '^Mirror 1 axis position:\s*read pos：(?P<actual>-?\d+\.?\d*)\s*send pos：(?P<target>-?\d+\.?\d*)$'
+    event_type: MIRROR_1_FEEDBACK
+    details: 'Laser Mirror 1 - Target: {target}, Actual: {actual}'
+
+# 9. THE FINAL CHECK: Confirming the second laser mirror is in position
+  - name: mirror_2_feedback
+    regex: '^Mirror 2-axis position:\s*read pos：(?P<actual>-?\d+\.?\d*)\s*send pos：(?P<target>-?\d+\.?\d*)$'
+    event_type: MIRROR_2_FEEDBACK
+    details: 'Laser Mirror 2 - Target: {target}, Actual: {actual}'
+
+# 10. THE VISION TRIGGER: Requesting high-precision alignment data
+  - name: camera_double_exposure_cmd
+    # Captures the camera ID and the complex protocol string
+    regex: '^相机(?P<cam_id>\d+)发送二次曝光定位指令：(?P<protocol>TWG,CMD_\d+,.*)$'
+    event_type: CAMERA_DOUBLE_EXPOSURE_CMD
+    details: 'Camera {cam_id} triggering double exposure positioning. Protocol: {protocol}'
+
+# 11. THE SKIP: Handling empty cavities to save cycle time
+  - name: cavity_skip_empty
+    # Captures the slot number (1-12)
+    regex: '^当前穴位:(?P<slot>\d+)产品码为NA,跳过定位$'
+    event_type: CAVITY_SKIP_EMPTY
+    details: 'Slot {slot} is empty or has no barcode (NA). Skipping vision alignment.'
+
+# 12. THE VISION DATA: Receiving the calculated alignment from the camera
+  - name: camera_double_exposure_rx
+    # Captures which camera replied and the raw data payload
+    regex: '^接收相机(?P<cam_id>\d+)二次曝光数据:(?P<protocol>.*)$'
+    event_type: CAMERA_DOUBLE_EXPOSURE_RX
+    details: 'Received positioning response from Camera {cam_id}. Data: {protocol}'
+
+# 13. THE GATEKEEPER: Confirming all vision/positioning logic is finished
+  - name: positioning_tasks_done
+    regex: '^所有定位任务已完成!$'
+    event_type: POSITIONING_TASKS_DONE
+    details: 'Logic Gate: All vision alignment and positioning tasks for this cluster are complete.'
+
+# 14. THE FINAL TRIGGER: Requesting standard alignment data
+  - name: camera_positioning_cmd
+    # Captures the camera ID and the standard protocol string
+    regex: '^相机(?P<cam_id>\d+)发送定位指令：(?P<protocol>TWG,CMD_\d+,.*)$'
+    event_type: CAMERA_POSITIONING_CMD
+    details: 'Camera {cam_id} triggering standard positioning sequence. Protocol: {protocol}'
+
+# 15. THE POSITIONING DATA (REVISED): No longer "steals" from TWI
+  - name: camera_positioning_rx
+    regex: '^接收相机(?P<cam_id>\d+)数据:(?P<protocol>TWG,CMD_\d+,.*)$'
+    event_type: CAMERA_POSITIONING_RX
+    details: 'Standard Positioning Received - Protocol: {protocol}'
+
+# 16. THE ACTION: The definitive start of the laser marking/welding process
+  - name: marking_start
+    regex: '^开始同步标刻\.\.\.$'
+    event_type: MARKING_START
+    details: 'Process Trigger: Laser marking sequence initiated for the current workstation.'
+
+# 17. THE AIM: Commanding the internal laser mirrors to their start coordinates
+  - name: galvo_move_cmd
+    # Note the Chinese full-width colons '：' used after galvanometer names
+    regex: '^Move Pos:galvanometer1：(?P<g1>-?\d+\.?\d*),galvanometer2：(?P<g2>-?\d+\.?\d*)$'
+    event_type: GALVO_MOVE_CMD
+    details: 'Laser mirrors jumping to start position. G1 (X): {g1}, G2 (Y): {g2}'
+
+# 18. THE OUTCOME: The binary result of the laser welding/marking strike
+  - name: marking_result_status
+    # This captures the success/fail state for both laser heads
+    regex: '^Marking failed:(?P<head1>False|True),(?P<head2>False|True)$'
+    event_type: MARKING_RESULT_STATUS
+    details: 'Workstation marking result - Head 1 Fail: {head1}, Head 2 Fail: {head2}'
+
+# 19. THE QUALITY TRIGGER: Distinctly matches only "Inspection" (TWI) commands
+  - name: camera_reinspection_cmd
+    regex: '^相机(?P<cam_id>\d+)发送复检指令：(?P<protocol>TWI,CMD_\d+,.*)$'
+    event_type: CAMERA_REINSPECTION_CMD
+    details: 'Quality Check Trigger - Protocol: {protocol}'
+
+# 20. THE QUALITY DATA: Distinctly matches only "Inspection" (TWI) results
+  - name: camera_reinspection_rx
+    regex: '^接收相机(?P<cam_id>\d+)数据:(?P<protocol>TWI,CMD_\d+,.*)$'
+    event_type: CAMERA_REINSPECTION_RX
+    details: 'Quality Data Received - Protocol: {protocol}'
+
+# 21. THE INSPECTION GATE: Confirming all quality checks for this cluster are done
+  - name: reinspection_tasks_done
+    regex: '^所有复检任务已完成!$'
+    event_type: REINSPECTION_TASKS_DONE
+    details: 'Logic Gate: All post-weld inspection tasks for this cluster are complete.'
+
+# 22. THE ARCHIVE TRIGGER: Telling the camera to save the process images
+  - name: camera_image_save_cmd
+    regex: '^相机(?P<cam_id>\d+)发送图片存储指令：(?P<protocol>.*)$'
+    event_type: CAMERA_IMAGE_SAVE_CMD
+    details: 'Traceability: Triggered image archival for Camera {cam_id}. Protocol: {protocol}'
+
+# 23. THE ARCHIVE RECEIPT: Confirming the image file path and storage status
+  - name: camera_image_save_rx
+    # Captures the Camera ID and the full Windows file path
+    regex: '^接收相机(?P<cam_id>\d+)图片存储数据:(?P<file_info>.*)$'
+    event_type: CAMERA_IMAGE_SAVE_RX
+    details: 'Image storage confirmed for Camera {cam_id}. Path/Status: {file_info}'
+
+# 24. THE STORAGE GATE: Confirming all image-to-disk operations are finished
+  - name: image_tasks_done
+    regex: '^所有存图任务已完成!$'
+    event_type: IMAGE_TASKS_DONE
+    details: 'Logic Gate: All image storage and archival tasks for this cluster are confirmed complete.'
+
+# 25. THE RELEASE START: The high-level command to begin unloading the tray
+  - name: product_release_cmd
+    regex: '^松开产品[!！\.\s]*$'
+    event_type: PRODUCT_RELEASE_CMD
+    details: 'Process Finish: Software initiating the product release sequence.'
+
+# 26. THE HARDWARE RELEASE: Physical confirmation that the clamps have retracted
+  - name: clamp_release_feedback
+    regex: '^夹持气缸松开[!！\.\s]*$'
+    event_type: CLAMP_RELEASE_FEEDBACK
+    details: 'Hardware Feedback: Pneumatic clamping cylinders are physically retracted.'
+
+# 27. THE FINISH LINE: The final software confirmation for the entire tray
+  - name: processing_complete
+    regex: '^加工完成[!！\.\s]*$'
+    event_type: PROCESSING_COMPLETE
+    details: 'Batch Lifecycle: The entire tray has been successfully processed.'
+
+## second round: after 95%... these were skipped cycle logs!
+
+# 28. THE SUCCESS STRIKE: Positive confirmation of the laser marking process
+  - name: marking_success_status
+    # Captures the success state for both laser heads
+    regex: '^Marking successful:(?P<head1>False|True),(?P<head2>False|True)$'
+    event_type: MARKING_SUCCESS_STATUS
+    details: 'Process Success - Head 1: {head1}, Head 2: {head2}'
+
+# 29. THE QUALITY SKIP: Skipping a slot because it failed the UOP vision pre-check
+  - name: cavity_skip_uop_fail
+    # Captures the slot number (1-12)
+    regex: '^当前穴位:(?P<slot>\d+)UOP判定失败,跳过定位$'
+    event_type: CAVITY_SKIP_UOP_FAIL
+    details: 'Slot {slot} skip: Failed UOP vision pre-check. Positioning aborted.'
+
+## thrid round: this was after reaching 99%
+
+# 30. THE MODE CHECK: Confirming if the current tray is standard production or rework
+  - name: rework_status_standard
+    regex: '^First station not rework$'
+    event_type: REWORK_STATUS_CHECK
+    details: 'Process Mode: Standard production (Not a rework cycle).'
+
+# 31. THE REWORK TRIGGER: Confirming that the rework logic has been activated
+  - name: rework_enabled
+    regex: '^重工已开启$'
+    event_type: REWORK_ENABLED
+    details: 'Process Mode: Rework functionality is active for the current session.'
+
+# 32. THE HALT: Capturing a manual or system-forced stop command
+  - name: system_stop
+    # Matches "Stop" followed by a full-width or standard exclamation mark
+    regex: '^Stop[!！]$'
+    event_type: SYSTEM_STOP
+    details: 'Operator Action: System stop command received. All movements halted.'
+
+# 33. THE RESET START: The beginning of the machine's self-calibration/homing phase
+  - name: system_reset_start
+    # Flexible punctuation to catch "..." or any trailing spaces
+    regex: '^Begin to reset[!！\.\s]*$'
+    event_type: SYSTEM_RESET_START
+    details: 'System Recovery: Machine is initiating a homing and state-reset sequence.'
+
+# 34. THE DATA SYNC: Confirming the tray recipe has been retrieved from the database
+  - name: material_tray_load_success
+    # Catching the trailing colon ':' which is often used before a data dump
+    regex: '^Material tray information loaded successfully[:：\s]*$'
+    event_type: MATERIAL_TRAY_LOAD_SUCCESS
+    details: 'Database: Production recipe and tray configuration successfully loaded.'
+
+# 35. THE SCANNER LINK: Confirming the connection to the barcode readers
+  - name: scanner_connection_success
+    # Captures the Gun ID (1 or 2)
+    regex: '^Scan code gun (?P<gun_id>\d+) successfully connected[!！]$'
+    event_type: SCANNER_CONNECTION_SUCCESS
+    details: 'Hardware Init: Barcode Scanner {gun_id} is online and communicating.'
+
+# 36. THE DISTANCE SENSOR: Confirming connection to displacement sensors
+  - name: distance_sensor_connection
+    # Captures the sensor ID (1 or 2)
+    regex: '^Dist(?P<sensor_id>\d+) connect OK[!！]?$'
+    event_type: DISTANCE_SENSOR_CONNECT
+    details: 'Hardware Init: Laser displacement sensor {sensor_id} is online.'
+
+# 37. THE CAMERA LINK: Confirming connection to all vision sensors
+  - name: camera_connection_success
+    # Captures the camera ID (1, 2, 3, or 4)
+    regex: '^Camera (?P<cam_id>\d+) successfully connected[!！]$'
+    event_type: CAMERA_CONNECTION_SUCCESS
+    details: 'Hardware Init: Camera {cam_id} is online and ready for alignment/inspection.'
+
+# 38. THE RESET SUCCESS: Confirmation that the machine is fully homed and healthy
+  - name: system_reset_ok
+    # Matches "Reset OK" with support for different exclamation marks
+    regex: '^Reset OK[!！]$'
+    event_type: SYSTEM_RESET_OK
+    details: 'System Recovery: All axes homed and peripherals verified. Machine is ready.'
+  
+# 39. THE HUMAN GATE (REVISED): More flexible for quotes and spacing
+  - name: operator_wait_prompt
+    # This matches the line whether or not the quotes are present or escaped
+    regex: '^"?Wait for running\s*,\s*please click to start"?$'
+    event_type: OPERATOR_WAIT_PROMPT
+    details: 'System Idle: Waiting for operator to press Start.'
+
+# 40. THE RUN TRIGGER: The transition into the active production state
+  - name: process_start_cmd
+    # Flexible for "..." or "." or "!" 
+    regex: '^Process Start[!！\.\s]*$'
+    event_type: PROCESS_START
+    details: 'System State: Machine is now in RUN mode and looking for product.'
+
+# 41. THE AUXILIARY LINK: Confirming connection to the Mac mini vision/data node
+  - name: mac_mini_connection_success
+    # Matches "successful" with standard or full-width exclamation marks
+    regex: '^Mac mini connection successful[!！]$'
+    event_type: MAC_MINI_CONNECT
+    details: 'Hardware Init: Auxiliary Mac mini controller is online and communicating.'
+
+# 42. THE STORAGE ERROR: Capturing failures when trying to archive process images - opposite of pattern #23 it seems
+  - name: camera_image_save_fail
+    # Captures the camera ID (1-4)
+    regex: '^接收相机(?P<cam_id>\d+)图片存储数据失败[!！]$'
+    event_type: CAMERA_IMAGE_SAVE_FAIL
+    details: 'Process Error: Failed to receive image storage confirmation from Camera {cam_id}.'
+
+# 43. THE SENSOR SKIP: Skipping a slot because the height measurement failed - pattern 11 and 29 are other skips
+  - name: cavity_skip_height_fail
+    # Handles the optional quotes and captures the slot number
+    regex: '^"?当前穴位:(?P<slot>\d+)产品测高失败,跳过定位"?$'
+    event_type: CAVITY_SKIP_HEIGHT_FAIL
+    details: 'Slot {slot} skip: Laser displacement sensor failed to measure part height.'
+
+# 44. THE STOPPED STATE: A repeating status line confirming the process is halted
+  - name: process_stopped_status
+    # Matches the specific phrase with the full-width exclamation mark
+    regex: '^The process has stopped[!！]$'
+    event_type: PROCESS_STOPPED_STATUS
+    details: 'System Status: The machine confirms it is currently in a stopped/idle state.'
+
+# 45. THE YIELD GUARDRAIL: An alarm triggered when failure rates exceed a set limit
+  - name: quality_threshold_alarm
+    # Captures the count of failed pieces mentioned in the alarm
+    regex: '^一小时内复检失败超过(?P<fail_count>\d+)pcs[.。]{1,3}$'
+    event_type: QUALITY_THRESHOLD_ALARM
+    details: 'Quality Alert: More than {fail_count} failures detected within a 1-hour window.'
+
+# 46. THE RESUMPTION: Signal that the process is continuing after a pause or alert
+  - name: process_continue
+    regex: '^Continue[.]{1,3}$'
+    event_type: PROCESS_CONTINUE
+    details: 'System Resumed: Operator or system has cleared the pause/alarm state.'
+
+# 47. THE CONFIG CHANGE: Tracking modifications to machine parameters and recipes - THIS IS PROBABLY THE BROADEST or LAZIEST REGEX (if needed, can break this down, but its mean to grep all the param changes at once)
+  - name: parameter_change_log
+    # Captures the parameter name, the original value (Form), and the new value (To)
+    # Uses a "lazy match" (.*?) to find the literal ";To:" even if the values contain semicolons
+    regex: '^Change info:(?P<param>[^;]+);Form:(?P<from_val>.*?);To:(?P<to_val>.*)$'
+    event_type: PARAMETER_CHANGE
+    details: 'Config Update - Parameter: {param} changed from {from_val} to {to_val}'
+
+
+# 48. THE FIXTURE ERROR: Failure to identify or retrieve data for the physical tool/nest
+  - name: fixture_query_fail
+    regex: '^Failed to query fixture[.]{1,3}$'
+    event_type: FIXTURE_QUERY_FAIL
+    details: 'Database Error: System could not retrieve recipe or offset data for the current fixture.'
+
+# 49. THE VISION TIMEOUT: Failure to receive alignment data from the camera
+  - name: camera_positioning_fail
+    # Captures the specific camera ID (1-4)
+    regex: '^接收相机(?P<cam_id>\d+)定位数据失败[!！]$'
+    event_type: CAMERA_POSITIONING_FAIL
+    details: 'Process Error: Failed to receive alignment coordinates from Camera {cam_id}.'
+
+# 50. THE SHUTDOWN: Marking the exact moment the control software was closed
+  - name: software_close_signal
+    # Flexible for the number of asterisks
+    regex: '^[*]+\s*Close software\s*[*]+$'
+    event_type: SOFTWARE_CLOSE
+    details: 'System Lifecycle: The control software has been shut down.'
+
+# 51. THE LAUNCH: Capturing the exact moment and filename of the software startup
+  - name: software_open_signal
+    # Captures the executable name following the asterisks
+    regex: '^[*]+\s*Open Software\s*[*]+(?P<exe_name>.*)$'
+    event_type: SOFTWARE_OPEN
+    details: 'System Lifecycle: Control software launched. Executable: {exe_name}'
+
+# 52. THE VERSION INFO: Capturing the specific build and version of the control software
+  - name: software_version_info
+    # Captures everything after "Version:"
+    regex: '^Version:(?P<version_id>.*)$'
+    event_type: SOFTWARE_VERSION
+    details: 'System Lifecycle: Running software version {version_id}.'
+
+# 53. THE LASER INIT: Confirmation that the laser source is powered and healthy
+  - name: laser_init_success
+    # Matches the specific phrase with the full-width exclamation mark
+    regex: '^Laser init success[!！]$'
+    event_type: LASER_INIT_SUCCESS
+    details: 'Hardware Init: Laser source self-test passed. Ready to fire.'
+
+# 54. THE MOTION INIT: Confirmation that the motor controller is online
+  - name: motion_card_init_success
+    # Matches "OK" with support for the full-width exclamation mark
+    regex: '^Motion card init OK[!！]$'
+    event_type: MOTION_CARD_INIT_SUCCESS
+    details: 'Hardware Init: Motion control card initialized. Motors are ready for homing.'
+
+# 55. THE PLC LINK: Confirmation that the PLC communication bridge is established
+  - name: plc_connection_ok
+    # Matches the specific lowercase 'ok' and standard '!'
+    regex: '^PLC connect ok!$'
+    event_type: PLC_CONNECT_OK
+    details: 'Hardware Init: PLC communication link established. Safety and I/O ready.'
+
+# 56. THE RELEASE TIMEOUT: The clamping cylinder failed to retract in time
+  - name: clamp_release_timeout
+    regex: '^加持气缸松开超时[.]{1,3}$'
+    event_type: CLAMP_RELEASE_TIMEOUT
+    details: 'Hardware Alarm: The clamping cylinder failed to release/retract within the safety time limit.'
+
+## lost patience to check each pattern one by one, so bulk/batch testing below - might need more scrutiny
+
+# 57. THE CLAMP TIMEOUT: The clamping cylinder failed to lock the tray in time
+  - name: clamp_engage_timeout
+    regex: '^Clamping cylinder clamping timeout[.]{1,3}$'
+    event_type: CLAMP_ENGAGE_TIMEOUT
+    details: 'Hardware Alarm: The clamping cylinder failed to reach the locked position.'
+
+# 58. THE VISION GROUP DATA: Captured path and result from the Cognex vision system
+  - name: camera_group_data_rx
+    # Captures Camera ID, Group ID, and the full File Path/Status
+    regex: '^"?接收相机(?P<cam_id>\d+)数据:Group,(?P<group_id>\d+),(?P<path_result>.*)"?$'
+    event_type: CAMERA_GROUP_DATA_RX
+    details: 'Vision Logic: Camera {cam_id} (Group {group_id}) returned result: {path_result}'
+
+# 59. THE PARSING ERROR: Software failed to decode a data packet (likely from vision)
+  - name: data_format_error
+    regex: '^Data format error!$'
+    event_type: DATA_FORMAT_ERROR
+    details: 'Software Logic: A received data packet could not be parsed into the expected format.'
+
+# 60. THE SCANNER RECOVERY: Automatic reconnection of a barcode reader during operation
+  - name: scanner_reconnect_success
+    # Captures the Gun ID (1 or 2)
+    regex: '^Scan code gun (?P<gun_id>\d+) successfully reconnected[!！]$'
+    event_type: SCANNER_RECONNECT
+    details: 'Hardware Recovery: Barcode Scanner {gun_id} has been automatically reconnected.'
+
+# 61. FIXTURE BARCODE MISSING: The fixture scanned as NA (Not Available)
+  - name: fixture_barcode_na
+    regex: '^治具码NA$'
+    event_type: FIXTURE_BARCODE_NA
+    details: 'Identification Error: The fixture barcode was read as NA or is missing.'
+
+# 62. RE-INSPECTION DATA FAIL: Failure to get quality data after the weld
+  - name: camera_reinspection_fail
+    regex: '^接收相机(?P<cam_id>\d+)复检数据失败[!！]$'
+    event_type: CAMERA_REINSPECTION_FAIL
+    details: 'Quality Error: Failed to receive post-weld inspection data from Camera {cam_id}.'
+
+# 63. LINE CODE MISSING: Failure to retrieve the production line ID
+  - name: line_code_missing
+    regex: '^No line code obtained$'
+    event_type: LINE_CODE_MISSING
+    details: 'Database Error: Software could not retrieve the line/station code'
+
+# 64. MAC MINI FAIL: Connection to the auxiliary vision node timed out
+  - name: mac_mini_connection_fail
+    regex: '^Mac mini connection failed[!！]?$'
+    event_type: MAC_MINI_CONNECT_FAIL
+    details: 'Hardware Error: Auxiliary Mac mini controller failed to connect.'
+
+# 65. RESET GLOBAL FAIL: The homing/reset sequence did not complete
+  - name: reset_failed
+    regex: '^Reset Failed$'
+    event_type: RESET_FAILED
+    details: 'System Error: The machine reset/homing sequence failed to complete.'
+
+# 66. RESET PROMPT: Software requesting user to trigger a fresh reset
+  - name: please_reset_prompt
+    regex: '^Please Reset[!！]$'
+    event_type: PLEASE_RESET_PROMPT
+    details: 'System Wait: Machine is in error state and requires a manual Reset command.'
+
+# 67. TRAY YIELD ALARM: Specific tray ID exceeding failure limits
+  - name: tray_reinspection_threshold_alarm
+    regex: '^当前载具:(?P<tray_id>\w+)复检失败超过(?P<fail_count>\d+)pcs$'
+    event_type: TRAY_YIELD_ALARM
+    details: 'Quality Alert: Tray {tray_id} has exceeded {fail_count} inspection failures.'
+
+# 68. PROCESS PAUSE: The machine has entered a paused state (non-emergency)
+  - name: process_pause
+    regex: '^Process Pause[.]{1,3}$'
+    event_type: PROCESS_PAUSE
+    details: 'System Status: Production has been paused.'
+
+# 69. Z-AXIS HOMING FAIL: The welding head failed to find its zero point
+  - name: z_axis_homing_fail
+    regex: '^WeldZAxis return to zero failed[!！]$'
+    event_type: Z_AXIS_HOMING_FAIL
+    details: 'Mechanical Error: Weld Z-axis failed to return to the home (zero) position.'
+
+# 70. TEMPLATE LOADING FAIL: Vision software could not load the golden template
+  - name: template_loading_fail
+    regex: '^Template loading failed:(?P<template_id>.*)$'
+    event_type: TEMPLATE_LOADING_FAIL
+    details: 'Vision Error: Could not load welding template {template_id}.'
+
+# 71. TRAY INFO CONFIG ERROR: Database found missing points in the recipe
+  - name: tray_info_loading_error
+    regex: '^Loading tray information failed:(?P<error_msg>.*)$'
+    event_type: TRAY_INFO_LOAD_ERROR
+    details: 'Database Error: Failed to load tray coordinates. Detail: {error_msg}'
+
+# 72. SAFETY DOOR: The physical safety enclosure has been opened
+  - name: safety_door_open
+    regex: '^安全门打开[:：]\s*$'
+    event_type: SAFETY_DOOR_OPEN
+    details: 'Safety Alert: The machine enclosure door was opened. Motion inhibited.'
+
+# 73. PLC LINK FAILURE: The heartbeat to the PLC has been lost
+  - name: plc_connection_failed
+    regex: '^PLC connection failed[!！]$'
+    event_type: PLC_CONNECTION_FAIL
+    details: 'Hardware Error: Communication with the PLC has been lost.'
+
+# 74. PLC WRITE ERROR: Software failed to send a command to a PLC register
+  - name: plc_write_fail
+    # Note: Includes the machine's "Wrute" typo!
+    regex: '^Wrute PLC data fail:(?P<register>.*)$'
+    event_type: PLC_WRITE_FAIL
+    details: 'Protocol Error: Failed to write data to PLC register {register}.'
+
+# 75. LASER DEVICE MISSING: The laser card (TK Device) is not detected
+  - name: laser_init_fail_tk
+    # Note the double single-quote '' to escape the apostrophe for YAML
+    regex: '^Laser initialization failed[!！]\s*Can''t find TK Device$'
+    event_type: LASER_INIT_FAIL
+    details: 'Hardware Error: Laser control card (TK Device) not found.'
+
+# 76. TK CARD DISCONNECT: Mid-session communication loss with the laser card
+  - name: tk_card_disconnect
+    regex: '^LoadFile Recv:TKcard disconnect[!！]{1,}$'
+    event_type: TK_CARD_DISCONNECT
+    details: 'Hardware Error: The TK laser control card has disconnected.'
+
+# 77. CAMERA LINK FAILURE: Specific camera went offline
+  - name: camera_connection_fail
+    regex: '^Camera (?P<cam_id>\d+) connection failed[!！]$'
+    event_type: CAMERA_CONNECTION_FAIL
+    details: 'Hardware Error: Connection to Camera {cam_id} failed.'
+
+# 78. DOUBLE EXPOSURE FAIL: Failure during the high-precision alignment phase
+  - name: double_exposure_pos_fail
+    regex: '^接收相机(?P<cam_id>\d+)二次曝光定位数据失败[!！]$'
+    event_type: DOUBLE_EXPOSURE_FAIL
+    details: 'Vision Error: Camera {cam_id} failed the double-exposure alignment.'
+
+# 79. DATA CONVERSION EXCEPTION: Software crash while processing numbers
+  - name: data_conversion_exception
+    regex: '^数据类型转换出现异常[!！]$'
+    event_type: DATA_TYPE_EXCEPTION
+    details: 'Software Logic: An exception occurred during data type conversion.'
+

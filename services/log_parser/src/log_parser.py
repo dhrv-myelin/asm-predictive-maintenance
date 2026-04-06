@@ -49,6 +49,39 @@ class GDMAdapter(MachineAdapter):
         channel = svc_m.group(1) if svc_m else "Unknown"
 
         return epoch, channel, content
+    
+# ─────────────────────────────────────────────
+#  RBW ADAPTER
+#  Format: [06:11:27.168]|[INF]|Laser init success！
+# ─────────────────────────────────────────────
+class RBWAdapter(MachineAdapter):
+    _HEADER = re.compile(
+        r"^\[(\d{2}:\d{2}:\d{2}\.\d{3})\]\|\[(\w+)\]\|(.*)"
+    )
+    _SERVICE = re.compile(r".*?\s+(\w+)\s+-\s+.*")
+
+    def __init__(self, log_date: str = None):
+        self._log_date = log_date
+
+    def extract_header(self, line: str):
+        m = self._HEADER.match(line)
+        if not m:
+            return None
+
+        ts_str, channel, content = m.group(1), m.group(2), m.group(3).strip()
+
+        # ts_str is already in HH:MM:SS.mmm format — split and zero-pad fraction
+        hms, frac = ts_str.split('.')
+        frac = frac.zfill(3)[:3]
+        full_ts = f"{self._log_date} {hms}.{frac}"
+
+        try:
+            dt = datetime.strptime(full_ts, "%Y-%m-%d %H:%M:%S.%f")
+            epoch = dt.timestamp()
+        except ValueError:
+            return None
+
+        return epoch, channel, content
 
 
 # ─────────────────────────────────────────────
@@ -207,6 +240,7 @@ class LogParser:
     MACHINE_ADAPTERS = {
         'GDM': GDMAdapter,
         'CED': CEDAdapter,
+        'RBW': RBWAdapter,
     }
 
     def __init__(self, patterns_config_path: str, machine: str, log_date: str):
@@ -258,8 +292,10 @@ class LogParser:
         """
         if self.machine == 'CED':
             yield from self._process_line_ced(line_text)
-        else:
+        elif self.machine == 'GDM':
             yield from self._process_line_gdm(line_text)
+        elif self.machine == 'RBW':
+            yield from self._process_line_rbw(line_text)
 
     # ── GDM path ───────────────────────────────────────────────────────────
     def _process_line_gdm(self, line_text: str):
@@ -279,6 +315,45 @@ class LogParser:
         for pattern in self.patterns:
             pmatch = pattern['regex'].search(content)
             if pmatch:
+                yield epoch, self._build_event(pattern, pmatch, channel, line_text)
+                break
+
+    # ── RBW path ───────────────────────────────────────────────────────────
+    def _process_line_rbw(self, line_text: str):
+        parsed = self.adapter.extract_header(line_text)
+        if parsed is None:
+            return
+
+        epoch, channel, content = parsed
+
+        # if '[ERR]' in line_text:
+        #     yield epoch, self._sentinel_event("ERROR_LOG", "error", line_text)
+        #     return
+        
+        # if '[WRN]' in line_text:
+        #     yield epoch, self._sentinel_event("WARN_LOG", "warning", line_text)
+        #     return
+
+        for pattern in self.patterns:
+            pmatch = pattern['regex'].search(content)
+            if pmatch:
+                if (pattern['target_id'] == 'error') or (pattern['target_id'] == 'warning'):
+                    groups = pmatch.groupdict()
+
+                    # Apply mapping translations before formatting
+                    if 'mapping' in pattern:
+                        for group_name, mapping in pattern.get('mapping', {}).items():
+                            if group_name in groups:
+                                value = groups[group_name]
+                                for key, translated in mapping.items():
+                                    if key in value:
+                                        value = value.replace(key, translated)
+                                groups[group_name] = value
+                                
+                    formatted_details = pattern['event_details'].format(**groups)
+                    yield epoch, self._sentinel_event(pattern['event_type'], pattern['target_id'], formatted_details)
+                    break
+
                 yield epoch, self._build_event(pattern, pmatch, channel, line_text)
                 break
 

@@ -219,7 +219,7 @@ def main():
     parser.add_argument('--viz', action='store_true')
     parser.add_argument('--patterns', default=None)
     parser.add_argument('--no-db', action='store_true', help='Disable database (fallback to CSV)')
-    parser.add_argument('--machine', choices=['GDM', 'CED'], default='CED', help='Indicates which Machine the logs are from (GDM/CED)')
+    parser.add_argument('--machine', choices=['GDM', 'CED', 'RBW'], default='RBW', help='Indicates which Machine the logs are from (GDM/CED/RBW)')
     parser.add_argument(
     '--baseline_hours',
     type=int,
@@ -276,6 +276,18 @@ def main():
 
             # Combine folder date with time from log
             start_time_str = f"{lg_file_date} {time_part}"
+        
+        elif args.machine == "RBW":
+            # Extract date from file name
+            file_name = os.path.basename(os.path.normpath(args.input)).split(".")[0]  # Assuming file name is like "230101.log"
+            lg_file_date = datetime.strptime(file_name, "%Y-%m-%d").strftime("%Y-%m-%d")
+
+            with open(args.input, "r") as f:
+                first_line = f.readline()
+                time_part = first_line.split(">")[1].split()[0]
+
+            # Combine folder date with time from log
+            start_time_str = f"{lg_file_date} {time_part}"
 
     except Exception as e:
         print(f"Error parsing start time: {e}")
@@ -308,9 +320,7 @@ def main():
     if "vector_buffer" in args.input:
         consumer = VectorBufferConsumer(args.input, live=is_live_mode)
     else:
-        if args.machine == "GDM":
-            consumer = RawFileConsumer(args.input, live=is_live_mode)
-        elif args.machine == "CED":
+        if args.machine == "CED":
             consumer = RawFileConsumer(os.path.join(args.input, "Message.txt"), live=is_live_mode) 
             temperature_file_path = os.path.join(args.input, "TemperatureValue.txt")
             if os.path.exists(temperature_file_path):
@@ -324,6 +334,8 @@ def main():
                     )
                     temp_thread.start()
                     print(">> Temperature parser running on background thread")
+        else:
+            consumer = RawFileConsumer(args.input, live=is_live_mode)
 
     # 7. Run the Loop
     print(f"\n=== Starting Engine ===")

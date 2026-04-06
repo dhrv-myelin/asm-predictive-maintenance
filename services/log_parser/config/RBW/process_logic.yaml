@@ -1,0 +1,26 @@
+"version": "1.0"
+"description": "Process Logic"
+"definitions":
+  # ==========================================
+  # 1. RBW STATION
+  # ==========================================
+  "rbw_station":
+    initial_state: "IDLE"
+    states:
+      IDLE:
+        transitions:
+          - event: "PALLET_ARRIVAL"
+            next_state: "ACTIVE"
+            action: "process_pallet"
+  # ==========================================
+  # 2. SINK
+  # ==========================================
+
+  "exit_sink":
+    initial_state: "ACTIVE"
+    states:
+      ACTIVE:
+        transitions:
+          - event: "PALLET_ARRIVAL"
+            next_state: "ACTIVE"
+            action: "destroy_pallet"

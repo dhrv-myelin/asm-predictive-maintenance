@@ -1,0 +1,22 @@
+machine:
+  name: "RBW"
+  version: "3.0"
+
+topology:
+  # ==========================================
+  # ENTRY: RBW
+  # ==========================================
+  - id: "rbw_station"
+    class: "RBWStation"
+    is_entry: true
+    logic_template: "rbw_station"
+    next_nodes: ["exit_sink"]
+
+  # ==========================================
+  # EXIT SINK
+  # ==========================================
+  - id: "exit_sink"
+    class: "SinkComponent"
+    is_exit: true
+    logic_template: "exit_sink"
+    hardware_link: {}

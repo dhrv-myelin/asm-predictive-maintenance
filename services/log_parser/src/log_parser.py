@@ -275,6 +275,7 @@ class LogParser:
                     'target_id':      p.get('target_id'),
                     'state_resolver': p.get('state_resolver', {}),
                     'mapping':        p.get('value_mapping', {}),
+                    'level':        p.get('level', {}),
                     'event_details':        p.get('event_details', ""),
                     'unit':        p.get('unit', ""),
                 })
@@ -337,7 +338,7 @@ class LogParser:
         for pattern in self.patterns:
             pmatch = pattern['regex'].search(content)
             if pmatch:
-                if (pattern['target_id'] == 'error') or (pattern['target_id'] == 'warning'):
+                if (pattern['level'] == 'error') or (pattern['level'] == 'warning'):
                     groups = pmatch.groupdict()
 
                     # Apply mapping translations before formatting
@@ -351,8 +352,8 @@ class LogParser:
                                 groups[group_name] = value
                                 
                     formatted_details = pattern['event_details'].format(**groups)
-                    yield epoch, self._sentinel_event(pattern['event_type'], pattern['target_id'], formatted_details)
-                    break
+                    yield epoch, self._sentinel_event(pattern['event_type'], pattern['level'], formatted_details)
+                    break  # Don't break here — allow error/warning patterns to overlap with regular patterns for richer events
 
                 yield epoch, self._build_event(pattern, pmatch, channel, line_text)
                 break

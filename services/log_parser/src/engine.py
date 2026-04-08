@@ -87,6 +87,7 @@ class LogicEngine:
         #     return
 
         if (event.get('level','') == "error") or (event.get('level','') == "warning"):
+            print(f"[DEBUG] : {event.get('level')} found in event {event['type']}. Logging to ErrorLog.")
             self._stream_error(timestamp, event)
             return
 

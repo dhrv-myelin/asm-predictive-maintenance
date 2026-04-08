@@ -76,7 +76,8 @@
   # Handles the optional quotes and captures the slot number
   regex: '^"?当前穴位:(?P<slot>\d+)产品测高失败,跳过定位"?$'
   event_type: CAVITY_SKIP_HEIGHT_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Slot {slot} skip: Laser displacement sensor failed to measure part height.'
 
 # 45. THE YIELD GUARDRAIL: An alarm triggered when failure rates exceed a set limit
@@ -84,14 +85,16 @@
   # Captures the count of failed pieces mentioned in the alarm
   regex: '^一小时内复检失败超过(?P<fail_count>\d+)pcs[.。]{1,3}$'
   event_type: QUALITY_THRESHOLD_ALARM
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Quality Alert: More than {fail_count} failures detected within a 1-hour window.'
 
 # 48. THE FIXTURE ERROR: Failure to identify or retrieve data for the physical tool/nest
 - name: fixture_query_fail
   regex: '^Failed to query fixture[.]{1,3}$'
   event_type: FIXTURE_QUERY_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Database Error: System could not retrieve recipe or offset data for the current fixture.'
 
 # 49. THE VISION TIMEOUT: Failure to receive alignment data from the camera
@@ -99,14 +102,16 @@
   # Captures the specific camera ID (1-4)
   regex: '^接收相机(?P<cam_id>\d+)定位数据失败[!！]$'
   event_type: CAMERA_POSITIONING_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Process Error: Failed to receive alignment coordinates from Camera {cam_id}.'
 
 # 56. THE RELEASE TIMEOUT: The clamping cylinder failed to retract in time
 - name: clamp_release_timeout
   regex: '^加持气缸松开超时[.]{1,3}$'
   event_type: CLAMP_RELEASE_TIMEOUT
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Hardware Alarm: The clamping cylinder failed to release/retract within the safety time limit.'
 
 ## lost patience to check each pattern one by one, so bulk/batch testing below - might need more scrutiny
@@ -115,63 +120,72 @@
 - name: clamp_engage_timeout
   regex: '^Clamping cylinder clamping timeout[.]{1,3}$'
   event_type: CLAMP_ENGAGE_TIMEOUT
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Hardware Alarm: The clamping cylinder failed to reach the locked position.'
 
 # 61. FIXTURE BARCODE MISSING: The fixture scanned as NA (Not Available)
 - name: fixture_barcode_na
   regex: '^治具码NA$'
   event_type: FIXTURE_BARCODE_NA
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Identification Error: The fixture barcode was read as NA or is missing.'
 
 # 62. RE-INSPECTION DATA FAIL: Failure to get quality data after the weld
 - name: camera_reinspection_fail
   regex: '^接收相机(?P<cam_id>\d+)复检数据失败[!！]$'
   event_type: CAMERA_REINSPECTION_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Quality Error: Failed to receive post-weld inspection data from Camera {cam_id}.'
 
 # 63. LINE CODE MISSING: Failure to retrieve the production line ID
 - name: line_code_missing
   regex: '^No line code obtained$'
   event_type: LINE_CODE_MISSING
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Database Error: Software could not retrieve the line/station code'
 
 # 64. MAC MINI FAIL: Connection to the auxiliary vision node timed out
 - name: mac_mini_connection_fail
   regex: '^Mac mini connection failed[!！]?$'
   event_type: MAC_MINI_CONNECT_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Hardware Error: Auxiliary Mac mini controller failed to connect.'
 
 # 65. RESET GLOBAL FAIL: The homing/reset sequence did not complete
 - name: reset_failed
   regex: '^Reset Failed$'
   event_type: RESET_FAILED
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'System Error: The machine reset/homing sequence failed to complete.'
 
 # 69. Z-AXIS HOMING FAIL: The welding head failed to find its zero point
 - name: z_axis_homing_fail
   regex: '^WeldZAxis return to zero failed[!！]$'
   event_type: Z_AXIS_HOMING_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Mechanical Error: Weld Z-axis failed to return to the home (zero) position.'
 
 # 70. TEMPLATE LOADING FAIL: Vision software could not load the golden template
 - name: template_loading_fail
   regex: '^Template loading failed:(?P<template_id>.*)$'
   event_type: TEMPLATE_LOADING_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Vision Error: Could not load welding template {template_id}.'
 
 # 71. TRAY INFO CONFIG ERROR: Database found missing points in the recipe
 - name: tray_info_loading_error
   regex: '^Loading tray information failed:(?P<error_msg>.*)$'
   event_type: TRAY_INFO_LOAD_ERROR
-  target_id: error
+  level: error
+  target_id: rbw_station
   value_mapping:
     error_msg:
       "未找到点位[扫码位][焊接上]1": "Point not found [Scan position] [Welding completed] 1"
@@ -181,7 +195,8 @@
 - name: plc_connection_failed
   regex: '^PLC connection failed[!！]$'
   event_type: PLC_CONNECTION_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Hardware Error: Communication with the PLC has been lost.'
 
 # 74. PLC WRITE ERROR: Software failed to send a command to a PLC register
@@ -189,7 +204,8 @@
   # Note: Includes the machine's "Wrute" typo!
   regex: '^Wrute PLC data fail:(?P<register>.*)$'
   event_type: PLC_WRITE_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Protocol Error: Failed to write data to PLC register {register}.'
 
 # 75. LASER DEVICE MISSING: The laser card (TK Device) is not detected
@@ -197,28 +213,32 @@
   # Note the double single-quote '' to escape the apostrophe for YAML
   regex: '^Laser initialization failed[!！]\s*Can''t find TK Device$'
   event_type: LASER_INIT_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Hardware Error: Laser control card (TK Device) not found.'
 
 # 76. TK CARD DISCONNECT: Mid-session communication loss with the laser card
 - name: tk_card_disconnect
   regex: '^LoadFile Recv:TKcard disconnect[!！]{1,}$'
   event_type: TK_CARD_DISCONNECT
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Hardware Error: The TK laser control card has disconnected.'
 
 # 77. CAMERA LINK FAILURE: Specific camera went offline
 - name: camera_connection_fail
   regex: '^Camera (?P<cam_id>\d+) connection failed[!！]$'
   event_type: CAMERA_CONNECTION_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Hardware Error: Connection to Camera {cam_id} failed.'
 
 # 78. DOUBLE EXPOSURE FAIL: Failure during the high-precision alignment phase
 - name: double_exposure_pos_fail
   regex: '^接收相机(?P<cam_id>\d+)二次曝光定位数据失败[!！]$'
   event_type: DOUBLE_EXPOSURE_FAIL
-  target_id: error
+  level: error
+  target_id: rbw_station
   event_details: 'Vision Error: Camera {cam_id} failed the double-exposure alignment.'
 
 # ------------------------ Warnings ------------------------
@@ -228,27 +248,27 @@
 #   # Captures the camera ID and the complex protocol string
 #   regex: '^相机(?P<cam_id>\d+)发送二次曝光定位指令：(?P<protocol>TWG,CMD_\d+,.*)$'
 #   event_type: CAMERA_DOUBLE_EXPOSURE_CMD
-#   target_id: warning
+#   level: warning
 #   event_details: 'Camera {cam_id} triggering double exposure positioning. Protocol: {protocol}'
 
 # 11. THE SKIP: Handling empty cavities to save cycle time
-- name: cavity_skip_empty
-  # Captures the slot number (1-12)
-  regex: '^当前穴位:(?P<slot>\d+)产品码为NA,跳过定位$'
-  event_type: CAVITY_SKIP_EMPTY
-  target_id: warning
-  event_details: 'Slot {slot} is empty or has no barcode (NA). Skipping vision alignment.'
+# - name: cavity_skip_empty
+#   # Captures the slot number (1-12)
+#   regex: '^当前穴位:(?P<slot>\d+)产品码为NA,跳过定位$'
+#   event_type: CAVITY_SKIP_EMPTY
+#   level: warning
+#   event_details: 'Slot {slot} is empty or has no barcode (NA). Skipping vision alignment.'
 
 # - name: marking_result_status
 #   regex: '^Marking failed:(?P<head1>False|True),(?P<head2>False|True)$'
 #   event_type: MARKING_RESULT_STATUS
-#   target_id: warning
+#   level: warning
 #   event_details: 'Workstation marking result - Head 1 Fail: {head1}, Head 2 Fail: {head2}'
 
 - name: parameter_change_log
   regex: '^Change info:(?P<param>[^;]+);Form:(?P<from_val>.*?);To:(?P<to_val>.*)$'
   event_type: PARAMETER_CHANGE
-  target_id: warning
+  level: warning
   value_mapping:
     param:
       "扫治具码": "scan_fixture_code"
@@ -260,14 +280,14 @@
 - name: process_pause
   regex: '^Process Pause[.]{1,3}$'
   event_type: PROCESS_PAUSE
-  target_id: warning
+  level: warning
   event_details: 'System Status: Production has been paused.'
 
 # 72. SAFETY DOOR: The physical safety enclosure has been opened
 - name: safety_door_open
   regex: '^安全门打开[:：]\s*$'
   event_type: SAFETY_DOOR_OPEN
-  target_id: warning
+  level: warning
   event_details: 'Safety Alert: The machine enclosure door was opened. Motion inhibited.'
 
 # ------------------------ Process Logic ------------------------
@@ -316,10 +336,14 @@
   "regex": "^相机(?P<cam_id>\\d+)发送二次曝光定位指令：(?P<protocol>TWG,CMD_\\d+,.*)$"
   "event_type": "CAMERA_DOUBLE_EXPOSURE_CMD"
   "target_id": "rbw_station"
+  "level": "warning"
+  "event_details": 'Camera {cam_id} triggering double exposure positioning. Protocol: {protocol}'
 - "name": "Cavity Skip Empty"
   "regex": "^当前穴位:(?P<slot>\\d+)产品码为NA,跳过定位$"
   "event_type": "CAVITY_SKIP_EMPTY"
   "target_id": "rbw_station"
+  level: warning
+  event_details: 'Slot {slot} is empty or has no barcode (NA). Skipping vision alignment.'
 - "name": "Camera Double Exposure Rx"
   "regex": "^接收相机(?P<cam_id>\\d+)二次曝光数据:(?P<protocol>.*)$"
   "event_type": "CAMERA_DOUBLE_EXPOSURE_RX"
@@ -348,6 +372,8 @@
   regex: '^Marking failed:(?P<head1>False|True),(?P<head2>False|True)$'
   event_type: MARKING_RESULT_STATUS
   target_id: rbw_station
+  level: warning
+  event_details: 'Workstation marking result - Head 1 Fail: {head1}, Head 2 Fail: {head2}'
 - "name": "Camera Reinspection Cmd"
   "regex": "^相机(?P<cam_id>\\d+)发送复检指令：(?P<protocol>TWI,CMD_\\d+,.*)$"
   "event_type": "CAMERA_REINSPECTION_CMD"
@@ -392,6 +418,8 @@
   "regex": "^当前穴位:(?P<slot>\\d+)UOP判定失败,跳过定位$"
   "event_type": "CAVITY_SKIP_UOP_FAIL"
   "target_id": "rbw_station"
+  level: warning
+  event_details: 'Slot {slot} is empty or has no barcode (NA). Skipping vision alignment.'
 - "name": "Rework Status Check"
   "regex": "^First station not rework$"
   "event_type": "REWORK_STATUS_CHECK"

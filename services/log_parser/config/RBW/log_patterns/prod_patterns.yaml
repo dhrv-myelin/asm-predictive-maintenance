@@ -5,70 +5,70 @@
 # ------------------------ System ------------------------
 
 # 2. THE COMMAND: Move Z-axis to production height
-- name: z_axis_prod_cmd
-  regex: '^UP Production:(?P<z_axis_target_height>-?\d+\.?\d*)$'
-  event_type: Z_AXIS_PROD_CMD
-  target_id: system
-  event_details: 'Commanded Z-axis to production height: {target_height}mm'
-  state_resolver:
-    target: "rbw_station"
+# - name: z_axis_prod_cmd
+#   regex: '^UP Production:(?P<z_axis_target_height>-?\d+\.?\d*)$'
+#   event_type: Z_AXIS_PROD_CMD
+#   target_id: system
+#   event_details: 'Commanded Z-axis to production height: {target_height}mm'
+#   state_resolver:
+#     target: "rbw_station"
 
 # 3. THE FEEDBACK: Confirming the physical position
 # Note: This uses the Chinese full-width colon '：' found in your logs
-- name: z_axis_feedback
-  regex: '^Welding Z-axis position:\s*read pos：(?P<z_axis_position_actual>-?\d+\.?\d*)\s*send pos：(?P<z_axis_position_target>-?\d+\.?\d*)$'
-  event_type: Z_AXIS_FEEDBACK
-  target_id: system
-  event_details: 'Z-Axis Position - Target: {target}, Actual: {actual}'
-  state_resolver:
-    target: "rbw_station"
+# - name: z_axis_feedback
+#   regex: '^Welding Z-axis position:\s*read pos：(?P<z_axis_position_actual>-?\d+\.?\d*)\s*send pos：(?P<z_axis_position_target>-?\d+\.?\d*)$'
+#   event_type: Z_AXIS_FEEDBACK
+#   target_id: system
+#   event_details: 'Z-Axis Position - Target: {target}, Actual: {actual}'
+#   state_resolver:
+#     target: "rbw_station"
 
 # 6. THE TRAVEL: Commanding the gantry to travel to a specific workstation
-- name: gantry_move_cmd
-  # This regex captures the X, Z, Mirror1, and Mirror2 coordinates
-  regex: '^Move Pos:(?P<gantry_move_x>-?\d+\.?\d*),(?P<gantry_move_z>-?\d+\.?\d*),(?P<gantry_move_m1>-?\d+\.?\d*),(?P<gantry_move_m2>-?\d+\.?\d*)$'
-  event_type: GANTRY_MOVE_CMD
-  target_id: system
-  event_details: 'Gantry commanded to move. X:{x}, Z:{z}, M1:{m1}, M2:{m2}'
-  state_resolver:
-    target: "rbw_station"
+# - name: gantry_move_cmd
+#   # This regex captures the X, Z, Mirror1, and Mirror2 coordinates
+#   regex: '^Move Pos:(?P<gantry_move_x>-?\d+\.?\d*),(?P<gantry_move_z>-?\d+\.?\d*),(?P<gantry_move_m1>-?\d+\.?\d*),(?P<gantry_move_m2>-?\d+\.?\d*)$'
+#   event_type: GANTRY_MOVE_CMD
+#   target_id: system
+#   event_details: 'Gantry commanded to move. X:{x}, Z:{z}, M1:{m1}, M2:{m2}'
+#   state_resolver:
+#     target: "rbw_station"
 
-# 7. THE VERIFICATION: Confirming the X-axis reached its destination
-- name: x_axis_feedback
-  regex: '^Welding X-axis position:\s*read pos：(?P<x_axis_position_actual>-?\d+\.?\d*)\s*send pos：(?P<x_axis_position_target>-?\d+\.?\d*)$'
-  event_type: X_AXIS_FEEDBACK
-  target_id: system
-  event_details: 'X-Axis Position Verification - Target: {target}, Actual: {actual}'
-  state_resolver:
-    target: "rbw_station"
+# # 7. THE VERIFICATION: Confirming the X-axis reached its destination
+# - name: x_axis_feedback
+#   regex: '^Welding X-axis position:\s*read pos：(?P<x_axis_position_actual>-?\d+\.?\d*)\s*send pos：(?P<x_axis_position_target>-?\d+\.?\d*)$'
+#   event_type: X_AXIS_FEEDBACK
+#   target_id: system
+#   event_details: 'X-Axis Position Verification - Target: {target}, Actual: {actual}'
+#   state_resolver:
+#     target: "rbw_station"
 
-# 8. THE PRECISION: Confirming the first laser mirror is calibrated
-- name: mirror_1_feedback
-  regex: '^Mirror 1 axis position:\s*read pos：(?P<m1_position_actual>-?\d+\.?\d*)\s*send pos：(?P<m1_position_target>-?\d+\.?\d*)$'
-  event_type: MIRROR_1_FEEDBACK
-  target_id: system
-  event_details: 'Laser Mirror 1 - Target: {target}, Actual: {actual}'
-  state_resolver:
-    target: "rbw_station"
+# # 8. THE PRECISION: Confirming the first laser mirror is calibrated
+# - name: mirror_1_feedback
+#   regex: '^Mirror 1 axis position:\s*read pos：(?P<m1_position_actual>-?\d+\.?\d*)\s*send pos：(?P<m1_position_target>-?\d+\.?\d*)$'
+#   event_type: MIRROR_1_FEEDBACK
+#   target_id: system
+#   event_details: 'Laser Mirror 1 - Target: {target}, Actual: {actual}'
+#   state_resolver:
+#     target: "rbw_station"
 
-# 9. THE FINAL CHECK: Confirming the second laser mirror is in position
-- name: mirror_2_feedback
-  regex: '^Mirror 2-axis position:\s*read pos：(?P<m2_position_actual>-?\d+\.?\d*)\s*send pos：(?P<m2_position_target>-?\d+\.?\d*)$'
-  event_type: MIRROR_2_FEEDBACK
-  target_id: system
-  event_details: 'Laser Mirror 2 - Target: {target}, Actual: {actual}'
-  state_resolver:
-    target: "rbw_station"
+# # 9. THE FINAL CHECK: Confirming the second laser mirror is in position
+# - name: mirror_2_feedback
+#   regex: '^Mirror 2-axis position:\s*read pos：(?P<m2_position_actual>-?\d+\.?\d*)\s*send pos：(?P<m2_position_target>-?\d+\.?\d*)$'
+#   event_type: MIRROR_2_FEEDBACK
+#   target_id: system
+#   event_details: 'Laser Mirror 2 - Target: {target}, Actual: {actual}'
+#   state_resolver:
+#     target: "rbw_station"
 
-# 17. THE AIM: Commanding the internal laser mirrors to their start coordinates
-- name: galvo_move_cmd
-  # Note the Chinese full-width colons '：' used after galvanometer names
-  regex: '^Move Pos:galvanometer1：(?P<galvo_1_position>-?\d+\.?\d*),galvanometer2：(?P<galvo_2_position>-?\d+\.?\d*)$'
-  event_type: GALVO_MOVE_CMD
-  target_id: system
-  event_details: 'Laser mirrors jumping to start position. G1 (X): {g1}, G2 (Y): {g2}'
-  state_resolver:
-    target: "rbw_station"
+# # 17. THE AIM: Commanding the internal laser mirrors to their start coordinates
+# - name: galvo_move_cmd
+#   # Note the Chinese full-width colons '：' used after galvanometer names
+#   regex: '^Move Pos:galvanometer1：(?P<galvo_1_position>-?\d+\.?\d*),galvanometer2：(?P<galvo_2_position>-?\d+\.?\d*)$'
+#   event_type: GALVO_MOVE_CMD
+#   target_id: system
+#   event_details: 'Laser mirrors jumping to start position. G1 (X): {g1}, G2 (Y): {g2}'
+#   state_resolver:
+#     target: "rbw_station"
 
 # ------------------------ Errors ------------------------
 # 43. THE SENSOR SKIP: Skipping a slot because the height measurement failed - pattern 11 and 29 are other skips
@@ -223,13 +223,13 @@
 
 # ------------------------ Warnings ------------------------
 
-# 10. THE VISION TRIGGER: Requesting high-precision alignment data
-- name: camera_double_exposure_cmd
-  # Captures the camera ID and the complex protocol string
-  regex: '^相机(?P<cam_id>\d+)发送二次曝光定位指令：(?P<protocol>TWG,CMD_\d+,.*)$'
-  event_type: CAMERA_DOUBLE_EXPOSURE_CMD
-  target_id: warning
-  event_details: 'Camera {cam_id} triggering double exposure positioning. Protocol: {protocol}'
+# # 10. THE VISION TRIGGER: Requesting high-precision alignment data
+# - name: camera_double_exposure_cmd
+#   # Captures the camera ID and the complex protocol string
+#   regex: '^相机(?P<cam_id>\d+)发送二次曝光定位指令：(?P<protocol>TWG,CMD_\d+,.*)$'
+#   event_type: CAMERA_DOUBLE_EXPOSURE_CMD
+#   target_id: warning
+#   event_details: 'Camera {cam_id} triggering double exposure positioning. Protocol: {protocol}'
 
 # 11. THE SKIP: Handling empty cavities to save cycle time
 - name: cavity_skip_empty
@@ -239,11 +239,11 @@
   target_id: warning
   event_details: 'Slot {slot} is empty or has no barcode (NA). Skipping vision alignment.'
 
-- name: marking_result_status
-  regex: '^Marking failed:(?P<head1>False|True),(?P<head2>False|True)$'
-  event_type: MARKING_RESULT_STATUS
-  target_id: warning
-  event_details: 'Workstation marking result - Head 1 Fail: {head1}, Head 2 Fail: {head2}'
+# - name: marking_result_status
+#   regex: '^Marking failed:(?P<head1>False|True),(?P<head2>False|True)$'
+#   event_type: MARKING_RESULT_STATUS
+#   target_id: warning
+#   event_details: 'Workstation marking result - Head 1 Fail: {head1}, Head 2 Fail: {head2}'
 
 - name: parameter_change_log
   regex: '^Change info:(?P<param>[^;]+);Form:(?P<from_val>.*?);To:(?P<to_val>.*)$'
@@ -269,3 +269,235 @@
   event_type: SAFETY_DOOR_OPEN
   target_id: warning
   event_details: 'Safety Alert: The machine enclosure door was opened. Motion inhibited.'
+
+# ------------------------ Process Logic ------------------------
+- "name": "Product Arrival"
+  "regex": "^Received product in place signal\\.\\.\\.$"
+  "event_type": "PRODUCT_ARRIVAL"
+  "target_id": "rbw_station"
+- "name": "Z Axis Prod Cmd"
+  "regex": "^UP Production:(?P<target_height>-?\\d+\\.?\\d*)$"
+  "event_type": "Z_AXIS_PROD_CMD"
+  "target_id": "rbw_station"
+- "name": "Z Axis Feedback"
+  "regex": "^Welding Z-axis position:\\s*read pos：(?P<actual>-?\\d+\\.?\\d*)\\s*send\
+    \ pos：(?P<target>-?\\d+\\.?\\d*)$"
+  "event_type": "Z_AXIS_FEEDBACK"
+  "target_id": "rbw_station"
+- "name": "Clamp Cylinder"
+  "regex": "^Clamp the cylinder in place\\.\\.\\.$"
+  "event_type": "CLAMP_CYLINDER"
+  "target_id": "rbw_station"
+- "name": "Data Exchange Wait"
+  "regex": "^Waiting for the completion of the previous data exchange task$"
+  "event_type": "DATA_EXCHANGE_WAIT"
+  "target_id": "rbw_station"
+- "name": "Gantry Move Cmd"
+  "regex": "^Move Pos:(?P<x>-?\\d+\\.?\\d*),(?P<z>-?\\d+\\.?\\d*),(?P<m1>-?\\d+\\\
+    .?\\d*),(?P<m2>-?\\d+\\.?\\d*)$"
+  "event_type": "GANTRY_MOVE_CMD"
+  "target_id": "rbw_station"
+- "name": "X Axis Feedback"
+  "regex": "^Welding X-axis position:\\s*read pos：(?P<actual>-?\\d+\\.?\\d*)\\s*send\
+    \ pos：(?P<target>-?\\d+\\.?\\d*)$"
+  "event_type": "X_AXIS_FEEDBACK"
+  "target_id": "rbw_station"
+- "name": "Mirror 1 Feedback"
+  "regex": "^Mirror 1 axis position:\\s*read pos：(?P<actual>-?\\d+\\.?\\d*)\\s*send\
+    \ pos：(?P<target>-?\\d+\\.?\\d*)$"
+  "event_type": "MIRROR_1_FEEDBACK"
+  "target_id": "rbw_station"
+- "name": "Mirror 2 Feedback"
+  "regex": "^Mirror 2-axis position:\\s*read pos：(?P<actual>-?\\d+\\.?\\d*)\\s*send\
+    \ pos：(?P<target>-?\\d+\\.?\\d*)$"
+  "event_type": "MIRROR_2_FEEDBACK"
+  "target_id": "rbw_station"
+- "name": "Camera Double Exposure Cmd"
+  "regex": "^相机(?P<cam_id>\\d+)发送二次曝光定位指令：(?P<protocol>TWG,CMD_\\d+,.*)$"
+  "event_type": "CAMERA_DOUBLE_EXPOSURE_CMD"
+  "target_id": "rbw_station"
+- "name": "Cavity Skip Empty"
+  "regex": "^当前穴位:(?P<slot>\\d+)产品码为NA,跳过定位$"
+  "event_type": "CAVITY_SKIP_EMPTY"
+  "target_id": "rbw_station"
+- "name": "Camera Double Exposure Rx"
+  "regex": "^接收相机(?P<cam_id>\\d+)二次曝光数据:(?P<protocol>.*)$"
+  "event_type": "CAMERA_DOUBLE_EXPOSURE_RX"
+  "target_id": "rbw_station"
+- "name": "Positioning Tasks Done"
+  "regex": "^所有定位任务已完成!$"
+  "event_type": "POSITIONING_TASKS_DONE"
+  "target_id": "rbw_station"
+- "name": "Camera Positioning Cmd"
+  "regex": "^相机(?P<cam_id>\\d+)发送定位指令：(?P<protocol>TWG,CMD_\\d+,.*)$"
+  "event_type": "CAMERA_POSITIONING_CMD"
+  "target_id": "rbw_station"
+- "name": "Camera Positioning Rx"
+  "regex": "^接收相机(?P<cam_id>\\d+)数据:(?P<protocol>TWG,CMD_\\d+,.*)$"
+  "event_type": "CAMERA_POSITIONING_RX"
+  "target_id": "rbw_station"
+- "name": "Marking Start"
+  "regex": "^开始同步标刻\\.\\.\\.$"
+  "event_type": "MARKING_START"
+  "target_id": "rbw_station"
+- name: galvo_move_cmd
+  regex: '^Move Pos:galvanometer1：(?P<galvo_1_position>-?\d+\.?\d*),galvanometer2：(?P<galvo_2_position>-?\d+\.?\d*)$'
+  event_type: GALVO_MOVE_CMD
+  target_id: rbw_station
+- name: marking_result_status
+  regex: '^Marking failed:(?P<head1>False|True),(?P<head2>False|True)$'
+  event_type: MARKING_RESULT_STATUS
+  target_id: rbw_station
+- "name": "Camera Reinspection Cmd"
+  "regex": "^相机(?P<cam_id>\\d+)发送复检指令：(?P<protocol>TWI,CMD_\\d+,.*)$"
+  "event_type": "CAMERA_REINSPECTION_CMD"
+  "target_id": "rbw_station"
+- "name": "Camera Reinspection Rx"
+  "regex": "^接收相机(?P<cam_id>\\d+)数据:(?P<protocol>TWI,CMD_\\d+,.*)$"
+  "event_type": "CAMERA_REINSPECTION_RX"
+  "target_id": "rbw_station"
+- "name": "Reinspection Tasks Done"
+  "regex": "^所有复检任务已完成!$"
+  "event_type": "REINSPECTION_TASKS_DONE"
+  "target_id": "rbw_station"
+- "name": "Camera Image Save Cmd"
+  "regex": "^相机(?P<cam_id>\\d+)发送图片存储指令：(?P<protocol>.*)$"
+  "event_type": "CAMERA_IMAGE_SAVE_CMD"
+  "target_id": "rbw_station"
+- "name": "Camera Image Save Rx"
+  "regex": "^接收相机(?P<cam_id>\\d+)图片存储数据:(?P<file_info>.*)$"
+  "event_type": "CAMERA_IMAGE_SAVE_RX"
+  "target_id": "rbw_station"
+- "name": "Image Tasks Done"
+  "regex": "^所有存图任务已完成!$"
+  "event_type": "IMAGE_TASKS_DONE"
+  "target_id": "rbw_station"
+- "name": "Product Release Cmd"
+  "regex": "^松开产品[!！\\.\\s]*$"
+  "event_type": "PRODUCT_RELEASE_CMD"
+  "target_id": "rbw_station"
+- "name": "Clamp Release Feedback"
+  "regex": "^夹持气缸松开[!！\\.\\s]*$"
+  "event_type": "CLAMP_RELEASE_FEEDBACK"
+  "target_id": "rbw_station"
+- "name": "Processing Complete"
+  "regex": "^加工完成[!！\\.\\s]*$"
+  "event_type": "PROCESSING_COMPLETE"
+  "target_id": "rbw_station"
+- "name": "Marking Success Status"
+  "regex": "^Marking successful:(?P<head1>False|True),(?P<head2>False|True)$"
+  "event_type": "MARKING_SUCCESS_STATUS"
+  "target_id": "rbw_station"
+- "name": "Cavity Skip Uop Fail"
+  "regex": "^当前穴位:(?P<slot>\\d+)UOP判定失败,跳过定位$"
+  "event_type": "CAVITY_SKIP_UOP_FAIL"
+  "target_id": "rbw_station"
+- "name": "Rework Status Check"
+  "regex": "^First station not rework$"
+  "event_type": "REWORK_STATUS_CHECK"
+  "target_id": "rbw_station"
+- "name": "Rework Enabled"
+  "regex": "^重工已开启$"
+  "event_type": "REWORK_ENABLED"
+  "target_id": "rbw_station"
+- "name": "System Stop"
+  "regex": "^Stop[!！]$"
+  "event_type": "SYSTEM_STOP"
+  "target_id": "rbw_station"
+- "name": "System Reset Start"
+  "regex": "^Begin to reset[!！\\.\\s]*$"
+  "event_type": "SYSTEM_RESET"
+  "target_id": "rbw_station"
+- "name": "Material Tray Load Success"
+  "regex": "^Material tray information loaded successfully[:：\\s]*$"
+  "event_type": "MATERIAL_TRAY_LOAD_SUCCESS"
+  "target_id": "rbw_station"
+- "name": "Scanner Connection Success"
+  "regex": "^Scan code gun (?P<gun_id>\\d+) successfully connected[!！]$"
+  "event_type": "SCANNER_CONNECTION_SUCCESS"
+  "target_id": "rbw_station"
+- "name": "Distance Sensor Connect"
+  "regex": "^Dist(?P<sensor_id>\\d+) connect OK[!！]?$"
+  "event_type": "DISTANCE_SENSOR_CONNECT"
+  "target_id": "rbw_station"
+- "name": "Camera Connection Success"
+  "regex": "^Camera (?P<cam_id>\\d+) successfully connected[!！]$"
+  "event_type": "CAMERA_CONNECTION_SUCCESS"
+  "target_id": "rbw_station"
+- "name": "System Reset Ok"
+  "regex": "^Reset OK[!！]$"
+  "event_type": "SYSTEM_RESET_OK"
+  "target_id": "rbw_station"
+- "name": "Operator Wait Prompt"
+  "regex": "^\"?Wait for running\\s*,\\s*please click to start\"?$"
+  "event_type": "OPERATOR_WAIT_PROMPT"
+  "target_id": "rbw_station"
+- "name": "Process Start"
+  "regex": "^Process Start[!！\\.\\s]*$"
+  "event_type": "PROCESS_START"
+  "target_id": "rbw_station"
+- "name": "Mac Mini Connect"
+  "regex": "^Mac mini connection successful[!！]$"
+  "event_type": "MAC_MINI_CONNECT"
+  "target_id": "rbw_station"
+- "name": "Camera Image Save Fail"
+  "regex": "^接收相机(?P<cam_id>\\d+)图片存储数据失败[!！]$"
+  "event_type": "CAMERA_IMAGE_SAVE_FAIL"
+  "target_id": "rbw_station"
+- "name": "Process Stopped Status"
+  "regex": "^The process has stopped[!！]$"
+  "event_type": "PROCESS_STOPPED_STATUS"
+  "target_id": "rbw_station"
+- "name": "Process Continue"
+  "regex": "^Continue[.]{1,3}$"
+  "event_type": "PROCESS_CONTINUE"
+  "target_id": "rbw_station"
+- "name": "Software Close"
+  "regex": "^[*]+\\s*Close software\\s*[*]+$"
+  "event_type": "SOFTWARE_CLOSE"
+  "target_id": "rbw_station"
+- "name": "Software Open"
+  "regex": "^[*]+\\s*Open Software\\s*[*]+(?P<exe_name>.*)$"
+  "event_type": "SOFTWARE_OPEN"
+  "target_id": "rbw_station"
+- "name": "Software Version"
+  "regex": "^Version:(?P<version_id>.*)$"
+  "event_type": "SOFTWARE_VERSION"
+  "target_id": "rbw_station"
+- "name": "Laser Init Success"
+  "regex": "^Laser init success[!！]$"
+  "event_type": "LASER_INIT_SUCCESS"
+  "target_id": "rbw_station"
+- "name": "Motion Card Init Success"
+  "regex": "^Motion card init OK[!！]$"
+  "event_type": "MOTION_CARD_INIT_SUCCESS"
+  "target_id": "rbw_station"
+- "name": "Plc Connect Ok"
+  "regex": "^PLC connect ok!$"
+  "event_type": "PLC_CONNECT_OK"
+  "target_id": "rbw_station"
+- "name": "Camera Group Data Rx"
+  "regex": "^\"?接收相机(?P<cam_id>\\d+)数据:Group,(?P<group_id>\\d+),(?P<path_result>.*)\"\
+    ?$"
+  "event_type": "CAMERA_GROUP_DATA_RX"
+  "target_id": "rbw_station"
+- "name": "Data Format Error"
+  "regex": "^Data format error!$"
+  "event_type": "DATA_FORMAT_ERROR"
+  "target_id": "rbw_station"
+- "name": "Scanner Reconnect"
+  "regex": "^Scan code gun (?P<gun_id>\\d+) successfully reconnected[!！]$"
+  "event_type": "SCANNER_RECONNECT"
+  "target_id": "rbw_station"
+- "name": "Please Reset Prompt"
+  "regex": "^Please Reset[!！]$"
+  "event_type": "PLEASE_RESET_PROMPT"
+  "target_id": "rbw_station"
+- "name": "Tray Yield Alarm"
+  "regex": "^当前载具:(?P<tray_id>\\w+)复检失败超过(?P<fail_count>\\d+)pcs$"
+  "event_type": "TRAY_YIELD_ALARM"
+  "target_id": "rbw_station"
+- "name": "Data Type Exception"
+  "regex": "^数据类型转换出现异常[!！]$"
+  "event_type": "DATA_TYPE_EXCEPTION"
+  "target_id": "rbw_station"

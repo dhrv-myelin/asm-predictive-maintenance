@@ -5,13 +5,230 @@
   # 1. RBW STATION
   # ==========================================
   "rbw_station":
-    initial_state: "IDLE"
-    states:
-      IDLE:
-        transitions:
-          - event: "PALLET_ARRIVAL"
-            next_state: "ACTIVE"
-            action: "process_pallet"
+    "initial_state": "IDLE"
+    "states":
+      "IDLE":
+        "transitions":
+        - "event": "PRODUCT_ARRIVAL"
+          "next_state": "PRODUCT_ARRIVED"
+          "metrics":
+          - "name": "upstream_waiting_time"
+            "type": "duration_seconds"
+            "export": true
+          transition_stage: "arrival"
+      "PRODUCT_ARRIVED":
+        "transitions":
+        - "event": "Z_AXIS_PROD_CMD"
+          "next_state": "Z_AXIS_POSITIONING"
+          "metrics":
+          - "name": "z_axis_positioning_wait"
+            "type": "duration_seconds"
+            "export": true
+      "Z_AXIS_POSITIONING":
+        "transitions":
+        - "event": "Z_AXIS_FEEDBACK"
+          "next_state": "CLAMPING"
+          "metrics":
+          - "name": "z_axis_positioning_time"
+            "type": "duration_seconds"
+            "export": true
+      "CLAMPING":
+        "transitions":
+        - "event": "CLAMP_CYLINDER"
+          "next_state": "POST_CLAMPING"
+          "metrics":
+          - "name": "clamping_time"
+            "type": "duration_seconds"
+            "export": true
+      "POST_CLAMPING":
+        "transitions":
+        - "event": "DATA_EXCHANGE_WAIT"
+          "next_state": "DATA_HANDSHAKE"
+          "metrics":
+          - "name": "pre_data_handshake_wait"
+            "type": "duration_seconds"
+            "export": true
+      "DATA_HANDSHAKE":
+        "transitions":
+        - "event": "GANTRY_MOVE_CMD"
+          "next_state": "GANTRY_POSITIONING"
+          "metrics":
+          - "name": "data_handshake_time"
+            "type": "duration_seconds"
+            "export": true
+      "GANTRY_POSITIONING":
+        "transitions":
+        - "event": "MIRROR_2_FEEDBACK"
+          "next_state": "POST_GANTRY_POSITIONING"
+          "metrics":
+          - "name": "gantry_positioning_time"
+            "type": "duration_seconds"
+            "export": true
+      "POST_GANTRY_POSITIONING":
+        "transitions":
+        - "event": "CAMERA_DOUBLE_EXPOSURE_CMD"
+          "next_state": "DOUBLE_EXPOSURE_POSITIONING"
+          "metrics":
+          - "name": "pre_double_exposure_wait_time"
+            "type": "duration_seconds"
+            "export": true
+        - "event": "POSITIONING_TASKS_DONE"
+          "next_state": "PRE_MARKING"
+          "metrics":
+          - "name": "gantry_positioning_to_pre_marking_wait"
+            "type": "duration_seconds"
+            "export": true
+      "DOUBLE_EXPOSURE_POSITIONING":
+        "transitions":
+        - "event": "POSITIONING_TASKS_DONE"
+          "next_state": "PRE_CAMERA_POSITIONING"
+          "metrics":
+          - "name": "double_exposure_positioning_time"
+            "type": "duration_seconds"
+            "export": true
+      "PRE_CAMERA_POSITIONING":
+        "transitions":
+        - "event": "CAMERA_POSITIONING_CMD"
+          "next_state": "CAMERA_POSITIONING"
+          "metrics":
+          - "name": "pre_camera_positioning_wait"
+            "type": "duration_seconds"
+            "export": true
+      "CAMERA_POSITIONING":
+        "transitions":
+        - "event": "POSITIONING_TASKS_DONE"
+          "next_state": "PRE_MARKING"
+          "metrics":
+          - "name": "camera_positioning_time"
+            "type": "duration_seconds"
+            "export": true
+      "PRE_MARKING":
+        "transitions":
+        - "event": "MARKING_START"
+          "next_state": "MARKING_INIT"
+          "metrics":
+          - "name": "pre_marking_wait"
+            "type": "duration_seconds"
+            "export": true
+      "MARKING_INIT":
+        "transitions":
+        - "event": "GALVO_MOVE_CMD"
+          "next_state": "GALVO_POSITIONING"
+          "metrics":
+          - "name": "marking_init_time"
+            "type": "duration_seconds"
+            "export": true
+      "GALVO_POSITIONING":
+        "transitions":
+        - "event": "MIRROR_2_FEEDBACK"
+          "next_state": "MARKING_RESULT_WAIT"
+          "metrics":
+          - "name": "marking_galvo_positioning_time"
+            "type": "duration_seconds"
+            "export": true
+      "MARKING_RESULT_WAIT":
+        "transitions":
+        - "event": "MARKING_SUCCESS_STATUS"
+          "next_state": "REMARKING_EVAL"
+          "metrics":
+          - "name": "marking_result_wait"
+            "type": "duration_seconds"
+            "export": true
+        - "event": "MARKING_RESULT_STATUS"
+          "next_state": "REMARKING_EVAL"
+          "metrics":
+          - "name": "marking_result_wait"
+            "type": "duration_seconds"
+            "export": true
+      "REMARKING_EVAL":
+        "transitions":
+        - "event": "GALVO_MOVE_CMD"
+          "next_state": "GALVO_POSITIONING"
+          "metrics":
+          - "name": "marking_repeat_wait"
+            "type": "duration_seconds"
+            "export": true
+        - "event": "CAMERA_REINSPECTION_CMD"
+          "next_state": "REINSPECTION"
+          "metrics":
+          - "name": "marking_to_reinspection_wait"
+            "type": "duration_seconds"
+            "export": true
+        - "event": "REINSPECTION_TASKS_DONE"
+          "next_state": "PRE_IMAGE_SAVE"
+          "metrics":
+          - "name": "marking_to_image_save_wait"
+            "type": "duration_seconds"
+            "export": true
+      "REINSPECTION":
+        "transitions":
+        - "event": "REINSPECTION_TASKS_DONE"
+          "next_state": "PRE_IMAGE_SAVE"
+          "metrics":
+          - "name": "reinspection_time"
+            "type": "duration_seconds"
+            "export": true
+      "PRE_IMAGE_SAVE":
+        "transitions":
+        - "event": "IMAGE_TASKS_DONE"
+          "next_state": "POST_IMAGE_TASKS"
+          "metrics":
+          - "name": "skip_image_save_delay"
+            "type": "duration_seconds"
+            "export": true
+        - "event": "CAMERA_IMAGE_SAVE_CMD"
+          "next_state": "IMAGE_SAVING"
+          "metrics":
+          - "name": "pre_image_save_wait"
+            "type": "duration_seconds"
+            "export": true
+      "IMAGE_SAVING":
+        "transitions":
+        - "event": "IMAGE_TASKS_DONE"
+          "next_state": "POST_IMAGE_TASKS"
+          "metrics":
+          - "name": "camera_image_save_time"
+            "type": "duration_seconds"
+            "export": true
+      "POST_IMAGE_TASKS":
+        "transitions":
+        - "event": "GANTRY_MOVE_CMD"
+          "next_state": "GANTRY_POSITIONING"
+          "metrics":
+          - "name": "between_cluster_gantry_positioning_wait"
+            "type": "duration_seconds"
+            "export": true
+        - "event": "PRODUCT_RELEASE_CMD"
+          "next_state": "PRODUCT_UNCLAMPING"
+          "metrics":
+          - "name": "product_release_wait"
+            "type": "duration_seconds"
+            "export": true
+      "PRODUCT_UNCLAMPING":
+        "transitions":
+        - "event": "CLAMP_RELEASE_FEEDBACK"
+          "next_state": "Z_AXIS_HOMING"
+          "metrics":
+          - "name": "unclamping_time"
+            "type": "duration_seconds"
+            "export": true
+      "Z_AXIS_HOMING":
+        "transitions":
+        - "event": "Z_AXIS_FEEDBACK"
+          "next_state": "POST_HOMING"
+          "metrics":
+          - "name": "z_axis_homing_time"
+            "type": "duration_seconds"
+            "export": true
+      "POST_HOMING":
+        "transitions":
+        - "event": "PROCESSING_COMPLETE"
+          "next_state": "IDLE"
+          "metrics":
+          - "name": "post_homing_wait"
+            "type": "duration_seconds"
+            "export": true
+
   # ==========================================
   # 2. SINK
   # ==========================================

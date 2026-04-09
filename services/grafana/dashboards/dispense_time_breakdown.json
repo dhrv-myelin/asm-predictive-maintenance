@@ -1,0 +1,239 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "bfgv77w1umjuoa"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 19,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "ANOMALY": {
+                        "color": "red",
+                        "index": 0,
+                        "text": "ANOMALY"
+                      },
+                      "Normal": {
+                        "color": "green",
+                        "index": 1,
+                        "text": "Normal"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Metric"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 280
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value (s)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UCL"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LCL"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH selected_cycle AS (\n  SELECT cycle_count\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name = 'cavity_2_dispensing_time'\n  ORDER BY ABS(EXTRACT(EPOCH FROM (\n    timestamp - '${anomaly_time}'::timestamptz\n  )))\n  LIMIT 1\n),\n\nmetric_values AS (\n  SELECT\n    metric_name,\n    MAX(value) AS value\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n    AND cycle_count = (SELECT cycle_count FROM selected_cycle)\n    AND metric_name IN (\n      'cavity_1_dispensing_time',\n      'cavity_2_dispensing_time',\n      'cavity_3_dispensing_time',\n      'cavity_4_dispensing_time',\n      'cavity_5_dispensing_time',\n      'cavity_6_dispensing_time',\n      'pre_cavity_2_dispensing_delay',\n      'pre_cavity_3_dispensing_delay',\n      'pre_cavity_4_dispensing_delay',\n      'pre_cavity_5_dispensing_delay',\n      'pre_cavity_6_dispensing_delay'\n    )\n  GROUP BY metric_name\n),\n\nbaselines AS (\n  SELECT\n    metric_name,\n    AVG(value)         AS mean,\n    STDDEV_SAMP(value) AS std\n  FROM process_metrics\n  WHERE station_name = 'ced_station'\n    AND metric_name IN (\n      'cavity_1_dispensing_time',\n      'cavity_2_dispensing_time',\n      'cavity_3_dispensing_time',\n      'cavity_4_dispensing_time',\n      'cavity_5_dispensing_time',\n      'cavity_6_dispensing_time',\n      'pre_cavity_2_dispensing_delay',\n      'pre_cavity_3_dispensing_delay',\n      'pre_cavity_4_dispensing_delay',\n      'pre_cavity_5_dispensing_delay',\n      'pre_cavity_6_dispensing_delay'\n    )\n  GROUP BY metric_name\n)\n\nSELECT\n  mv.metric_name                          AS \"Metric\",\n  ROUND(mv.value::numeric, 3)             AS \"Value (s)\",\n  ROUND(b.mean::numeric, 3)               AS \"Mean\",\n  ROUND((b.mean + 3 * b.std)::numeric, 3) AS \"UCL\",\n  ROUND((b.mean - 3 * b.std)::numeric, 3) AS \"LCL\",\n  CASE\n    WHEN mv.value > (b.mean + 3 * b.std)\n      OR mv.value < (b.mean - 3 * b.std)\n    THEN 'ANOMALY'\n    ELSE 'Normal'\n  END AS \"Status\"\nFROM metric_values mv\nJOIN baselines b USING (metric_name)\nORDER BY mv.metric_name;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Dispense Time Breakdown — ${anomaly_time}",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "2026-03-05T17:22:05.479Z",
+          "value": "2026-03-05T17:22:05.479Z"
+        },
+        "description": "ISO timestamp of the anomaly to inspect (passed from main dashboard)",
+        "label": "Anomaly Time",
+        "name": "anomaly_time",
+        "options": [
+          {
+            "selected": true,
+            "text": "2026-03-05T17:22:05.479Z",
+            "value": "2026-03-05T17:22:05.479Z"
+          }
+        ],
+        "query": "2026-03-05T17:22:05.479Z",
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Dispense Time Breakdown",
+  "uid": "bfi5xt44ok5c0c",
+  "version": 4,
+  "weekStart": ""
+}

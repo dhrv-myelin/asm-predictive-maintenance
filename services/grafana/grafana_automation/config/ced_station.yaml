@@ -1,0 +1,284 @@
+dashboard:
+  title: "Ced Station — Process Metrics"
+  uid: "ced-station-metrics"
+  id: 1
+  version: 1
+  tags:
+    - "process-metrics"
+    - "ced_station"
+  refresh: "1d"
+  timezone: "browser"
+  schemaVersion: 40
+
+datasource:
+  type: "postgres"
+  uid: "${datasource}"
+  label: "Data Source"
+  current_text: "PostgreSQL"
+  current_value: "bffvbhhjc42yoe"
+
+station_name: "ced_station"
+
+time:
+  from: "2026-02-01T18:30:00.000Z"
+  to: "2026-03-10T18:29:59.000Z"
+
+panels:
+  - metric_name: barcode_scanning_time
+    title: "Barcode Scanning Time"
+    type: spc_timeseries
+    unit: s
+    id: 1
+
+  - metric_name: cavity_1_dispensing_time
+    title: "Cavity 1 Dispensing Time"
+    type: spc_timeseries
+    unit: s
+    id: 2
+
+  - metric_name: cavity_2_dispensing_time
+    title: "Cavity 2 Dispensing Time"
+    type: spc_timeseries
+    unit: s
+    id: 3
+
+  - metric_name: cavity_3_dispensing_time
+    title: "Cavity 3 Dispensing Time"
+    type: spc_timeseries
+    unit: s
+    id: 4
+
+  - metric_name: cavity_4_dispensing_time
+    title: "Cavity 4 Dispensing Time"
+    type: spc_timeseries
+    unit: s
+    id: 5
+
+  - metric_name: cavity_5_dispensing_time
+    title: "Cavity 5 Dispensing Time"
+    type: spc_timeseries
+    unit: s
+    id: 6
+
+  - metric_name: cavity_6_dispensing_time
+    title: "Cavity 6 Dispensing Time"
+    type: spc_timeseries
+    unit: s
+    id: 7
+
+  - metric_name: downstream_waiting_time
+    title: "Downstream Waiting Time"
+    type: spc_timeseries
+    unit: s
+    id: 8
+
+  - metric_name: entry_stopper_eval_delay
+    title: "Entry Stopper Eval Delay"
+    type: spc_timeseries
+    unit: s
+    id: 9
+
+  - metric_name: entry_stopper_lowering_time
+    title: "Entry Stopper Lowering Time"
+    type: spc_timeseries
+    unit: s
+    id: 10
+
+  - metric_name: entry_stopper_raising_time
+    title: "Entry Stopper Raising Time"
+    type: spc_timeseries
+    unit: s
+    id: 11
+
+  - metric_name: exit_stopper_lowering_time
+    title: "Exit Stopper Lowering Time"
+    type: spc_timeseries
+    unit: s
+    id: 12
+
+  - metric_name: exit_stopper_raising_time
+    title: "Exit Stopper Raising Time"
+    type: spc_timeseries
+    unit: s
+    id: 13
+
+  - metric_name: inspection_time
+    title: "Inspection Time"
+    type: spc_timeseries
+    unit: s
+    id: 14
+
+  - metric_name: movein_to_entry_stopper_up_delay
+    title: "Movein To Entry Stopper Up Delay"
+    type: spc_timeseries
+    unit: s
+    id: 15
+
+  - metric_name: pallet_clamping_time
+    title: "Pallet Clamping Time"
+    type: spc_timeseries
+    unit: s
+    id: 16
+
+  - metric_name: pallet_lifting_time
+    title: "Pallet Lifting Time"
+    type: spc_timeseries
+    unit: s
+    id: 17
+
+  - metric_name: pallet_lowering_time
+    title: "Pallet Lowering Time"
+    type: spc_timeseries
+    unit: s
+    id: 18
+
+  - metric_name: pallet_movein_time
+    title: "Pallet Movein Time"
+    type: spc_timeseries
+    unit: s
+    id: 19
+
+  - metric_name: pallet_moveout_time
+    title: "Pallet Moveout Time"
+    type: spc_timeseries
+    unit: s
+    id: 20
+
+  - metric_name: pallet_unclamping_time
+    title: "Pallet Unclamping Time"
+    type: spc_timeseries
+    unit: s
+    id: 21
+
+  - metric_name: pdca_conn_time
+    title: "PDCA Conn Time"
+    type: spc_timeseries
+    unit: s
+    id: 22
+
+  - metric_name: pdca_upload_time
+    title: "PDCA Upload Time"
+    type: spc_timeseries
+    unit: s
+    id: 23
+
+  - metric_name: post_pallet_lifting_delay
+    title: "Post Pallet Lifting Delay"
+    type: spc_timeseries
+    unit: s
+    id: 24
+
+  - metric_name: pre_cavity_2_dispensing_delay
+    title: "Pre Cavity 2 Dispensing Delay"
+    type: spc_timeseries
+    unit: s
+    id: 25
+
+  - metric_name: pre_cavity_3_dispensing_delay
+    title: "Pre Cavity 3 Dispensing Delay"
+    type: spc_timeseries
+    unit: s
+    id: 26
+
+  - metric_name: pre_cavity_4_dispensing_delay
+    title: "Pre Cavity 4 Dispensing Delay"
+    type: spc_timeseries
+    unit: s
+    id: 27
+
+  - metric_name: pre_cavity_5_dispensing_delay
+    title: "Pre Cavity 5 Dispensing Delay"
+    type: spc_timeseries
+    unit: s
+    id: 28
+
+  - metric_name: pre_cavity_6_dispensing_delay
+    title: "Pre Cavity 6 Dispensing Delay"
+    type: spc_timeseries
+    unit: s
+    id: 29
+
+  - metric_name: pre_clamping_delay
+    title: "Pre Clamping Delay"
+    type: spc_timeseries
+    unit: s
+    id: 30
+
+  - metric_name: pre_dispensing_delay
+    title: "Pre Dispensing Delay"
+    type: spc_timeseries
+    unit: s
+    id: 31
+
+  - metric_name: pre_inspection_delay
+    title: "Pre Inspection Delay"
+    type: spc_timeseries
+    unit: s
+    id: 32
+
+  - metric_name: pre_pallet_lifting_delay
+    title: "Pre Pallet Lifting Delay"
+    type: spc_timeseries
+    unit: s
+    id: 33
+
+  - metric_name: pre_pallet_lowering_delay
+    title: "Pre Pallet Lowering Delay"
+    type: spc_timeseries
+    unit: s
+    id: 34
+
+  - metric_name: pre_sfc_query_delay
+    title: "Pre SFC Query Delay"
+    type: spc_timeseries
+    unit: s
+    id: 35
+
+  - metric_name: sfc_conn_time
+    title: "SFC Conn Time"
+    type: spc_timeseries
+    unit: s
+    id: 36
+
+  - metric_name: sfc_query_processing_time
+    title: "SFC Query Processing Time"
+    type: spc_timeseries
+    unit: s
+    id: 37
+
+  - metric_name: upstream_waiting_time
+    title: "Upstream Waiting Time"
+    type: spc_timeseries
+    unit: s
+    id: 38
+
+layout:
+  panel_width: 12
+  panel_height: 8
+  columns: 24
+
+features:
+  rolling_window:
+    enabled: true
+    datasource_type: "grafana-postgresql-datasource"
+    options:
+      - "1 minute"
+      - "5 minutes"
+      - "10 minutes"
+      - "15 minutes"
+      - "30 minutes"
+      - "1 hour"
+    default: "10 minutes"
+
+  annotations:
+    enabled: false
+    rules:
+      - name: "Rule 1 - Beyond 3σ"
+        color: "red"
+        query: "nelson_rule_1"
+      - name: "Rule 2 - Run of 9"
+        color: "orange"
+        query: "nelson_rule_2"
+      - name: "Rule 3 - 6 Trending"
+        color: "yellow"
+        query: "nelson_rule_3"

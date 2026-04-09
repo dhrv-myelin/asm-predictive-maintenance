@@ -18,13 +18,22 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 4,
   "links": [],
   "panels": [
     {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Maint Nozzle Cleaning Time",
+      "pluginVersion": "11.4.0",
       "datasource": {
         "type": "postgres",
         "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
       },
       "fieldConfig": {
         "defaults": {
@@ -108,7 +117,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "UCL (+3σ)"
+              "options": "UCL (+3\u03c3)"
             },
             "properties": [
               {
@@ -134,7 +143,7 @@
               },
               {
                 "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
+                "value": "LCL (-3\u03c3)"
               },
               {
                 "id": "custom.fillOpacity",
@@ -145,7 +154,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "LCL (-3σ)"
+              "options": "LCL (-3\u03c3)"
             },
             "properties": [
               {
@@ -264,7 +273,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
+                "value": "Rolling Upper Bound (+3\u03c3)"
               },
               {
                 "id": "custom.showPoints",
@@ -297,7 +306,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
+                "value": "Rolling Lower Bound (-3\u03c3)"
               }
             ]
           },
@@ -328,13 +337,6 @@
           }
         ]
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
-      "id": 1,
       "options": {
         "legend": {
           "calcs": [],
@@ -347,7 +349,6 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -357,7 +358,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_nozzle_cleaning_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_nozzle_cleaning_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_nozzle_cleaning_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_nozzle_cleaning_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3\u03c3)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3\u03c3)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -406,14 +407,22 @@
             "limit": 50
           }
         }
-      ],
-      "title": "Maint Nozzle Cleaning Time",
-      "type": "timeseries"
+      ]
     },
     {
+      "id": 30,
+      "type": "timeseries",
+      "title": "Maint Between Nozzle Clean Delay",
+      "pluginVersion": "11.4.0",
       "datasource": {
         "type": "postgres",
         "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
       },
       "fieldConfig": {
         "defaults": {
@@ -497,7 +506,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "UCL (+3σ)"
+              "options": "UCL (+3\u03c3)"
             },
             "properties": [
               {
@@ -523,7 +532,7 @@
               },
               {
                 "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
+                "value": "LCL (-3\u03c3)"
               },
               {
                 "id": "custom.fillOpacity",
@@ -534,7 +543,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "LCL (-3σ)"
+              "options": "LCL (-3\u03c3)"
             },
             "properties": [
               {
@@ -653,7 +662,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
+                "value": "Rolling Upper Bound (+3\u03c3)"
               }
             ]
           },
@@ -682,7 +691,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
+                "value": "Rolling Lower Bound (-3\u03c3)"
               }
             ]
           },
@@ -713,13 +722,6 @@
           }
         ]
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "id": 30,
       "options": {
         "legend": {
           "calcs": [],
@@ -732,7 +734,6 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -742,7 +743,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_between_nozzle_clean_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_between_nozzle_clean_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_between_nozzle_clean_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_between_nozzle_clean_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3\u03c3)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3\u03c3)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -791,14 +792,22 @@
             "limit": 50
           }
         }
-      ],
-      "title": "Maint Between Nozzle Clean Delay",
-      "type": "timeseries"
+      ]
     },
     {
+      "id": 31,
+      "type": "timeseries",
+      "title": "Maint Post Nozzle Clean Delay",
+      "pluginVersion": "11.4.0",
       "datasource": {
         "type": "postgres",
         "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -882,7 +891,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "UCL (+3σ)"
+              "options": "UCL (+3\u03c3)"
             },
             "properties": [
               {
@@ -908,7 +917,7 @@
               },
               {
                 "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
+                "value": "LCL (-3\u03c3)"
               },
               {
                 "id": "custom.fillOpacity",
@@ -919,7 +928,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "LCL (-3σ)"
+              "options": "LCL (-3\u03c3)"
             },
             "properties": [
               {
@@ -1038,7 +1047,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
+                "value": "Rolling Upper Bound (+3\u03c3)"
               }
             ]
           },
@@ -1067,7 +1076,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
+                "value": "Rolling Lower Bound (-3\u03c3)"
               }
             ]
           },
@@ -1098,13 +1107,6 @@
           }
         ]
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "id": 31,
       "options": {
         "legend": {
           "calcs": [],
@@ -1117,7 +1119,6 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -1127,7 +1128,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_post_nozzle_clean_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_post_nozzle_clean_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_post_nozzle_clean_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_post_nozzle_clean_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3\u03c3)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3\u03c3)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1176,14 +1177,22 @@
             "limit": 50
           }
         }
-      ],
-      "title": "Maint Post Nozzle Clean Delay",
-      "type": "timeseries"
+      ]
     },
     {
+      "id": 32,
+      "type": "timeseries",
+      "title": "Maint Glue Purging Time",
+      "pluginVersion": "11.4.0",
       "datasource": {
         "type": "postgres",
         "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -1267,7 +1276,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "UCL (+3σ)"
+              "options": "UCL (+3\u03c3)"
             },
             "properties": [
               {
@@ -1293,7 +1302,7 @@
               },
               {
                 "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
+                "value": "LCL (-3\u03c3)"
               },
               {
                 "id": "custom.fillOpacity",
@@ -1304,7 +1313,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "LCL (-3σ)"
+              "options": "LCL (-3\u03c3)"
             },
             "properties": [
               {
@@ -1423,7 +1432,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
+                "value": "Rolling Upper Bound (+3\u03c3)"
               }
             ]
           },
@@ -1452,7 +1461,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
+                "value": "Rolling Lower Bound (-3\u03c3)"
               }
             ]
           },
@@ -1483,13 +1492,6 @@
           }
         ]
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "id": 32,
       "options": {
         "legend": {
           "calcs": [],
@@ -1502,7 +1504,6 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -1512,7 +1513,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_glue_purging_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_glue_purging_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_glue_purging_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_glue_purging_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3\u03c3)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3\u03c3)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1561,14 +1562,22 @@
             "limit": 50
           }
         }
-      ],
-      "title": "Maint Glue Purging Time",
-      "type": "timeseries"
+      ]
     },
     {
+      "id": 33,
+      "type": "timeseries",
+      "title": "Maint Between Glue Purge Delay",
+      "pluginVersion": "11.4.0",
       "datasource": {
         "type": "postgres",
         "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -1652,7 +1661,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "UCL (+3σ)"
+              "options": "UCL (+3\u03c3)"
             },
             "properties": [
               {
@@ -1678,7 +1687,7 @@
               },
               {
                 "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
+                "value": "LCL (-3\u03c3)"
               },
               {
                 "id": "custom.fillOpacity",
@@ -1689,7 +1698,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "LCL (-3σ)"
+              "options": "LCL (-3\u03c3)"
             },
             "properties": [
               {
@@ -1808,7 +1817,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
+                "value": "Rolling Upper Bound (+3\u03c3)"
               }
             ]
           },
@@ -1837,7 +1846,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
+                "value": "Rolling Lower Bound (-3\u03c3)"
               }
             ]
           },
@@ -1868,13 +1877,6 @@
           }
         ]
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 16
-      },
-      "id": 33,
       "options": {
         "legend": {
           "calcs": [],
@@ -1887,7 +1889,6 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -1897,7 +1898,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_between_glue_purge_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_between_glue_purge_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_between_glue_purge_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_between_glue_purge_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3\u03c3)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3\u03c3)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1946,14 +1947,22 @@
             "limit": 50
           }
         }
-      ],
-      "title": "Maint Between Glue Purge Delay",
-      "type": "timeseries"
+      ]
     },
     {
+      "id": 34,
+      "type": "timeseries",
+      "title": "Maint Post Glue Purge Delay",
+      "pluginVersion": "11.4.0",
       "datasource": {
         "type": "postgres",
         "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -2037,7 +2046,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "UCL (+3σ)"
+              "options": "UCL (+3\u03c3)"
             },
             "properties": [
               {
@@ -2063,7 +2072,7 @@
               },
               {
                 "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
+                "value": "LCL (-3\u03c3)"
               },
               {
                 "id": "custom.fillOpacity",
@@ -2074,7 +2083,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "LCL (-3σ)"
+              "options": "LCL (-3\u03c3)"
             },
             "properties": [
               {
@@ -2193,7 +2202,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
+                "value": "Rolling Upper Bound (+3\u03c3)"
               }
             ]
           },
@@ -2222,7 +2231,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
+                "value": "Rolling Lower Bound (-3\u03c3)"
               }
             ]
           },
@@ -2253,13 +2262,6 @@
           }
         ]
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 16
-      },
-      "id": 34,
       "options": {
         "legend": {
           "calcs": [],
@@ -2272,7 +2274,6 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -2282,7 +2283,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_post_glue_purge_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_post_glue_purge_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_post_glue_purge_delay'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_post_glue_purge_delay'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3\u03c3)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3\u03c3)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -2331,14 +2332,22 @@
             "limit": 50
           }
         }
-      ],
-      "title": "Maint Post Glue Purge Delay",
-      "type": "timeseries"
+      ]
     },
     {
+      "id": 35,
+      "type": "timeseries",
+      "title": "Maint Move To Safe Time",
+      "pluginVersion": "11.4.0",
       "datasource": {
         "type": "postgres",
         "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -2422,7 +2431,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "UCL (+3σ)"
+              "options": "UCL (+3\u03c3)"
             },
             "properties": [
               {
@@ -2448,7 +2457,7 @@
               },
               {
                 "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
+                "value": "LCL (-3\u03c3)"
               },
               {
                 "id": "custom.fillOpacity",
@@ -2459,7 +2468,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "LCL (-3σ)"
+              "options": "LCL (-3\u03c3)"
             },
             "properties": [
               {
@@ -2578,7 +2587,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
+                "value": "Rolling Upper Bound (+3\u03c3)"
               }
             ]
           },
@@ -2607,7 +2616,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
+                "value": "Rolling Lower Bound (-3\u03c3)"
               }
             ]
           },
@@ -2638,13 +2647,6 @@
           }
         ]
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 24
-      },
-      "id": 35,
       "options": {
         "legend": {
           "calcs": [],
@@ -2657,7 +2659,6 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -2667,7 +2668,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_move_to_safe_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_move_to_safe_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maint_move_to_safe_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maint_move_to_safe_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3\u03c3)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3\u03c3)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -2716,14 +2717,22 @@
             "limit": 50
           }
         }
-      ],
-      "title": "Maint Move To Safe Time",
-      "type": "timeseries"
+      ]
     },
     {
+      "id": 36,
+      "type": "timeseries",
+      "title": "Maintenance Waiting Time",
+      "pluginVersion": "11.4.0",
       "datasource": {
         "type": "postgres",
         "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -2807,7 +2816,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "UCL (+3σ)"
+              "options": "UCL (+3\u03c3)"
             },
             "properties": [
               {
@@ -2833,7 +2842,7 @@
               },
               {
                 "id": "custom.fillBelowTo",
-                "value": "LCL (-3σ)"
+                "value": "LCL (-3\u03c3)"
               },
               {
                 "id": "custom.fillOpacity",
@@ -2844,7 +2853,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "LCL (-3σ)"
+              "options": "LCL (-3\u03c3)"
             },
             "properties": [
               {
@@ -2963,7 +2972,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Upper Bound (+3σ)"
+                "value": "Rolling Upper Bound (+3\u03c3)"
               }
             ]
           },
@@ -2992,7 +3001,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Rolling Lower Bound (-3σ)"
+                "value": "Rolling Lower Bound (-3\u03c3)"
               }
             ]
           },
@@ -3023,13 +3032,6 @@
           }
         ]
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 24
-      },
-      "id": 36,
       "options": {
         "legend": {
           "calcs": [],
@@ -3042,7 +3044,6 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -3052,7 +3053,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maintenance_waiting_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maintenance_waiting_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3σ)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3σ)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
+          "rawSql": "WITH filtered AS (\n  SELECT timestamp, value\n  FROM process_metrics\n  WHERE $__timeFilter(timestamp)\n    AND station_name = 'ced_maintenance'\n    AND metric_name = 'maintenance_waiting_time'\n),\n \nbaseline AS (\n  SELECT mean, std_dev\n  FROM baseline_metrics\n  WHERE station_name = 'ced_maintenance'\n    AND metric_name = 'maintenance_waiting_time'\n  LIMIT 1\n)\n \nSELECT\n  f.timestamp AS time,\n  f.value AS \"value\",\n \n  (b.mean + 3 * b.std_dev) AS \"UCL (+3\u03c3)\",\n  (b.mean - 3 * b.std_dev) AS \"LCL (-3\u03c3)\",\n  b.mean AS \"Mean\",\n \n  CASE\n    WHEN f.value > (b.mean + 3 * b.std_dev)\n      OR f.value < (b.mean - 3 * b.std_dev)\n    THEN f.value\n    ELSE NULL\n  END AS \"Anomaly\"\n \nFROM filtered f\nCROSS JOIN baseline b\nORDER BY f.timestamp;\n ",
           "refId": "A",
           "sql": {
             "columns": [
@@ -3101,9 +3102,7 @@
             "limit": 50
           }
         }
-      ],
-      "title": "Maintenance Waiting Time",
-      "type": "timeseries"
+      ]
     }
   ],
   "preload": false,
@@ -3174,8 +3173,9 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Ced Maintenance — Process Metrics",
+  "title": "Ced Maintenance \u2014 Process Metrics",
   "uid": "ced-maintenance-metrics",
   "version": 2,
-  "weekStart": ""
+  "weekStart": "",
+  "id": 4
 }

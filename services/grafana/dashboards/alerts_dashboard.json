@@ -1,0 +1,2304 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Unified Alerts & Anomalies — errors, warnings, maintenance events, statistical pattern detections, and 3σ anomalies across all stations and metrics.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": 20,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "panels": [],
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Alerts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n    COUNT(DISTINCT CASE WHEN severity = 'anomaly' THEN (metric_name || '|' || station) END) +\n    COUNT(DISTINCT CASE WHEN severity = 'critical' THEN detail END) +\n    COUNT(DISTINCT CASE WHEN severity = 'warning' THEN detail END) +\n    COUNT( CASE WHEN severity = 'maintenance' THEN detail END) +\n    COUNT(DISTINCT CASE WHEN severity = 'pattern' THEN title END)\nAS \"Total Alerts\"\nFROM alerts_unified \nWHERE time >= $__timeFrom() AND time < $__timeTo()",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Total Alerts",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "red",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Critical Errors"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT detail) AS \"Critical Errors\" \nFROM alerts_unified WHERE severity = 'critical' \nAND time >= $__timeFrom() AND time < $__timeTo()",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "🟠 Error Logs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "yellow",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT detail) AS \"Warnings\" \nFROM alerts_unified WHERE severity = 'warning' \nAND time >= $__timeFrom() AND time < $__timeTo()",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "🟡 Warning Logs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "purple",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Patterns"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT (metric_name, title)) AS \"Patterns\" \nFROM alerts_unified \nWHERE severity = 'pattern' \nAND time >= $__timeFrom() \nAND time < $__timeTo() \nAND title NOT LIKE '%Slow Drift%'\nAND title NOT LIKE '%Periodic Oscillation%'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "🔴 Component Level Degradations",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "orange",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Anomalies"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT (metric_name, station)) AS \"Anomalies\" \nFROM alerts_unified WHERE severity = 'anomaly' \nAND time >= $__timeFrom() AND time < $__timeTo()",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "🔴 Anomalies (3σ)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(detail) AS \"Maintenance\" \nFROM alerts_unified \nWHERE severity = 'maintenance' \nAND time >= $__timeFrom() \nAND time < $__timeTo()",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "🔵 Maintenance Cycles",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 101,
+      "panels": [],
+      "title": "Alert Trends Over Time",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value critical"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "value error"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value warning"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FFB357",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value anomaly"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value pattern"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "value component level degradation"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "value maintenance"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(time, $__interval), severity, COUNT(*) AS value FROM alerts_unified WHERE $__timeFilter(time) GROUP BY 1, severity ORDER BY 1",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Alert Volume by Category",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 204,
+      "panels": [
+        {
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 41,
+            "w": 24,
+            "x": 0,
+            "y": 17
+          },
+          "id": 203,
+          "options": {
+            "code": {
+              "language": "plaintext",
+              "showLineNumbers": false,
+              "showMiniMap": false
+            },
+            "content": "# Dashboard — Summary\n**Machine:** CED\n\n---\n\n## 🔴 Alert Overview\n\nThe machine was active throughout the day with a low baseline alert rate from **00:00–04:00**, picking up significantly from **05:00 onwards**. A sharp spike of ~55 alerts was recorded around **19:30**, which is the most notable single-minute event of the day and warrants investigation.\n\n---\n\n## 🟠 Anomaly Hotspots (3σ Control Limit Violations)\n\n**By Station:**\n\n| Station | Anomaly Count |\n|---|---|\n| `ced_station` | 4,341 |\n| `system` | 676 |\n| `ced_maintenance` | 83 |\n| `gantry_positioning` | 20 |\n\n`ced_station` is by far the most affected, accounting for **~85% of all anomalies**. This station should be the primary focus of inspection.\n\n**Top Misbehaving Metrics at `ced_station`:**\n\nThe highest anomaly counts cluster around dispenser positioning and timing metrics — specifically `cavity_2` and `cavity_5` dispenser start-point coordinates (x, y, a values), `pre_dispensing_delay`, `pre_sfc_query_delay`, and `barcode_scanning_time`. These all individually hit 42–60 anomaly events, pointing to **systemic instability in the dispensing sub-system's positioning and sequencing logic**.\n\n`barcode_scanning_time` is particularly notable — several readings hit **0.578–3.03 seconds** against a mean of **0.336 s** and an upper control limit of **0.409 s**, meaning some scans ran **7–9× over the expected duration**.\n\n\n---\n\n## 🟣 Statistical Pattern Detections\n\n**One active pattern detected:**\n\n| Metric | Pattern | Motor Type | Occurrences | Recommended Action Window |\n|---|---|---|---|---|\n| `pallet_movein_time` | Random Spikes | Stepper | 9 (01:32 → 17:54) | 3–14 days |\n\n**Interpretation:** The stepper motor driving pallet move-in is producing random, unpredictable time spikes throughout the day. The likely cause is **transient pallet interference, vibration, or electrical noise** affecting the sensor or drive. The recommended action is to correlate spike timestamps with nearby machine events and physically inspect the sensors and cabling. With 9 occurrences across a full shift, this is escalating and should be scheduled for inspection within the week.\n\n---\n\n## 🔴 Critical Errors & Warnings\n\n**Dominant critical error:** `CRITICAL: Front Barrier failed to reach WORK (Extend) position` — appearing repeatedly from **01:32 through 18:15**. This is a mechanical positioning failure that recurred across two distinct windows of the shift, suggesting the front barrier actuator or its end-stop sensor is intermittently failing.\n\n**Vision system errors:** Multiple `Vision Alignment FAILED` events occurred between **17:54–17:57** across all three retry attempts (Attempts 1, 2, 3 all returning NG). This indicates the vision system was unable to align during that window, likely connected to the manual operator interventions logged immediately before.\n\n**Warnings of note:**\n- Several rounds of **manual Loading/Unloading** initiated by the operator around **17:51–17:58**, which is normal but worth correlating with the vision failures that followed immediately after.\n- **Vision Light Intensity** deviations logged at 17:52 and 17:54 (`Calib: 117, Prod: 114, Insp: 114`) — production and inspection lighting is running 3 units below calibration, which may be contributing to the vision alignment failures.\n\n---\n\n## 🔵 Maintenance Events\n\n177 maintenance wait events were recorded, concentrated in two windows: **06:00–22:00** (regular operational hours) and a cluster from **16:45 through 18:30**. All events are tied to `maintenance_waiting_time`, indicating the machine entered planned or triggered wait states. The density of waits between 18:18–18:30 (6 events in ~12 minutes) could indicate a maintenance intervention in progress or a recurring wait condition that needs review.\n\n---\n\n## ⚡ Priority Action Items\n\n1. **Immediate (Today):** Investigate the Front Barrier actuator — repeated critical failures across the full shift suggest mechanical wear or sensor misalignment.\n2. **Immediate:** Check vision system lighting calibration — production intensity is below calibration threshold and correlates with repeated NG alignment failures.\n3. **Within 3 days:** Inspect `pallet_movein_time` stepper motor wiring, sensors, and cabling for electrical noise or interference. Pattern has appeared 9× in a single day.\n4. **Within 1 week:** Audit `ced_station` dispensing sub-system — cavity 2 and cavity 5 positional metrics are producing 40–60 anomalies each, indicating either mechanical drift or control logic issues.\n5. **Monitor:** Main and sub valve temperatures are consistently nudging above UCL. While not critical today, a continuing upward trend may indicate glue viscosity or thermal regulation issues developing over time.\n\n---\n\n*Summary auto-generated from `alerts_unified`, `error_logs`, `model_predictions`, and `statistical_patterns` tables. All timestamps are machine-local time (UTC+5:30 offset may apply depending on deployment).*",
+            "mode": "markdown"
+          },
+          "pluginVersion": "11.4.0",
+          "title": "",
+          "type": "text"
+        }
+      ],
+      "title": "AI Summary",
+      "type": "row"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 102,
+      "panels": [],
+      "title": "🔴 Component Degradation : Alarms",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Detected At"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Recommended Time for Action"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Occurrences"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 96
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Type"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 66
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pattern"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 117
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Metric"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 224
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "detected_at"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity (Based on Impact)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 198
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text",
+                  "wrapText": false
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 4
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Likely Causes & Suggestions"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 534
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Occurrences"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text",
+                  "wrapText": false
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 50
+                    },
+                    {
+                      "color": "red",
+                      "value": 100
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "id": 20,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Detected At"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": true,
+          "rawQuery": true,
+          "rawSql": "SELECT\n    TO_CHAR(mp.actual_timestamp, 'YYYY-MM-DD HH24:MI:SS') AS \"Detected At\",    mp.metric_name AS \"Metric\",\n    SPLIT_PART(mp.model_name, '::', 2) AS \"Pattern\",\n    COALESCE(sp.type_of_motor::text, 'N/A') AS \"Type\",\n    COALESCE(sp.likely_causes_and_what_to_inspect::text, 'N/A') AS \"Likely Causes & Suggestions\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration'   THEN '4–8 hours'\n        WHEN 'Step jumps'           THEN '<5 Moves'\n        WHEN 'Random spikes'        THEN '1–3 Events'\n        WHEN 'Slow drift'           THEN '>10k Moves'\n        WHEN 'Baseline shift'       THEN 'Unknown'\n        WHEN 'Periodic oscillation' THEN '>50 Moves'\n        WHEN 'Recovery cycles'      THEN '3–5 Move Groups'\n        ELSE 'Unknown'\n    END AS \"Recommended Time for Action\"\nFROM model_predictions mp\nINNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\nWHERE\n    mp.actual_timestamp >= $__timeFrom()\n    AND mp.actual_timestamp < $__timeTo()\n    AND mp.model_name LIKE 'stats_pattern_detector::%%'\nORDER BY\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration' THEN 1\n        WHEN 'Step jumps' THEN 1\n        WHEN 'Random spikes' THEN 2\n        WHEN 'Slow drift' THEN 2\n        WHEN 'Baseline shift' THEN 2\n        ELSE 3\n    END,\n    mp.actual_timestamp ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": true,
+          "rawQuery": true,
+          "rawSql": "SELECT\n    TO_CHAR(mp.actual_timestamp, 'YYYY-MM-DD HH24:MI:SS') AS \"Detected At\",    mp.metric_name                                  AS \"Metric\",\n    SPLIT_PART(mp.model_name, '::', 2)              AS \"Pattern\",\n    COALESCE(sp.type_of_motor::text, 'N/A')         AS \"Type\",\n    COALESCE(sp.likely_causes_and_what_to_inspect::text, 'N/A') AS \"Likely Causes and Maintenance Suggestions\",\n\n    -- 🔥 NEW SEVERITY COLUMN\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration'   THEN 10\n        WHEN 'Step jumps'           THEN 10\n        WHEN 'Random spikes'        THEN 3\n        WHEN 'Slow drift'           THEN 8\n        WHEN 'Baseline shift'       THEN 8\n        WHEN 'Periodic oscillation' THEN 8\n        WHEN 'Variance growth'      THEN 8\n        ELSE 3\n    END AS \"Severity\",\n\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration'   THEN 'Hours – < 1 day'\n        WHEN 'Step jumps'           THEN '1 – 3 days'\n        WHEN 'Random spikes'        THEN '3 – 14 days'\n        WHEN 'Slow drift'           THEN '2 – 6 weeks'\n        WHEN 'Baseline shift'       THEN '3 – 14 days'\n        WHEN 'Periodic oscillation' THEN '3 – 14 days'\n        WHEN 'Variance growth'      THEN '3 – 14 days'\n        ELSE 'Unknown'\n    END AS \"Recommended Time for Action\"\n\nFROM model_predictions mp\nINNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\n\nWHERE\n    mp.actual_timestamp >= $__timeFrom()\n    AND mp.actual_timestamp < $__timeTo()\n    AND mp.model_name LIKE 'stats_pattern_detector::%'\n\nORDER BY\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration' THEN 1\n        WHEN 'Step jumps'         THEN 1\n        WHEN 'Random spikes'      THEN 2\n        WHEN 'Slow drift'         THEN 2\n        WHEN 'Baseline shift'     THEN 2\n        ELSE 3\n    END,\n    mp.actual_timestamp DESC;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n    TO_CHAR(MAX(mp.actual_timestamp) AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD HH24:MI:SS') AS \"Detected At\",\n    mp.metric_name AS \"Metric\",\n    SPLIT_PART(mp.model_name, '::', 2) AS \"Pattern\",\n    COALESCE(MAX(sp.type_of_motor::text), 'N/A') AS \"Type\",\n    COALESCE(MAX(sp.likely_causes_and_what_to_inspect::text), 'N/A') AS \"Likely Causes & Suggestions\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration'   THEN 'Hours – < 1 day'\n        WHEN 'Step Jump'            THEN '1 – 3 days'\n        WHEN 'Random Spikes'        THEN '3 – 14 days'\n        WHEN 'Slow Drift'           THEN '2 – 6 weeks'\n        WHEN 'Baseline Shift'       THEN '3 – 14 days'\n        WHEN 'Periodic Oscillation' THEN '3 – 14 days'\n        WHEN 'Variance Growth'      THEN '3 – 14 days'\n        ELSE 'Unknown'\n    END AS \"Recommended Time for Action\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration'   THEN 10\n        WHEN 'Step Jump'           THEN 10\n        WHEN 'Random Spikes'        THEN 3\n        WHEN 'Slow Drift'           THEN 8\n        WHEN 'Baseline Shift'       THEN 8\n        WHEN 'Periodic Oscillation' THEN 8\n        WHEN 'Variance Growth'      THEN 8\n        ELSE 3\n    END AS \"Severity (Based on Impact)\",\n    COUNT(*) AS \"Occurrences\"\nFROM model_predictions mp\nINNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\nWHERE\n    mp.actual_timestamp >= $__timeFrom()\n    AND mp.actual_timestamp < $__timeTo()\n    AND mp.model_name LIKE 'stats_pattern_detector::%'\n    AND SPLIT_PART(mp.model_name, '::', 2) NOT IN ('Slow Drift', 'Periodic Oscillation')\nGROUP BY\n    mp.metric_name,\n    SPLIT_PART(mp.model_name, '::', 2)\nORDER BY\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration' THEN 1\n        WHEN 'Step jumps'         THEN 1\n        WHEN 'Random spikes'      THEN 2\n        WHEN 'Slow drift'         THEN 2\n        WHEN 'Baseline shift'     THEN 2\n        ELSE 3\n    END,\n    MAX(mp.actual_timestamp) DESC",
+          "refId": "C",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Statistical Pattern Detections — Component Analysis",
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "string",
+                "targetField": "Detected At"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 103,
+      "panels": [],
+      "title": "🔴 Process Metrics Anomalies : Alarms",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              },
+              {
+                "id": "unit",
+                "value": "dateTimeAsLocal"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "station"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metric_name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "title"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 260
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Details"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 260
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Detected At"
+            },
+            "properties": []
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Occurrences"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 30,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Occurrences"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n    TO_CHAR(MAX(time) AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD HH24:MI:SS')::TEXT AS \"Detected At\",\n    station AS \"Station\",\n    metric_name,\n    MAX(title) AS \"Remark\",\n    MAX(detail) AS \"Details\",\n    COUNT(*) AS \"Occurrences\"\nFROM alerts_unified \nWHERE severity = 'anomaly' \nAND $__timeFilter(time) \nGROUP BY station, metric_name\nORDER BY MAX(time) DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "3σ Anomaly Events — All Stations & Metrics",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "orange",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 39
+      },
+      "id": 31,
+      "options": {
+        "barRadius": 0.05,
+        "barWidth": 0.7,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 100
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT metric_name, COUNT(*) AS \"Anomaly Count\" FROM alerts_unified WHERE severity = 'anomaly' AND $__timeFilter(time) GROUP BY metric_name ORDER BY \"Anomaly Count\" DESC LIMIT 20",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Top 20 Most Anomalous Metrics",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#FF780A",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 39
+      },
+      "id": 32,
+      "options": {
+        "barRadius": 0.05,
+        "barWidth": 0.7,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT station, COUNT(*) AS \"Anomaly Count\" FROM alerts_unified WHERE severity = 'anomaly' AND $__timeFilter(time) GROUP BY station ORDER BY \"Anomaly Count\" DESC LIMIT 20",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Process Groupwise Distribution of Anomalies ",
+      "type": "barchart"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "id": 104,
+      "panels": [],
+      "title": "🟠 Errors & Warnings from Logs: Alerts",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 180
+              },
+              {
+                "id": "unit",
+                "value": "dateTimeAsLocal"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tags"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Occurrences"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 49
+      },
+      "id": 40,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Detected At"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n    TO_CHAR(MAX(timestamp) AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD HH24:MI:SS')::TEXT AS \"Detected At\",\n    log_message AS \"Error Message\",\n    COUNT(*) AS \"Occurrences\",\n    'ERROR' AS tags\nFROM error_logs \nWHERE severity = 'error' \nAND $__timeFilter(timestamp) \nGROUP BY log_message\nORDER BY MAX(timestamp) DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "🟠 Error Logs",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 180
+              },
+              {
+                "id": "unit",
+                "value": "dateTimeAsLocal"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tags"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Occurrences"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 49
+      },
+      "id": 41,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "time"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n    TO_CHAR(MAX(timestamp) AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD HH24:MI:SS')::TEXT AS \"Detected At\",\n    log_message AS \"Error Message\",\n    COUNT(*) AS \"Occurrences\",\n    'WARNING' AS tags\nFROM error_logs \nWHERE severity = 'warning' \nAND $__timeFilter(timestamp) \nGROUP BY log_message\nORDER BY MAX(timestamp) DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "🟡 Warning Logs",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 59
+      },
+      "id": 200,
+      "panels": [],
+      "title": "🔵 Maintenance Cycle Starts: Information",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#5794F2",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 60
+      },
+      "id": 201,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(time, $__interval), COUNT(*) AS \"Maintenance Events\" FROM alerts_unified WHERE severity = 'maintenance' AND $__timeFilter(time) GROUP BY 1 ORDER BY 1",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Maintenance Events Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 180
+              },
+              {
+                "id": "unit",
+                "value": "dateTimeAsLocal"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "metric_name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 220
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "title"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 260
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "detail"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Occurrences"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 60
+      },
+      "id": 202,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "time"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n    TO_CHAR(time AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD HH24:MI:SS')::TEXT AS \"Detected At\",\n    metric_name,\n    title AS \"Status\",\n    detail\nFROM alerts_unified \nWHERE severity = 'maintenance' \nAND $__timeFilter(time) \nORDER BY time DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Maintenance Event Log",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "refresh": "30s",
+  "schemaVersion": 40,
+  "tags": [
+    "alerts",
+    "anomalies",
+    "monitoring",
+    "postgresql"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "bffvbhhjc42yoe"
+        },
+        "definition": "SELECT DISTINCT station FROM alerts_unified WHERE station IS NOT NULL ORDER BY station",
+        "includeAll": true,
+        "label": "Station",
+        "multi": true,
+        "name": "station",
+        "options": [],
+        "query": "SELECT DISTINCT station FROM alerts_unified WHERE station IS NOT NULL ORDER BY station",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "bffvbhhjc42yoe"
+        },
+        "definition": "SELECT DISTINCT severity FROM alerts_unified ORDER BY severity",
+        "includeAll": true,
+        "label": "Severity",
+        "multi": true,
+        "name": "severity",
+        "options": [],
+        "query": "SELECT DISTINCT severity FROM alerts_unified ORDER BY severity",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "2026-03-09T16:03:39.507Z",
+    "to": "2026-03-09T20:50:11.145Z"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Notification and Alarms",
+  "uid": "alerts-anomalies-v1",
+  "version": 46,
+  "weekStart": ""
+}

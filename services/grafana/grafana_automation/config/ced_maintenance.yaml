@@ -1,0 +1,108 @@
+dashboard:
+  title: "Ced Maintenance — Process Metrics"
+  uid: "ced-maintenance-metrics"
+  id: 4
+  version: 2
+  tags: []
+  refresh: "1d"
+  timezone: "browser"
+  schemaVersion: 40
+
+datasource:
+  type: "postgres"
+  uid: "${datasource}"
+  label: "Data Source"
+  current_text: "PostgreSQL"
+  current_value: "bffvbhhjc42yoe"
+
+station_name: "ced_maintenance"
+
+time:
+  from: "2026-02-01T18:30:00.000Z"
+  to: "2026-03-10T18:29:59.000Z"
+
+panels:
+  - metric_name: maint_nozzle_cleaning_time
+    title: "Maint Nozzle Cleaning Time"
+    type: spc_timeseries
+    unit: s
+    id: 1
+    value_color: "dark-green"
+    bb_upper_show_points: true
+
+  - metric_name: maint_between_nozzle_clean_delay
+    title: "Maint Between Nozzle Clean Delay"
+    type: spc_timeseries
+    unit: dtdurationms
+    id: 30
+    value_color: "dark-green"
+
+  - metric_name: maint_post_nozzle_clean_delay
+    title: "Maint Post Nozzle Clean Delay"
+    type: spc_timeseries
+    unit: s
+    id: 31
+
+  - metric_name: maint_glue_purging_time
+    title: "Maint Glue Purging Time"
+    type: spc_timeseries
+    unit: s
+    id: 32
+
+  - metric_name: maint_between_glue_purge_delay
+    title: "Maint Between Glue Purge Delay"
+    type: spc_timeseries
+    unit: s
+    id: 33
+
+  - metric_name: maint_post_glue_purge_delay
+    title: "Maint Post Glue Purge Delay"
+    type: spc_timeseries
+    unit: s
+    id: 34
+
+  - metric_name: maint_move_to_safe_time
+    title: "Maint Move To Safe Time"
+    type: spc_timeseries
+    unit: s
+    id: 35
+
+  - metric_name: maintenance_waiting_time
+    title: "Maintenance Waiting Time"
+    type: spc_timeseries
+    unit: s
+    id: 36
+
+layout:
+  panel_width: 12
+  panel_height: 8
+  columns: 24
+
+features:
+  rolling_window:
+    # When enabled: adds a ${rolling_window} Grafana variable to the dashboard.
+    # Users can switch the window interactively in Grafana.
+    # datasource_type: the plugin type used for Target B (rolling SQL).
+    enabled: true
+    datasource_type: "grafana-postgresql-datasource"
+    options:
+      - "1 minute"
+      - "5 minutes"
+      - "10 minutes"
+      - "15 minutes"
+      - "30 minutes"
+      - "1 hour"
+    default: "10 minutes"
+
+  annotations:
+    enabled: false
+    rules:
+      - name: "Rule 1 - Beyond 3σ"
+        color: "red"
+        query: "nelson_rule_1"
+      - name: "Rule 2 - Run of 9"
+        color: "orange"
+        query: "nelson_rule_2"
+      - name: "Rule 3 - 6 Trending"
+        color: "yellow"
+        query: "nelson_rule_3"

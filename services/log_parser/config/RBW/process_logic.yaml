@@ -23,7 +23,8 @@
           "metrics":
           - "name": "z_axis_positioning_wait"
             "type": "duration_seconds"
-            "export": true
+          - "name": "z_axis_target_height"
+            "type": "payload"
       "Z_AXIS_POSITIONING":
         "transitions":
         - "event": "Z_AXIS_FEEDBACK"
@@ -32,6 +33,10 @@
           - "name": "z_axis_positioning_time"
             "type": "duration_seconds"
             "export": true
+          - "name": "z_axis_position_actual"
+            "type": "payload"
+          # - "name": "z_axis_position_target"
+          #   "type": "payload"
       "CLAMPING":
         "transitions":
         - "event": "CLAMP_CYLINDER"
@@ -56,6 +61,14 @@
           - "name": "data_handshake_time"
             "type": "duration_seconds"
             "export": true
+          - "name": "gantry_move_x"
+            "type": "payload"
+          # - "name": "gantry_move_z"
+          #   "type": "payload"
+          # - "name": "gantry_move_m1"
+          #   "type": "payload"
+          # - "name": "gantry_move_m2"
+          #   "type": "payload"
       "GANTRY_POSITIONING":
         "transitions":
         - "event": "MIRROR_2_FEEDBACK"
@@ -64,6 +77,10 @@
           - "name": "gantry_positioning_time"
             "type": "duration_seconds"
             "export": true
+          - "name": "m2_position_actual"
+            "type": "payload"
+          # - "name": "m2_position_target"
+          #   "type": "payload"
       "POST_GANTRY_POSITIONING":
         "transitions":
         - "event": "CAMERA_DOUBLE_EXPOSURE_CMD"
@@ -118,6 +135,10 @@
           - "name": "marking_init_time"
             "type": "duration_seconds"
             "export": true
+          - "name": "galvo_1_position"
+            "type": "payload"
+          # - "name": "galvo_2_position"
+          #   "type": "payload"
       "GALVO_POSITIONING":
         "transitions":
         - "event": "MIRROR_2_FEEDBACK"
@@ -148,6 +169,10 @@
           - "name": "marking_repeat_wait"
             "type": "duration_seconds"
             "export": true
+          - "name": "galvo_1_position"
+            "type": "payload"
+          # - "name": "galvo_2_position"
+          #   "type": "payload"
         - "event": "CAMERA_REINSPECTION_CMD"
           "next_state": "REINSPECTION"
           "metrics":
@@ -198,12 +223,21 @@
           - "name": "between_cluster_gantry_positioning_wait"
             "type": "duration_seconds"
             "export": true
+          - "name": "gantry_move_x"
+            "type": "payload"
+          # - "name": "gantry_move_z"
+          #   "type": "payload"
+          # - "name": "gantry_move_m1"
+          #   "type": "payload"
+          # - "name": "gantry_move_m2"
+          #   "type": "payload"
         - "event": "PRODUCT_RELEASE_CMD"
           "next_state": "PRODUCT_UNCLAMPING"
           "metrics":
           - "name": "product_release_wait"
             "type": "duration_seconds"
             "export": true
+          "transition_stage": "handover_prep"
       "PRODUCT_UNCLAMPING":
         "transitions":
         - "event": "CLAMP_RELEASE_FEEDBACK"
@@ -220,6 +254,10 @@
           - "name": "z_axis_homing_time"
             "type": "duration_seconds"
             "export": true
+          - "name": "z_axis_position_actual"
+            "type": "payload"
+          # - "name": "z_axis_position_target"
+          #   "type": "payload"
       "POST_HOMING":
         "transitions":
         - "event": "PROCESSING_COMPLETE"
@@ -228,6 +266,7 @@
           - "name": "post_homing_wait"
             "type": "duration_seconds"
             "export": true
+          "transition_stage": "handover"
 
   # ==========================================
   # 2. SINK

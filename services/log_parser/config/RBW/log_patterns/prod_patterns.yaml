@@ -33,23 +33,23 @@
 #   state_resolver:
 #     target: "rbw_station"
 
-# # 7. THE VERIFICATION: Confirming the X-axis reached its destination
-# - name: x_axis_feedback
-#   regex: '^Welding X-axis position:\s*read pos：(?P<x_axis_position_actual>-?\d+\.?\d*)\s*send pos：(?P<x_axis_position_target>-?\d+\.?\d*)$'
-#   event_type: X_AXIS_FEEDBACK
-#   target_id: system
-#   event_details: 'X-Axis Position Verification - Target: {target}, Actual: {actual}'
-#   state_resolver:
-#     target: "rbw_station"
+# 7. THE VERIFICATION: Confirming the X-axis reached its destination
+- name: x_axis_feedback
+  regex: '^Welding X-axis position:\s*read pos：(?P<x_axis_position_actual>-?\d+\.?\d*)\s*send pos：(?P<x_axis_position_target>-?\d+\.?\d*)$'
+  event_type: X_AXIS_FEEDBACK
+  target_id: system
+  event_details: 'X-Axis Position Verification - Target: {target}, Actual: {actual}'
+  state_resolver:
+    target: "rbw_station"
 
-# # 8. THE PRECISION: Confirming the first laser mirror is calibrated
-# - name: mirror_1_feedback
-#   regex: '^Mirror 1 axis position:\s*read pos：(?P<m1_position_actual>-?\d+\.?\d*)\s*send pos：(?P<m1_position_target>-?\d+\.?\d*)$'
-#   event_type: MIRROR_1_FEEDBACK
-#   target_id: system
-#   event_details: 'Laser Mirror 1 - Target: {target}, Actual: {actual}'
-#   state_resolver:
-#     target: "rbw_station"
+# 8. THE PRECISION: Confirming the first laser mirror is calibrated
+- name: mirror_1_feedback
+  regex: '^Mirror 1 axis position:\s*read pos：(?P<m1_position_actual>-?\d+\.?\d*)\s*send pos：(?P<m1_position_target>-?\d+\.?\d*)$'
+  event_type: MIRROR_1_FEEDBACK
+  target_id: system
+  event_details: 'Laser Mirror 1 - Target: {target}, Actual: {actual}'
+  state_resolver:
+    target: "rbw_station"
 
 # # 9. THE FINAL CHECK: Confirming the second laser mirror is in position
 # - name: mirror_2_feedback
@@ -296,12 +296,12 @@
   "event_type": "PRODUCT_ARRIVAL"
   "target_id": "rbw_station"
 - "name": "Z Axis Prod Cmd"
-  "regex": "^UP Production:(?P<target_height>-?\\d+\\.?\\d*)$"
+  "regex": "^UP Production:(?P<z_axis_target_height>-?\\d+\\.?\\d*)$"
   "event_type": "Z_AXIS_PROD_CMD"
   "target_id": "rbw_station"
 - "name": "Z Axis Feedback"
-  "regex": "^Welding Z-axis position:\\s*read pos：(?P<actual>-?\\d+\\.?\\d*)\\s*send\
-    \ pos：(?P<target>-?\\d+\\.?\\d*)$"
+  "regex": "^Welding Z-axis position:\\s*read pos：(?P<z_axis_position_actual>-?\\d+\\.?\\d*)\\s*send\
+    \ pos：(?P<z_axis_position_target>-?\\d+\\.?\\d*)$"
   "event_type": "Z_AXIS_FEEDBACK"
   "target_id": "rbw_station"
 - "name": "Clamp Cylinder"
@@ -313,23 +313,23 @@
   "event_type": "DATA_EXCHANGE_WAIT"
   "target_id": "rbw_station"
 - "name": "Gantry Move Cmd"
-  "regex": "^Move Pos:(?P<x>-?\\d+\\.?\\d*),(?P<z>-?\\d+\\.?\\d*),(?P<m1>-?\\d+\\\
-    .?\\d*),(?P<m2>-?\\d+\\.?\\d*)$"
+  "regex": "^Move Pos:(?P<gantry_move_x>-?\\d+\\.?\\d*),(?P<gantry_move_z>-?\\d+\\.?\\d*),(?P<gantry_move_m1>-?\\d+\\\
+    .?\\d*),(?P<gantry_move_m2>-?\\d+\\.?\\d*)$"
   "event_type": "GANTRY_MOVE_CMD"
   "target_id": "rbw_station"
-- "name": "X Axis Feedback"
-  "regex": "^Welding X-axis position:\\s*read pos：(?P<actual>-?\\d+\\.?\\d*)\\s*send\
-    \ pos：(?P<target>-?\\d+\\.?\\d*)$"
-  "event_type": "X_AXIS_FEEDBACK"
-  "target_id": "rbw_station"
+# - "name": "X Axis Feedback"
+#   "regex": "^Welding X-axis position:\\s*read pos：(?P<actual>-?\\d+\\.?\\d*)\\s*send\
+#     \ pos：(?P<target>-?\\d+\\.?\\d*)$"
+#   "event_type": "X_AXIS_FEEDBACK"
+#   "target_id": "rbw_station"
 - "name": "Mirror 1 Feedback"
   "regex": "^Mirror 1 axis position:\\s*read pos：(?P<actual>-?\\d+\\.?\\d*)\\s*send\
     \ pos：(?P<target>-?\\d+\\.?\\d*)$"
   "event_type": "MIRROR_1_FEEDBACK"
   "target_id": "rbw_station"
 - "name": "Mirror 2 Feedback"
-  "regex": "^Mirror 2-axis position:\\s*read pos：(?P<actual>-?\\d+\\.?\\d*)\\s*send\
-    \ pos：(?P<target>-?\\d+\\.?\\d*)$"
+  "regex": "^Mirror 2-axis position:\\s*read pos：(?P<m2_position_actual>-?\\d+\\.?\\d*)\\s*send\
+    \ pos：(?P<m2_position_target>-?\\d+\\.?\\d*)$"
   "event_type": "MIRROR_2_FEEDBACK"
   "target_id": "rbw_station"
 - "name": "Camera Double Exposure Cmd"

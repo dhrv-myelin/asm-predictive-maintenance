@@ -374,6 +374,20 @@ class LogicEngine:
                 # Stream immediately to database
                 self._stream_metric(timestamp, station.id, m_name, value, m_type, station.current_state, self.inventory.get(station.id, {}).cycle_count, self.inventory.get(station.id, {}).active_pallet_id)
 
+            if m_type == 'payload':
+                print("[DEBUG] Payload metric detected. Streaming raw payload data for metric:", m_name)
+                self._push_raw_metrics(
+                    event={
+                        'payload': payload,
+                        'target': station.id,
+                        'type': station.current_state,
+                        'state_resolver': {
+                            'target': station.id,
+                        }
+                    },
+                    timestamp= timestamp
+                )
+
     def _push_raw_metrics(self, event, timestamp):
 
         SKIP_KEYS = {'pallet_id', 'unit', 'carrier_sn', 'position', 'version'}

@@ -45,6 +45,7 @@
           - "name": "clamping_time"
             "type": "duration_seconds"
             "export": true
+          "transition_stage": "handover_prep"
       "POST_CLAMPING":
         "transitions":
         - "event": "DATA_EXCHANGE_WAIT"
@@ -237,7 +238,7 @@
           - "name": "product_release_wait"
             "type": "duration_seconds"
             "export": true
-          "transition_stage": "handover_prep"
+          # "transition_stage": "handover_prep"
       "PRODUCT_UNCLAMPING":
         "transitions":
         - "event": "CLAMP_RELEASE_FEEDBACK"

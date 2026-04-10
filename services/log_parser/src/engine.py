@@ -109,6 +109,9 @@ class LogicEngine:
             station.active_pallet_id = payload['pallet_id']
             print(f"[DEBUG]: Updated Station '{target_id}' with Pallet ID: {station.active_pallet_id}")
 
+        if transition_stage in ["handover_prep", "handover"] and not station.active_pallet_id:
+            station.active_pallet_id = station.cycle_count
+
         # 3. ARRIVAL: Claim from Inbox
         if transition_stage == "arrival":
             if not getattr(station, 'is_entry', False):
@@ -132,6 +135,7 @@ class LogicEngine:
         self._handle_station_logic(station, event, timestamp)
 
         if transition_stage == "handover":
+            event['timestamp'] = timestamp
             self._execute_handover(station, event)
 
         # D. Viz Update
@@ -238,6 +242,27 @@ class LogicEngine:
             cycle_count = self.inventory.get(station.id, {}).cycle_count,
             pallet_serial_number = self.inventory.get(station.id, {}).active_pallet_id,
         )
+        if station.exit_station_previous_entry_time:
+            cycle_time = timestamp - station.exit_station_previous_entry_time
+            self._stream_metric(
+                timestamp=timestamp,
+                comp_id=station.id,
+                name="cycle_time",
+                value=cycle_time,
+                unit="seconds",
+                context="EXIT",
+                cycle_count = self.inventory.get(station.id, {}).cycle_count,
+                pallet_serial_number = self.inventory.get(station.id, {}).active_pallet_id,
+            )
+        print(
+            "[DEBUG] Previous entry time for exit station was : ",
+            datetime.fromtimestamp(station.exit_station_previous_entry_time).strftime("%y-%m-%d %H:%M:%S") if station.exit_station_previous_entry_time else "N/A",
+            " and current timestamp is : ",
+            datetime.fromtimestamp(timestamp).strftime("%y-%m-%d %H:%M:%S"),
+            " calculated cycle time is : ",
+            timestamp - station.exit_station_previous_entry_time if station.exit_station_previous_entry_time else "N/A"
+        )
+        station.exit_station_previous_entry_time = timestamp
 
         if self.viz:
             # Update the graph

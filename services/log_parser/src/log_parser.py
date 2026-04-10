@@ -353,7 +353,7 @@ class LogParser:
                                 
                     formatted_details = pattern['event_details'].format(**groups)
                     yield epoch, self._sentinel_event(pattern['event_type'], pattern['level'], formatted_details)
-                    break  # Don't break here — allow error/warning patterns to overlap with regular patterns for richer events
+                    # break  # Don't break here — allow error/warning patterns to overlap with regular patterns for richer events
 
                 yield epoch, self._build_event(pattern, pmatch, channel, line_text)
                 break

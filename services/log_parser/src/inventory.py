@@ -14,6 +14,9 @@ class Station:
 
         self.is_entry = config.get('is_entry', False)
         self.is_exit = config.get('is_exit', False)
+
+        if self.is_exit:
+            self.exit_station_previous_entry_time = None
         
         # State Management
         self.current_state = logic_template.get('initial_state', 'IDLE')

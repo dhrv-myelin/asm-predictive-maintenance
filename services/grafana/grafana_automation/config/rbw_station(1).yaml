@@ -1,0 +1,290 @@
+dashboard:
+  title: "RBW Station — Process Metrics"
+  uid: "rbw-station-metrics"
+  id: 1
+  version: 1
+  tags:
+    - "process-metrics"
+    - "rbw_station"
+  refresh: "1d"
+  timezone: "browser"
+  schemaVersion: 40
+
+datasource:
+  type: "postgres"
+  uid: "${datasource}"
+  label: "Data Source"
+  current_text: "PostgreSQL"
+  current_value: "bffvbhhjc42yoe"
+
+station_name: "rbw_station"
+
+time:
+  from: "2026-02-01T18:30:00.000Z"
+  to: "2026-03-10T18:29:59.000Z"
+
+panels:
+  - metric_name: z_axis_positioning_wait
+    title: "Z Axis Positioning Wait"
+    type: spc_timeseries
+    unit: s
+    id: 1
+
+  - metric_name: z_axis_target_height
+    title: "Z Axis Target Height"
+    type: spc_timeseries
+    unit: s
+    id: 2
+
+  - metric_name: z_axis_positioning_time
+    title: "Z Axis Positioning Time"
+    type: spc_timeseries
+    unit: s
+    id: 3
+
+  - metric_name: z_axis_position_actual
+    title: "Z Axis Position Actual"
+    type: spc_timeseries
+    unit: s
+    id: 4
+
+  - metric_name: z_axis_position_target
+    title: "Z Axis Position Target"
+    type: spc_timeseries
+    unit: s
+    id: 5
+
+  - metric_name: clamping_time
+    title: "Clamping Time"
+    type: spc_timeseries
+    unit: s
+    id: 6
+
+  - metric_name: pre_data_handshake_wait
+    title: "Pre Data Handshake Wait"
+    type: spc_timeseries
+    unit: s
+    id: 7
+
+  - metric_name: data_handshake_time
+    title: "Data Handshake Time"
+    type: spc_timeseries
+    unit: s
+    id: 8
+
+  - metric_name: gantry_move_x
+    title: "Gantry Move X"
+    type: spc_timeseries
+    unit: s
+    id: 9
+
+  - metric_name: gantry_move_z
+    title: "Gantry Move Z"
+    type: spc_timeseries
+    unit: s
+    id: 10
+
+  - metric_name: gantry_move_m1
+    title: "Gantry Move M1"
+    type: spc_timeseries
+    unit: s
+    id: 11
+
+  - metric_name: gantry_move_m2
+    title: "Gantry Move M2"
+    type: spc_timeseries
+    unit: s
+    id: 12
+
+  - metric_name: gantry_positioning_time
+    title: "Gantry Positioning Time"
+    type: spc_timeseries
+    unit: s
+    id: 13
+
+  - metric_name: m2_position_actual
+    title: "M2 Position Actual"
+    type: spc_timeseries
+    unit: s
+    id: 14
+
+  - metric_name: m2_position_target
+    title: "M2 Position Target"
+    type: spc_timeseries
+    unit: s
+    id: 15
+
+  - metric_name: pre_double_exposure_wait_time
+    title: "Pre Double Exposure Wait Time"
+    type: spc_timeseries
+    unit: s
+    id: 16
+
+  - metric_name: gantry_positioning_to_pre_marking_wait
+    title: "Gantry Positioning To Pre Marking Wait"
+    type: spc_timeseries
+    unit: s
+    id: 17
+
+  - metric_name: double_exposure_positioning_time
+    title: "Double Exposure Positioning Time"
+    type: spc_timeseries
+    unit: s
+    id: 18
+
+  - metric_name: pre_camera_positioning_wait
+    title: "Pre Camera Positioning Wait"
+    type: spc_timeseries
+    unit: s
+    id: 19
+
+  - metric_name: camera_positioning_time
+    title: "Camera Positioning Time"
+    type: spc_timeseries
+    unit: s
+    id: 20
+
+  - metric_name: pre_marking_wait
+    title: "Pre Marking Wait"
+    type: spc_timeseries
+    unit: s
+    id: 21
+
+  - metric_name: marking_init_time
+    title: "Marking Init Time"
+    type: spc_timeseries
+    unit: s
+    id: 22
+
+  - metric_name: galvo_1_position
+    title: "Galvo 1 Position"
+    type: spc_timeseries
+    unit: s
+    id: 23
+
+  - metric_name: galvo_2_position
+    title: "Galvo 2 Position"
+    type: spc_timeseries
+    unit: s
+    id: 24
+
+  - metric_name: marking_galvo_positioning_time
+    title: "Marking Galvo Positioning Time"
+    type: spc_timeseries
+    unit: s
+    id: 25
+
+  - metric_name: marking_result_wait
+    title: "Marking Result Wait"
+    type: spc_timeseries
+    unit: s
+    id: 26
+
+  - metric_name: marking_repeat_wait
+    title: "Marking Repeat Wait"
+    type: spc_timeseries
+    unit: s
+    id: 27
+
+  - metric_name: marking_to_reinspection_wait
+    title: "Marking To Reinspection Wait"
+    type: spc_timeseries
+    unit: s
+    id: 28
+
+  - metric_name: reinspection_time
+    title: "Reinspection Time"
+    type: spc_timeseries
+    unit: s
+    id: 29
+
+  - metric_name: pre_image_save_wait
+    title: "Pre Image Save Wait"
+    type: spc_timeseries
+    unit: s
+    id: 30
+
+  - metric_name: camera_image_save_time
+    title: "Camera Image Save Time"
+    type: spc_timeseries
+    unit: s
+    id: 31
+
+  - metric_name: between_cluster_gantry_positioning_wait
+    title: "Between Cluster Gantry Positioning Wait"
+    type: spc_timeseries
+    unit: s
+    id: 32
+
+  - metric_name: marking_to_image_save_wait
+    title: "Marking To Image Save Wait"
+    type: spc_timeseries
+    unit: s
+    id: 33
+
+  - metric_name: skip_image_save_delay
+    title: "Skip Image Save Delay"
+    type: spc_timeseries
+    unit: s
+    id: 34
+
+  - metric_name: product_release_wait
+    title: "Product Release Wait"
+    type: spc_timeseries
+    unit: s
+    id: 35
+
+  - metric_name: unclamping_time
+    title: "Unclamping Time"
+    type: spc_timeseries
+    unit: s
+    id: 36
+
+  - metric_name: z_axis_homing_time
+    title: "Z Axis Homing Time"
+    type: spc_timeseries
+    unit: s
+    id: 37
+
+  - metric_name: post_homing_wait
+    title: "Post Homing Wait"
+    type: spc_timeseries
+    unit: s
+    id: 38
+
+  - metric_name: upstream_waiting_time
+    title: "Upstream Waiting Time"
+    type: spc_timeseries
+    unit: s
+    id: 39
+
+layout:
+  panel_width: 12
+  panel_height: 8
+  columns: 24
+
+features:
+  rolling_window:
+    enabled: true
+    datasource_type: "grafana-postgresql-datasource"
+    options:
+      - "1 minute"
+      - "5 minutes"
+      - "10 minutes"
+      - "15 minutes"
+      - "30 minutes"
+      - "1 hour"
+    default: "10 minutes"
+
+  annotations:
+    enabled: false
+    rules:
+      - name: "Rule 1 - Beyond 3σ"
+        color: "red"
+        query: "nelson_rule_1"
+      - name: "Rule 2 - Run of 9"
+        color: "orange"
+        query: "nelson_rule_2"
+      - name: "Rule 3 - 6 Trending"
+        color: "yellow"
+        query: "nelson_rule_3"

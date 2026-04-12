@@ -1,0 +1,80 @@
+dashboard:
+  title: "System — Process Metrics"
+  uid: "system-metrics"
+  id: 1
+  version: 1
+  tags:
+    - "process-metrics"
+    - "system"
+  refresh: "1d"
+  timezone: "browser"
+  schemaVersion: 40
+
+datasource:
+  type: "postgres"
+  uid: "${datasource}"
+  label: "Data Source"
+  current_text: "PostgreSQL"
+  current_value: "bffvbhhjc42yoe"
+
+station_name: "system"
+
+time:
+  from: "2026-02-01T18:30:00.000Z"
+  to: "2026-03-10T18:29:59.000Z"
+
+panels:
+  - metric_name: x_axis_position_actual
+    title: "X Axis Position Actual"
+    type: spc_timeseries
+    unit: s
+    id: 1
+
+  - metric_name: x_axis_position_target
+    title: "X Axis Position Target"
+    type: spc_timeseries
+    unit: s
+    id: 2
+
+  - metric_name: m1_position_actual
+    title: "M1 Position Actual"
+    type: spc_timeseries
+    unit: s
+    id: 3
+
+  - metric_name: m1_position_target
+    title: "M1 Position Target"
+    type: spc_timeseries
+    unit: s
+    id: 4
+
+layout:
+  panel_width: 12
+  panel_height: 8
+  columns: 24
+
+features:
+  rolling_window:
+    enabled: true
+    datasource_type: "grafana-postgresql-datasource"
+    options:
+      - "1 minute"
+      - "5 minutes"
+      - "10 minutes"
+      - "15 minutes"
+      - "30 minutes"
+      - "1 hour"
+    default: "10 minutes"
+
+  annotations:
+    enabled: false
+    rules:
+      - name: "Rule 1 - Beyond 3σ"
+        color: "red"
+        query: "nelson_rule_1"
+      - name: "Rule 2 - Run of 9"
+        color: "orange"
+        query: "nelson_rule_2"
+      - name: "Rule 3 - 6 Trending"
+        color: "yellow"
+        query: "nelson_rule_3"

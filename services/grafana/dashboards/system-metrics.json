@@ -12,6 +12,74 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bffvbhhjc42yoe"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "error logs",
+        "target": {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    timestamp AS time,\n    log_message AS text,\n    'ERROR' AS tags\nFROM error_logs\nWHERE severity = 'error'\nORDER BY timestamp",
+          "refId": "Anno",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      },
+      {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bffvbhhjc42yoe"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "orange",
+        "name": "warning logs",
+        "target": {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    timestamp AS time,\n    log_message AS text,\n    'WARNING' AS tags\nFROM error_logs\nWHERE severity = 'warning'\nORDER BY timestamp",
+          "refId": "Anno",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
       }
     ]
   },
@@ -480,6 +548,6 @@
   "timezone": "browser",
   "title": "System — Process Metrics",
   "uid": "system-metrics",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }

@@ -17,8 +17,9 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from zoneinfo import ZoneInfo
 from typing import Optional
+
 # Stats pipeline imports
-from baseline_stats import analyse_metric, build_config, ALLOWED_METRICS 
+from baseline_stats import analyse_metric, build_config, ALLOWED_METRICS
 from stats_model_2 import run_pattern_pipeline, print_summary
 
 logger = logging.getLogger(__name__)
@@ -153,6 +154,7 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
 # Stats pipeline (no DataHandler needed)
 # --------------------------------------------------
 
+
 def run_stats_pipeline(db_util: DBUtils) -> None:
     """
     1. Pull process_metrics (full history) and baseline from DB
@@ -172,14 +174,18 @@ def run_stats_pipeline(db_util: DBUtils) -> None:
     df = df[df["metric_name"].isin(ALLOWED_METRICS)]
 
     if df.empty:
-        logger.error(" [Stats] No rows remain after ALLOWED_METRICS filter — aborting stats pipeline")
+        logger.error(
+            " [Stats] No rows remain after ALLOWED_METRICS filter — aborting stats pipeline"
+        )
         return
 
-    logger.info(" [Stats] %d rows fetched across %d days for %d metrics: %s",
-                len(df),
-                df["timestamp"].dt.date.nunique(),
-                df["metric_name"].nunique(),
-                df["metric_name"].unique().tolist())
+    logger.info(
+        " [Stats] %d rows fetched across %d days for %d metrics: %s",
+        len(df),
+        df["timestamp"].dt.date.nunique(),
+        df["metric_name"].nunique(),
+        df["metric_name"].unique().tolist(),
+    )
 
     logger.info(" [Stats] Fetching baseline from DB...")
     baseline = db_util.fetch_baseline()  # dict: {metric_name: (mean, std)}
@@ -193,7 +199,9 @@ def run_stats_pipeline(db_util: DBUtils) -> None:
             results.append(r)
 
     if not results:
-        logger.error("❌ [Stats] analyse_metric returned no results — check data volume (need ≥50 rows per metric/station)")
+        logger.error(
+            "❌ [Stats] analyse_metric returned no results — check data volume (need ≥50 rows per metric/station)"
+        )
         return
 
     metric_cfg = build_config(results)
@@ -201,14 +209,18 @@ def run_stats_pipeline(db_util: DBUtils) -> None:
 
     # ── Run pattern detectors ──────────────────────────────────────────────────
     logger.info("📊 [Stats] Running pattern detectors...")
-    patterns_df = run_pattern_pipeline(df, global_baseline=baseline, metric_cfg=metric_cfg)
+    patterns_df = run_pattern_pipeline(
+        df, global_baseline=baseline, metric_cfg=metric_cfg
+    )
     patterns_df = print_summary(patterns_df)
 
     # ── Push to DB ─────────────────────────────────────────────────────────────
     logger.info("📊 [Stats] Writing patterns to DB...")
     db_util.insert_patterns(patterns_df)
 
-    logger.info("✅ [Stats] Pipeline complete — %d pattern windows written", len(patterns_df))
+    logger.info(
+        "✅ [Stats] Pipeline complete — %d pattern windows written", len(patterns_df)
+    )
 
 
 def main():
@@ -243,13 +255,13 @@ def main():
     parser.add_argument(
         "--start",
         type=str,
-        default="2026-02-03 18:45:00",
+        default="2026-02-09 00:40:00",
         help="Start timestamp in IST for train/backup mode (format: 'YYYY-MM-DD HH:MM:SS')",
     )
     parser.add_argument(
         "--end",
         type=str,
-        default="2026-02-03 19:27:35",
+        default="2026-03-31 19:27:35",
         help="End timestamp in IST for train/backup mode (format: 'YYYY-MM-DD HH:MM:SS')",
     )
     parser.add_argument(
@@ -350,10 +362,16 @@ def main():
     # Mode dispatch
     # --------------------------------------------------
     if args.mode == "train":
-        start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S").replace(
-            tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
-        end_ts = datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S").replace(
-            tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
+        start_ts = (
+            datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S")
+            .replace(tzinfo=ZoneInfo("Asia/Kolkata"))
+            .astimezone(ZoneInfo("UTC"))
+        )
+        end_ts = (
+            datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S")
+            .replace(tzinfo=ZoneInfo("Asia/Kolkata"))
+            .astimezone(ZoneInfo("UTC"))
+        )
 
         rows = db_util.fetch_data(start_ts, end_ts)
 
@@ -371,10 +389,16 @@ def main():
                     models[name].train(X, y)
 
     elif args.mode == "backup":
-        start_ts = datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S").replace(
-            tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
-        end_ts = datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S").replace(
-            tzinfo=ZoneInfo("Asia/Kolkata")).astimezone(ZoneInfo("UTC"))
+        start_ts = (
+            datetime.strptime(args.start, "%Y-%m-%d %H:%M:%S")
+            .replace(tzinfo=ZoneInfo("Asia/Kolkata"))
+            .astimezone(ZoneInfo("UTC"))
+        )
+        end_ts = (
+            datetime.strptime(args.end, "%Y-%m-%d %H:%M:%S")
+            .replace(tzinfo=ZoneInfo("Asia/Kolkata"))
+            .astimezone(ZoneInfo("UTC"))
+        )
 
         infer_from_archive(start_ts, end_ts, data_handlers, models, db_util)
 

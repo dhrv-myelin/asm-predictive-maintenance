@@ -1,0 +1,2412 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Focused view: Component Level Degradation and Anomalies by component type, with AI Summary.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": 1,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2000,
+      "panels": [],
+      "title": "🔴 Component Level Degradation — By Component Type",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TypeRank"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "overall_health_score"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "semi-dark-green",
+                        "index": 0
+                      },
+                      "1": {
+                        "color": "yellow",
+                        "index": 1
+                      },
+                      "2": {
+                        "color": "semi-dark-red",
+                        "index": 2
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "applyToRow": true,
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "health_score"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 3017,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": false
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH\nanomaly_data AS (\n  SELECT COUNT(DISTINCT au.metric_name) AS cnt\n  FROM alerts_unified au\n  LEFT JOIN statistical_patterns sp \n    ON au.metric_name = sp.metric_name\n  WHERE au.severity = 'anomaly'\n    AND au.time >= $__timeFrom() AND au.time < $__timeTo()\n    AND au.station IN ($station)\n    AND (\n      (au.station NOT IN ('ced_station','ced_maintenance','gantry_positioning','system') \n        AND LOWER(sp.type_of_motor::text) LIKE '%%stepper%%')\n      OR (au.station = 'ced_station' \n        AND au.metric_name IN ('pallet_movein_time','pallet_moveout_time'))\n    )\n),\n\ndegradation_data AS (\n  SELECT \n    COUNT(DISTINCT (mp.metric_name, SPLIT_PART(mp.model_name, '::', 2))) AS cnt,\n    MAX(\n      CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration'   THEN 10\n        WHEN 'Step Jump'            THEN 10\n        WHEN 'Random Spikes'        THEN 3\n        WHEN 'Slow Drift'           THEN 8\n        WHEN 'Baseline Shift'       THEN 8\n        WHEN 'Periodic Oscillation' THEN 8\n        WHEN 'Variance Growth'      THEN 8\n        ELSE 3\n      END\n    ) AS max_severity\n  FROM model_predictions mp\n  INNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\n  WHERE mp.model_name LIKE 'stats_pattern_detector::%%'\n    AND $__timeFilter(mp.actual_timestamp)\n    AND LOWER(sp.type_of_motor::text) LIKE '%%stepper%%'\n    AND SPLIT_PART(mp.model_name, '::', 2) \n        NOT IN ('Slow Drift', 'Periodic Oscillation', 'Step Jump')\n),\n\nscored AS (\n  SELECT\n    'Anomaly' AS type,\n    cnt AS count,\n    CASE \n      WHEN cnt > 20 THEN 3\n      WHEN cnt >= 10 THEN 1\n      ELSE 0\n    END AS health_score\n  FROM anomaly_data\n\n  UNION ALL\n\n  SELECT\n    'Degradation' AS type,\n    cnt AS count,\n    CASE \n      WHEN max_severity >= 8  THEN 2\n      WHEN max_severity > 3 THEN 1\n      ELSE 0\n    END AS health_score\n  FROM degradation_data\n),\n\nfinal AS (\n  SELECT *,\n         MAX(health_score) OVER () AS overall_health_score\n  FROM scored\n)\n\nSELECT * FROM final;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Stepper",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TypeRank"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "overall_health_score"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "semi-dark-green",
+                        "index": 0
+                      },
+                      "1": {
+                        "color": "yellow",
+                        "index": 1
+                      },
+                      "2": {
+                        "color": "semi-dark-red",
+                        "index": 2
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "applyToRow": true,
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "health_score"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 3016,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": false
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH\nanomaly_data AS (\n  SELECT COUNT(DISTINCT au.metric_name) AS cnt\n  FROM alerts_unified au\n  LEFT JOIN statistical_patterns sp \n    ON au.metric_name = sp.metric_name\n  WHERE au.severity = 'anomaly'\n    AND au.time >= $__timeFrom() AND au.time < $__timeTo()\n    AND au.station IN ($station)\n    AND (\n      (au.station NOT IN ('ced_station','ced_maintenance','gantry_positioning','system') \n        AND LOWER(sp.type_of_motor::text) LIKE '%%servo%%')\n      OR au.station = 'gantry_positioning'\n      OR (au.station = 'ced_station' \n        AND au.metric_name IN (\n          'cavity_1_dispensing_time','cavity_2_dispensing_time',\n          'cavity_3_dispensing_time','cavity_4_dispensing_time',\n          'cavity_5_dispensing_time','cavity_6_dispensing_time',\n          'inspection_time'))\n    )\n),\n\ndegradation_data AS (\n  SELECT \n    COUNT(DISTINCT (mp.metric_name, SPLIT_PART(mp.model_name, '::', 2))) AS cnt,\n    MAX(\n      CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration'   THEN 10\n        WHEN 'Step Jump'            THEN 10\n        WHEN 'Random Spikes'        THEN 3\n        WHEN 'Slow Drift'           THEN 8\n        WHEN 'Baseline Shift'       THEN 8\n        WHEN 'Periodic Oscillation' THEN 8\n        WHEN 'Variance Growth'      THEN 8\n        ELSE 3\n      END\n    ) AS max_severity\n  FROM model_predictions mp\n  INNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\n  WHERE mp.model_name LIKE 'stats_pattern_detector::%%'\n    AND $__timeFilter(mp.actual_timestamp)\n    AND LOWER(sp.type_of_motor::text) LIKE '%%servo%%'\n    AND SPLIT_PART(mp.model_name, '::', 2) \n        NOT IN ('Slow Drift', 'Periodic Oscillation', 'Step Jump')\n),\n\nscored AS (\n  SELECT\n    'Anomaly' AS type,\n    cnt AS count,\n    CASE \n      WHEN cnt >= 20 THEN 2\n      WHEN cnt >= 10 THEN 1\n      ELSE 0\n    END AS health_score\n  FROM anomaly_data\n\n  UNION ALL\n\n  SELECT\n    'Degradation' AS type,\n    cnt AS count,\n    CASE \n      WHEN max_severity >= 8  THEN 2\n      WHEN max_severity > 3 THEN 1\n      ELSE 0\n    END AS health_score\n  FROM degradation_data\n),                          -- ← this comma was missing\n\nfinal AS (\n  SELECT *,\n         MAX(health_score) OVER () AS overall_health_score\n  FROM scored\n)\n\nSELECT * FROM final;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Servo",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TypeRank"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "overall_health_score"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "semi-dark-green",
+                        "index": 0
+                      },
+                      "1": {
+                        "color": "yellow",
+                        "index": 1
+                      },
+                      "2": {
+                        "color": "semi-dark-red",
+                        "index": 2
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "applyToRow": true,
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "health_score"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 3018,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": false
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH\nanomaly_data AS (\n  SELECT COUNT(DISTINCT au.metric_name) AS cnt\n  FROM alerts_unified au\n  LEFT JOIN statistical_patterns sp ON au.metric_name = sp.metric_name\n  WHERE au.severity = 'anomaly'\n    AND au.time >= $__timeFrom() AND au.time < $__timeTo()\n    AND au.station IN ($station)\n    AND (\n      (au.station NOT IN ('ced_station','ced_maintenance','gantry_positioning','system') \n        AND LOWER(sp.type_of_motor::text) LIKE '%%pneumatic%%')\n      OR (au.station = 'ced_station' AND au.metric_name IN (\n          'entry_stopper_lowering_time','entry_stopper_raising_time',\n          'exit_stopper_lowering_time','exit_stopper_raising_time',\n          'pallet_clamping_time','pallet_lifting_time',\n          'pallet_lowering_time','pallet_unclamping_time'))\n    )\n),\n\ndegradation_data AS (\n  SELECT \n    COUNT(DISTINCT (mp.metric_name, SPLIT_PART(mp.model_name, '::', 2))) AS cnt,\n    MAX(\n      CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration'   THEN 10\n        WHEN 'Step Jump'            THEN 10\n        WHEN 'Random Spikes'        THEN 3\n        WHEN 'Slow Drift'           THEN 8\n        WHEN 'Baseline Shift'       THEN 8\n        WHEN 'Periodic Oscillation' THEN 8\n        WHEN 'Variance Growth'      THEN 8\n        ELSE 3\n      END\n    ) AS max_severity\n  FROM model_predictions mp\n  INNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\n  WHERE mp.model_name LIKE 'stats_pattern_detector::%%'\n    AND $__timeFilter(mp.actual_timestamp)\n    AND LOWER(sp.type_of_motor::text) LIKE '%%pneumatic%%'\n    AND SPLIT_PART(mp.model_name, '::', 2) \n        NOT IN ('Slow Drift', 'Periodic Oscillation', 'Step Jump')\n),\n\nscored AS (\n  SELECT\n    'Anomaly' AS type,\n    cnt AS count,\n    CASE \n      WHEN cnt >= 20 THEN 2\n      WHEN cnt >= 10 THEN 1\n      ELSE 0\n    END AS health_score\n  FROM anomaly_data\n\n  UNION ALL\n\n  SELECT\n    'Degradation' AS type,\n    cnt AS count,\n    CASE \n      WHEN max_severity >= 8 THEN 2\n      WHEN max_severity >  3 THEN 1\n      ELSE 0\n    END AS health_score\n  FROM degradation_data\n),\n\nfinal AS (\n  SELECT *,\n         MAX(health_score) OVER () AS overall_health_score\n  FROM scored\n)\n\nSELECT * FROM final;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "pneumatic",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TypeRank"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "overall_health_score"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "semi-dark-green",
+                        "index": 0
+                      },
+                      "1": {
+                        "color": "yellow",
+                        "index": 1
+                      },
+                      "2": {
+                        "color": "semi-dark-red",
+                        "index": 2
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "applyToRow": true,
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "health_score"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 3019,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": false
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH\nanomaly_data AS (\n  SELECT COUNT(DISTINCT au.metric_name) AS cnt\n  FROM alerts_unified au\n  LEFT JOIN statistical_patterns sp ON au.metric_name = sp.metric_name\n  WHERE au.severity = 'anomaly'\n    AND au.time >= $__timeFrom() AND au.time < $__timeTo()\n    AND au.station IN ($station)\n    AND (\n      (au.station NOT IN ('ced_station','ced_maintenance','gantry_positioning','system') \n        AND LOWER(sp.type_of_motor::text) LIKE '%%dispenser%%')\n      OR (au.station = 'system' \n        AND au.metric_name NOT IN ('cycle_time_value','unique_pallet_count'))\n    )\n),\n\ndegradation_data AS (\n  SELECT \n    COUNT(DISTINCT (mp.metric_name, SPLIT_PART(mp.model_name, '::', 2))) AS cnt,\n    MAX(\n      CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration'   THEN 10\n        WHEN 'Step Jump'            THEN 10\n        WHEN 'Random Spikes'        THEN 3\n        WHEN 'Slow Drift'           THEN 8\n        WHEN 'Baseline Shift'       THEN 8\n        WHEN 'Periodic Oscillation' THEN 8\n        WHEN 'Variance Growth'      THEN 8\n        ELSE 3\n      END\n    ) AS max_severity\n  FROM model_predictions mp\n  INNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\n  WHERE mp.model_name LIKE 'stats_pattern_detector::%%'\n    AND $__timeFilter(mp.actual_timestamp)\n    AND LOWER(sp.type_of_motor::text) LIKE '%%dispenser%%'\n    AND SPLIT_PART(mp.model_name, '::', 2) \n        NOT IN ('Slow Drift', 'Periodic Oscillation', 'Step Jump')\n),\n\nscored AS (\n  SELECT\n    'Anomaly' AS type,\n    cnt AS count,\n    CASE \n      WHEN cnt >= 20 THEN 2\n      WHEN cnt >= 10 THEN 1\n      ELSE 0\n    END AS health_score\n  FROM anomaly_data\n\n  UNION ALL\n\n  SELECT\n    'Degradation' AS type,\n    cnt AS count,\n    CASE \n      WHEN max_severity >= 8 THEN 2\n      WHEN max_severity >  3 THEN 1\n      ELSE 0\n    END AS health_score\n  FROM degradation_data\n),\n\nfinal AS (\n  SELECT *,\n         MAX(health_score) OVER () AS overall_health_score\n  FROM scored\n)\n\nSELECT * FROM final;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Dispenser",
+      "type": "table"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 3000,
+      "panels": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Detected At"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 160
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Component Type"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 130
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Pattern"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 140
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Metric"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 230
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Recommended Time for Action"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 190
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Severity (Based on Impact)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 170
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 4
+                        },
+                        {
+                          "color": "red",
+                          "value": 8
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Occurrences"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 105
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 10
+                        },
+                        {
+                          "color": "red",
+                          "value": 20
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Likely Causes & Suggestions"
+                },
+                "properties": [
+                  {
+                    "id": "custom.minWidth",
+                    "value": 280
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 0,
+            "y": 6
+          },
+          "id": 2010,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Severity (Based on Impact)"
+              }
+            ]
+          },
+          "pluginVersion": "11.4.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "postgres",
+                "uid": "bffvbhhjc42yoe"
+              },
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT\n    mp.metric_name AS \"Metric\",\n    SPLIT_PART(mp.model_name, '::', 2) AS \"Pattern\",\n    COALESCE(MAX(sp.likely_causes_and_what_to_inspect::text), 'N/A') AS \"Likely Causes & Suggestions\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration' THEN 'Hours – < 1 day'\n        WHEN 'Random Spikes'      THEN '3 – 14 days'\n        WHEN 'Baseline Shift'     THEN '3 – 14 days'\n        WHEN 'Variance Growth'    THEN '3 – 14 days'\n        ELSE 'Unknown'\n    END AS \"Recommended Time for Action\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration' THEN 10\n        WHEN 'Random Spikes'      THEN 3\n        WHEN 'Baseline Shift'     THEN 8\n        WHEN 'Variance Growth'    THEN 8\n        ELSE 3\n    END AS \"Severity (Based on Impact)\",\n    COUNT(*) AS \"Occurrences\"\nFROM model_predictions mp\nINNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\nWHERE\n    $__timeFilter(mp.actual_timestamp)\n    AND mp.model_name LIKE 'stats_pattern_detector::%%'\n    AND SPLIT_PART(mp.model_name, '::', 2) NOT IN ('Slow Drift', 'Periodic Oscillation', 'Step Jump')\n    AND LOWER(sp.type_of_motor::text) = 'stepper'\nGROUP BY mp.metric_name, SPLIT_PART(mp.model_name, '::', 2)\nORDER BY \"Severity (Based on Impact)\" DESC, MAX(mp.actual_timestamp) DESC",
+              "refId": "A",
+              "sql": {
+                "columns": [
+                  {
+                    "parameters": [],
+                    "type": "function"
+                  }
+                ],
+                "groupBy": [
+                  {
+                    "property": {
+                      "type": "string"
+                    },
+                    "type": "groupBy"
+                  }
+                ],
+                "limit": 50
+              }
+            }
+          ],
+          "title": "Component Degradation Detail — Stepper",
+          "transformations": [
+            {
+              "id": "convertFieldType",
+              "options": {
+                "conversions": [
+                  {
+                    "destinationType": "string",
+                    "targetField": "Detected At"
+                  }
+                ],
+                "fields": {}
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Detected At"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 160
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Component Type"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 130
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Pattern"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 140
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Metric"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 230
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Recommended Time for Action"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 190
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Severity (Based on Impact)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 170
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 4
+                        },
+                        {
+                          "color": "red",
+                          "value": 8
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Occurrences"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 105
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 10
+                        },
+                        {
+                          "color": "red",
+                          "value": 20
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Likely Causes & Suggestions"
+                },
+                "properties": [
+                  {
+                    "id": "custom.minWidth",
+                    "value": 280
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 6,
+            "y": 6
+          },
+          "id": 3007,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Severity (Based on Impact)"
+              }
+            ]
+          },
+          "pluginVersion": "11.4.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "postgres",
+                "uid": "bffvbhhjc42yoe"
+              },
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT\n    mp.metric_name AS \"Metric\",\n    SPLIT_PART(mp.model_name, '::', 2) AS \"Pattern\",\n    COALESCE(MAX(sp.likely_causes_and_what_to_inspect::text), 'N/A') AS \"Likely Causes & Suggestions\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration' THEN 'Hours – < 1 day'\n        WHEN 'Random Spikes'      THEN '3 – 14 days'\n        WHEN 'Baseline Shift'     THEN '3 – 14 days'\n        WHEN 'Variance Growth'    THEN '3 – 14 days'\n        ELSE 'Unknown'\n    END AS \"Recommended Time for Action\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration' THEN 10\n        WHEN 'Random Spikes'      THEN 3\n        WHEN 'Baseline Shift'     THEN 8\n        WHEN 'Variance Growth'    THEN 8\n        ELSE 3\n    END AS \"Severity (Based on Impact)\",\n    COUNT(*) AS \"Occurrences\"\nFROM model_predictions mp\nINNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\nWHERE\n    $__timeFilter(mp.actual_timestamp)\n    AND mp.model_name LIKE 'stats_pattern_detector::%%'\n    AND SPLIT_PART(mp.model_name, '::', 2) NOT IN ('Slow Drift', 'Periodic Oscillation', 'Step Jump')\n    AND LOWER(sp.type_of_motor::text) = 'servo'\nGROUP BY mp.metric_name, SPLIT_PART(mp.model_name, '::', 2)\nORDER BY \"Severity (Based on Impact)\" DESC, MAX(mp.actual_timestamp) DESC",
+              "refId": "A",
+              "sql": {
+                "columns": [
+                  {
+                    "parameters": [],
+                    "type": "function"
+                  }
+                ],
+                "groupBy": [
+                  {
+                    "property": {
+                      "type": "string"
+                    },
+                    "type": "groupBy"
+                  }
+                ],
+                "limit": 50
+              }
+            }
+          ],
+          "title": "Component Degradation Detail — Servo",
+          "transformations": [
+            {
+              "id": "convertFieldType",
+              "options": {
+                "conversions": [
+                  {
+                    "destinationType": "string",
+                    "targetField": "Detected At"
+                  }
+                ],
+                "fields": {}
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Detected At"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 160
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Component Type"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 130
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Pattern"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 140
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Metric"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 230
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Recommended Time for Action"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 190
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Severity (Based on Impact)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 170
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 4
+                        },
+                        {
+                          "color": "red",
+                          "value": 8
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Occurrences"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 105
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 10
+                        },
+                        {
+                          "color": "red",
+                          "value": 20
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Likely Causes & Suggestions"
+                },
+                "properties": [
+                  {
+                    "id": "custom.minWidth",
+                    "value": 280
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 12,
+            "y": 6
+          },
+          "id": 3008,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Severity (Based on Impact)"
+              }
+            ]
+          },
+          "pluginVersion": "11.4.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "postgres",
+                "uid": "bffvbhhjc42yoe"
+              },
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT\n    mp.metric_name AS \"Metric\",\n    SPLIT_PART(mp.model_name, '::', 2) AS \"Pattern\",\n    COALESCE(MAX(sp.likely_causes_and_what_to_inspect::text), 'N/A') AS \"Likely Causes & Suggestions\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration' THEN 'Hours – < 1 day'\n        WHEN 'Random Spikes'      THEN '3 – 14 days'\n        WHEN 'Baseline Shift'     THEN '3 – 14 days'\n        WHEN 'Variance Growth'    THEN '3 – 14 days'\n        ELSE 'Unknown'\n    END AS \"Recommended Time for Action\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration' THEN 10\n        WHEN 'Random Spikes'      THEN 3\n        WHEN 'Baseline Shift'     THEN 8\n        WHEN 'Variance Growth'    THEN 8\n        ELSE 3\n    END AS \"Severity (Based on Impact)\",\n    COUNT(*) AS \"Occurrences\"\nFROM model_predictions mp\nINNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\nWHERE\n    $__timeFilter(mp.actual_timestamp)\n    AND mp.model_name LIKE 'stats_pattern_detector::%%'\n    AND SPLIT_PART(mp.model_name, '::', 2) NOT IN ('Slow Drift', 'Periodic Oscillation', 'Step Jump')\n    AND LOWER(sp.type_of_motor::text) = 'pneumatic_actuator'\nGROUP BY mp.metric_name, SPLIT_PART(mp.model_name, '::', 2)\nORDER BY \"Severity (Based on Impact)\" DESC, MAX(mp.actual_timestamp) DESC",
+              "refId": "A",
+              "sql": {
+                "columns": [
+                  {
+                    "parameters": [],
+                    "type": "function"
+                  }
+                ],
+                "groupBy": [
+                  {
+                    "property": {
+                      "type": "string"
+                    },
+                    "type": "groupBy"
+                  }
+                ],
+                "limit": 50
+              }
+            }
+          ],
+          "title": "Component Degradation Detail — Pneumatic Actuator",
+          "transformations": [
+            {
+              "id": "convertFieldType",
+              "options": {
+                "conversions": [
+                  {
+                    "destinationType": "string",
+                    "targetField": "Detected At"
+                  }
+                ],
+                "fields": {}
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Detected At"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 160
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Component Type"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 130
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Pattern"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 140
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Metric"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 230
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Recommended Time for Action"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 190
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Severity (Based on Impact)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 170
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 4
+                        },
+                        {
+                          "color": "red",
+                          "value": 8
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Occurrences"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 105
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 10
+                        },
+                        {
+                          "color": "red",
+                          "value": 20
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Likely Causes & Suggestions"
+                },
+                "properties": [
+                  {
+                    "id": "custom.minWidth",
+                    "value": 280
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 18,
+            "y": 6
+          },
+          "id": 3009,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Severity (Based on Impact)"
+              }
+            ]
+          },
+          "pluginVersion": "11.4.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "postgres",
+                "uid": "bffvbhhjc42yoe"
+              },
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT\n    mp.metric_name AS \"Metric\",\n    SPLIT_PART(mp.model_name, '::', 2) AS \"Pattern\",\n    COALESCE(MAX(sp.likely_causes_and_what_to_inspect::text), 'N/A') AS \"Likely Causes & Suggestions\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration' THEN 'Hours – < 1 day'\n        WHEN 'Random Spikes'      THEN '3 – 14 days'\n        WHEN 'Baseline Shift'     THEN '3 – 14 days'\n        WHEN 'Variance Growth'    THEN '3 – 14 days'\n        ELSE 'Unknown'\n    END AS \"Recommended Time for Action\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend Acceleration' THEN 10\n        WHEN 'Random Spikes'      THEN 3\n        WHEN 'Baseline Shift'     THEN 8\n        WHEN 'Variance Growth'    THEN 8\n        ELSE 3\n    END AS \"Severity (Based on Impact)\",\n    COUNT(*) AS \"Occurrences\"\nFROM model_predictions mp\nINNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\nWHERE\n    $__timeFilter(mp.actual_timestamp)\n    AND mp.model_name LIKE 'stats_pattern_detector::%%'\n    AND SPLIT_PART(mp.model_name, '::', 2) NOT IN ('Slow Drift', 'Periodic Oscillation', 'Step Jump')\n    AND LOWER(sp.type_of_motor::text) = ''\nGROUP BY mp.metric_name, SPLIT_PART(mp.model_name, '::', 2)\nORDER BY \"Severity (Based on Impact)\" DESC, MAX(mp.actual_timestamp) DESC",
+              "refId": "A",
+              "sql": {
+                "columns": [
+                  {
+                    "parameters": [],
+                    "type": "function"
+                  }
+                ],
+                "groupBy": [
+                  {
+                    "property": {
+                      "type": "string"
+                    },
+                    "type": "groupBy"
+                  }
+                ],
+                "limit": 50
+              }
+            }
+          ],
+          "title": "Component Degradation Detail — Dispenser",
+          "transformations": [
+            {
+              "id": "convertFieldType",
+              "options": {
+                "conversions": [
+                  {
+                    "destinationType": "string",
+                    "targetField": "Detected At"
+                  }
+                ],
+                "fields": {}
+              }
+            }
+          ],
+          "type": "table"
+        }
+      ],
+      "title": "🔴 Component Level Degradation — By Component Type",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 3010,
+      "panels": [
+        {
+          "datasource": {
+            "uid": "bffvbhhjc42yoe"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Details"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 187
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Occurrences"
+                },
+                "properties": [
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "#EAB839",
+                          "value": 50
+                        },
+                        {
+                          "color": "red",
+                          "value": 100
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 11,
+            "w": 6,
+            "x": 0,
+            "y": 40
+          },
+          "id": 3011,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": []
+          },
+          "pluginVersion": "11.4.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT \n    station AS \"Station\",\n    metric_name,\n    MAX(title) AS \"Remark\",\n    MAX(detail) AS \"Details\",\n    COUNT(*) AS \"Occurrences\"\nFROM alerts_unified \nWHERE severity = 'anomaly' \nAND time >= $__timeFrom() AND time < $__timeTo()\nAND station = 'ced_station'\nAND metric_name IN ('pallet_movein_time','pallet_moveout_time')\nGROUP BY station, metric_name\nORDER BY MAX(time) DESC",
+              "refId": "A",
+              "sql": {
+                "columns": [
+                  {
+                    "parameters": [],
+                    "type": "function"
+                  }
+                ],
+                "groupBy": [
+                  {
+                    "property": {
+                      "type": "string"
+                    },
+                    "type": "groupBy"
+                  }
+                ],
+                "limit": 50
+              }
+            }
+          ],
+          "title": "Anomaly Details - Stepper",
+          "type": "table"
+        },
+        {
+          "datasource": {
+            "uid": "bffvbhhjc42yoe"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Details"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 187
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Occurrences"
+                },
+                "properties": [
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "#EAB839",
+                          "value": 50
+                        },
+                        {
+                          "color": "red",
+                          "value": 100
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 11,
+            "w": 6,
+            "x": 6,
+            "y": 40
+          },
+          "id": 3012,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": []
+          },
+          "pluginVersion": "11.4.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT \n    station AS \"Station\",\n    metric_name,\n    MAX(title) AS \"Remark\",\n    MAX(detail) AS \"Details\",\n    COUNT(*) AS \"Occurrences\"\nFROM alerts_unified \nWHERE severity = 'anomaly' \nAND time >= $__timeFrom() AND time < $__timeTo()\nAND metric_name IN ('cavity_1_dispensing_time','cavity_2_dispensing_time','cavity_3_dispensing_time','cavity_4_dispensing_time','cavity_5_dispensing_time','cavity_6_dispensing_time','inspection_time','gantry_safety_positioning_time')\nGROUP BY station, metric_name\nORDER BY MAX(time) DESC",
+              "refId": "A",
+              "sql": {
+                "columns": [
+                  {
+                    "parameters": [],
+                    "type": "function"
+                  }
+                ],
+                "groupBy": [
+                  {
+                    "property": {
+                      "type": "string"
+                    },
+                    "type": "groupBy"
+                  }
+                ],
+                "limit": 50
+              }
+            }
+          ],
+          "title": "Anomaly Details - Servo",
+          "type": "table"
+        },
+        {
+          "datasource": {
+            "uid": "bffvbhhjc42yoe"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Details"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 187
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Occurrences"
+                },
+                "properties": [
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "#EAB839",
+                          "value": 50
+                        },
+                        {
+                          "color": "red",
+                          "value": 100
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 11,
+            "w": 6,
+            "x": 12,
+            "y": 40
+          },
+          "id": 3013,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": []
+          },
+          "pluginVersion": "11.4.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT \n    station AS \"Station\",\n    metric_name,\n    MAX(title) AS \"Remark\",\n    MAX(detail) AS \"Details\",\n    COUNT(*) AS \"Occurrences\"\nFROM alerts_unified \nWHERE severity = 'anomaly' \nAND time >= $__timeFrom() AND time < $__timeTo()\nAND metric_name IN ('entry_stopper_lowering_time','entry_stopper_raising_time','exit_stopper_lowering_time','exit_stopper_raising_time','pallet_clamping_time','pallet_lifting_time','pallet_lowering_time','pallet_unclamping_time')\nGROUP BY station, metric_name\nORDER BY MAX(time) DESC",
+              "refId": "A",
+              "sql": {
+                "columns": [
+                  {
+                    "parameters": [],
+                    "type": "function"
+                  }
+                ],
+                "groupBy": [
+                  {
+                    "property": {
+                      "type": "string"
+                    },
+                    "type": "groupBy"
+                  }
+                ],
+                "limit": 50
+              }
+            }
+          ],
+          "title": "Anomaly Details - Pneumatic Actuator",
+          "type": "table"
+        },
+        {
+          "datasource": {
+            "uid": "bffvbhhjc42yoe"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Details"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 187
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Occurrences"
+                },
+                "properties": [
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "#EAB839",
+                          "value": 50
+                        },
+                        {
+                          "color": "red",
+                          "value": 100
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "metric_name"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 242
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 11,
+            "w": 6,
+            "x": 18,
+            "y": 40
+          },
+          "id": 3014,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": []
+          },
+          "pluginVersion": "11.4.0",
+          "targets": [
+            {
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "SELECT \n    station AS \"Station\",\n    metric_name,\n    MAX(title) AS \"Remark\",\n    MAX(detail) AS \"Details\",\n    COUNT(*) AS \"Occurrences\"\nFROM alerts_unified \nWHERE severity = 'anomaly' \nAND time >= $__timeFrom() AND time < $__timeTo()\nAND metric_name IN ('cavity_1_dispensing_time','cavity_2_dispensing_time','cavity_3_dispensing_time','cavity_4_dispensing_time','cavity_5_dispensing_time','cavity_6_dispensing_time','cavity_2_dispenser_start_point_a_value','cavity_2_dispenser_start_point_x_value','cavity_2_dispenser_start_point_y_value','cavity_3_dispenser_start_point_a_value','cavity_3_dispenser_start_point_x_value','cavity_3_dispenser_start_point_y_value','cavity_4_dispenser_start_point_a_value','cavity_4_dispenser_start_point_x_value','cavity_4_dispenser_start_point_y_value','cavity_5_dispenser_start_point_a_value','cavity_5_dispenser_start_point_x_value','cavity_5_dispenser_start_point_y_value','cm_vendor_value','dispense_height_value','dispense_speed_value','dispense_voltage_value','gantry_cpk_x_value','gantry_cpk_y_value','glue_weight_value','main_valve_temp','nozzle_temp_value','nozzle_temp_value_2','pressure_value','pulse_value','raising_time_value','striking_time_value','sub_valve_temp','tossing_value')\nGROUP BY station, metric_name\nORDER BY MAX(time) DESC",
+              "refId": "A",
+              "sql": {
+                "columns": [
+                  {
+                    "parameters": [],
+                    "type": "function"
+                  }
+                ],
+                "groupBy": [
+                  {
+                    "property": {
+                      "type": "string"
+                    },
+                    "type": "groupBy"
+                  }
+                ],
+                "limit": 50
+              }
+            }
+          ],
+          "title": "Anomaly Details - Dispenser",
+          "type": "table"
+        }
+      ],
+      "title": "🔴 Anomalies (3σ) — By Component Type",
+      "type": "row"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 1000,
+      "panels": [],
+      "title": "AI Summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "summary"
+            },
+            "properties": []
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 1001,
+      "options": {
+        "afterRender": "",
+        "content": "{{{summary}}}",
+        "contentPartials": [],
+        "defaultContent": "The query didn't return any results.",
+        "editor": {
+          "format": "markdown",
+          "language": "markdown"
+        },
+        "editors": [
+          "styles"
+        ],
+        "externalStyles": [],
+        "helpers": "",
+        "renderMode": "everyRow",
+        "styles": "",
+        "wrap": true
+      },
+      "pluginVersion": "6.2.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT replace(summary, '\\n', E'\\n') AS summary\nFROM agent_summaries\nWHERE run_date BETWEEN\n    ($__timeFrom() AT TIME ZONE 'Asia/Kolkata')::date\n    AND\n    ($__timeTo() AT TIME ZONE 'Asia/Kolkata')::date\nORDER BY run_date ASC;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "AI Summary",
+      "type": "marcusolsson-dynamictext-panel"
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 40,
+  "tags": [
+    "alerts",
+    "anomalies",
+    "degradation",
+    "monitoring",
+    "postgresql"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "bffvbhhjc42yoe"
+        },
+        "definition": "SELECT DISTINCT station FROM alerts_unified WHERE station IS NOT NULL ORDER BY station",
+        "includeAll": true,
+        "label": "Station",
+        "multi": true,
+        "name": "station",
+        "options": [],
+        "query": "SELECT DISTINCT station FROM alerts_unified WHERE station IS NOT NULL ORDER BY station",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "2026-02-01T18:30:00.000Z",
+    "to": "2026-02-02T18:29:59.000Z"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Simplified Alerts and Notification Dashboard",
+  "uid": "degradation-anomaly-v1",
+  "version": 18,
+  "weekStart": ""
+}

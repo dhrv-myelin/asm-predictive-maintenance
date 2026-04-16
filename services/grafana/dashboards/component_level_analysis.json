@@ -1,0 +1,437 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 12,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "color": "dark-green",
+                  "index": 0
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "noValue": "1",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "entry_stopper_lowering_time"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "purple",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 202
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "boolean"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "match": "true",
+                      "result": {
+                        "color": "semi-dark-orange",
+                        "index": 0,
+                        "text": "@"
+                      }
+                    },
+                    "type": "special"
+                  },
+                  {
+                    "options": {
+                      "match": "false",
+                      "result": {
+                        "color": "semi-dark-green",
+                        "index": 1,
+                        "text": "@"
+                      }
+                    },
+                    "type": "special"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "likely_causes_and_what_to_inspect"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 876
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "movein_to_entry_stopper_up_delay"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 140
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "What To Inspect"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 958
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Motor Type"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 96
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pattern"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 140
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Detected At"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 161
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Occurrences"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 118
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Metric"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 251
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Type"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 74
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "What To Inspect And Causes"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 1040
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Likely Causes and Maintenance Suggestions"
+            },
+            "properties": []
+          },
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "from": 1,
+                      "result": {
+                        "color": "yellow",
+                        "index": 0
+                      },
+                      "to": 3
+                    },
+                    "type": "range"
+                  },
+                  {
+                    "options": {
+                      "from": 4,
+                      "result": {
+                        "color": "orange",
+                        "index": 1
+                      },
+                      "to": 7
+                    },
+                    "type": "range"
+                  },
+                  {
+                    "options": {
+                      "from": 8,
+                      "result": {
+                        "color": "red",
+                        "index": 2
+                      },
+                      "to": 10
+                    },
+                    "type": "range"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity (Based on Impact)"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 22,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Detected At"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": true,
+          "rawQuery": true,
+          "rawSql": "SELECT\n    mp.actual_timestamp                             AS \"Detected At\",\n    mp.metric_name                                  AS \"Metric\",\n    SPLIT_PART(mp.model_name, '::', 2)              AS \"Pattern\",\n    COALESCE(sp.type_of_motor::text, 'N/A')                        AS \"Type\",\n    COALESCE(sp.likely_causes_and_what_to_inspect::text, 'N/A')    AS \"Likely Causes and Maintenance Suggestions\",\n    -- COUNT(*) OVER (\n    --     PARTITION BY mp.metric_name, SPLIT_PART(mp.model_name, '::', 2)\n    -- )                                               AS \"Occurrences\",\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n    WHEN 'Trend acceleration'   THEN 'Hours – < 1 day'\n    WHEN 'Step jumps'           THEN '1 – 3 days'\n    WHEN 'Random spikes'        THEN '3 – 14 days'\n    -- WHEN 'Slow drift'           THEN '2 – 6 weeks'\n    -- WHEN 'Baseline shift'       THEN '3 – 14 days'\n    WHEN 'Periodic oscillation' THEN '3 – 14 days'\n    WHEN 'Variance Growth'      THEN '3 – 14 days'\n    ELSE                             'Unknown'\nEND                                             AS \"Recommended Time for Action\"\n\nFROM model_predictions mp\nINNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\n\nWHERE\n    mp.actual_timestamp >= $__timeFrom()\n    AND mp.actual_timestamp < $__timeTo()\n    AND mp.model_name LIKE 'stats_pattern_detector::%'   -- ← added filter\n\nORDER BY\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration' THEN 1\n        WHEN 'Step jumps'         THEN 1\n        WHEN 'Random spikes'      THEN 2\n        WHEN 'Slow drift'         THEN 2\n        WHEN 'Baseline shift'     THEN 2\n        ELSE 3\n    END,\n    mp.actual_timestamp DESC;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bffvbhhjc42yoe"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT\n    mp.actual_timestamp                             AS \"Detected At\",\n    mp.metric_name                                  AS \"Metric\",\n    SPLIT_PART(mp.model_name, '::', 2)              AS \"Pattern\",\n    COALESCE(sp.type_of_motor::text, 'N/A')         AS \"Type\",\n    COALESCE(sp.likely_causes_and_what_to_inspect::text, 'N/A') AS \"Likely Causes and Maintenance Suggestions\",\n\n    -- 🔥 NEW SEVERITY COLUMN\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration'   THEN 10\n        WHEN 'Step Jump'           THEN 10\n        WHEN 'Random Spikes'        THEN 3\n        WHEN 'Slow Drift'           THEN 8\n        WHEN 'Baseline Shift'       THEN 8\n        WHEN 'Periodic Oscillation' THEN 8\n        WHEN 'Variance growth'      THEN 8\n        ELSE 3\n    END AS \"Severity (Based on Impact)\",\n\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration'   THEN 'Hours – < 1 day'\n        WHEN 'Step Jump'           THEN '1 – 3 days'\n        WHEN 'Random Spikes'        THEN '3 – 14 days'\n        WHEN 'Slow Drift'           THEN '2 – 6 weeks'\n        WHEN 'Baseline Shift'       THEN '3 – 14 days'\n        WHEN 'Periodic Oscillation' THEN '3 – 14 days'\n        WHEN 'Variance Growth'      THEN '3 – 14 days'\n        ELSE 'Unknown'\n    END AS \"Recommended Time for Action (Based on expected time to failure)\"\n\nFROM model_predictions mp\nINNER JOIN statistical_patterns sp\n    ON LOWER(SPLIT_PART(mp.model_name, '::', 2)) = LOWER(sp.statistical_pattern)\n    AND mp.metric_name = sp.metric_name\n\nWHERE\n    mp.actual_timestamp >= $__timeFrom()\n    AND mp.actual_timestamp < $__timeTo()\n    AND mp.model_name LIKE 'stats_pattern_detector::%'\n    AND SPLIT_PART(mp.model_name, '::', 2) NOT IN ('Slow Drift', 'Periodic Oscillation')\n\nORDER BY\n    CASE SPLIT_PART(mp.model_name, '::', 2)\n        WHEN 'Trend acceleration' THEN 1\n        WHEN 'Step jumps'         THEN 1\n        WHEN 'Random spikes'      THEN 2\n        WHEN 'Slow drift'         THEN 2\n        WHEN 'Baseline shift'     THEN 2\n        ELSE 3\n    END,\n    mp.actual_timestamp DESC;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Maintenance Cycles",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "2026-03-08T18:30:00.000Z",
+    "to": "2026-03-09T18:29:59.000Z"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Component Level Analysis",
+  "uid": "afgvjwd05dxj4a",
+  "version": 19,
+  "weekStart": ""
+}

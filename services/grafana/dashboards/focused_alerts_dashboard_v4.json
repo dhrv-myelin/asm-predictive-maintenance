@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1,
+  "id": 27,
   "links": [],
   "panels": [
     {
@@ -29,6 +29,189 @@
         "w": 24,
         "x": 0,
         "y": 0
+      },
+      "id": 1000,
+      "panels": [],
+      "title": "AI Summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "summary"
+            },
+            "properties": []
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1001,
+      "options": {
+        "afterRender": "",
+        "content": "{{{summary}}}",
+        "contentPartials": [],
+        "defaultContent": "The query didn't return any results.",
+        "editor": {
+          "format": "markdown",
+          "language": "markdown"
+        },
+        "editors": [
+          "styles"
+        ],
+        "externalStyles": [],
+        "helpers": "",
+        "renderMode": "everyRow",
+        "styles": "",
+        "wrap": true
+      },
+      "pluginVersion": "6.2.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT replace(summary, '\\n', E'\\n') AS summary\nFROM agent_summaries\nWHERE run_date BETWEEN\n    ($__timeFrom() AT TIME ZONE 'Asia/Kolkata')::date\n    AND\n    ($__timeTo() AT TIME ZONE 'Asia/Kolkata')::date\nORDER BY run_date ASC;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "",
+      "type": "marcusolsson-dynamictext-panel"
+    },
+    {
+      "datasource": {
+        "uid": "bffvbhhjc42yoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "summary"
+            },
+            "properties": []
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 3020,
+      "options": {
+        "afterRender": "",
+        "content": "{{{summary}}}",
+        "contentPartials": [],
+        "defaultContent": "The query didn't return any results.",
+        "editor": {
+          "format": "markdown",
+          "language": "markdown"
+        },
+        "editors": [
+          "styles"
+        ],
+        "externalStyles": [],
+        "helpers": "",
+        "renderMode": "everyRow",
+        "styles": "",
+        "wrap": true
+      },
+      "pluginVersion": "6.2.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT replace(summary, '\\n', E'\\n') AS summary\nFROM agent_summaries\nWHERE run_date BETWEEN\n    ($__timeFrom() AT TIME ZONE 'Asia/Kolkata')::date\n    AND\n    ($__timeTo() AT TIME ZONE 'Asia/Kolkata')::date\nORDER BY run_date ASC;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "",
+      "type": "marcusolsson-dynamictext-panel"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 12
       },
       "id": 2000,
       "panels": [],
@@ -167,7 +350,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 1
+        "y": 13
       },
       "id": 3017,
       "options": {
@@ -344,7 +527,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 1
+        "y": 13
       },
       "id": 3016,
       "options": {
@@ -521,7 +704,7 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 1
+        "y": 13
       },
       "id": 3018,
       "options": {
@@ -698,7 +881,7 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 1
+        "y": 13
       },
       "id": 3019,
       "options": {
@@ -749,7 +932,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 17
       },
       "id": 3000,
       "panels": [
@@ -930,7 +1113,7 @@
             "h": 9,
             "w": 6,
             "x": 0,
-            "y": 6
+            "y": 22
           },
           "id": 2010,
           "options": {
@@ -1176,7 +1359,7 @@
             "h": 9,
             "w": 6,
             "x": 6,
-            "y": 6
+            "y": 22
           },
           "id": 3007,
           "options": {
@@ -1422,7 +1605,7 @@
             "h": 9,
             "w": 6,
             "x": 12,
-            "y": 6
+            "y": 22
           },
           "id": 3008,
           "options": {
@@ -1668,7 +1851,7 @@
             "h": 9,
             "w": 6,
             "x": 18,
-            "y": 6
+            "y": 22
           },
           "id": 3009,
           "options": {
@@ -1747,7 +1930,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 18
       },
       "id": 3010,
       "panels": [
@@ -1829,7 +2012,7 @@
             "h": 11,
             "w": 6,
             "x": 0,
-            "y": 40
+            "y": 56
           },
           "id": 3011,
           "options": {
@@ -1953,7 +2136,7 @@
             "h": 11,
             "w": 6,
             "x": 6,
-            "y": 40
+            "y": 56
           },
           "id": 3012,
           "options": {
@@ -2077,7 +2260,7 @@
             "h": 11,
             "w": 6,
             "x": 12,
-            "y": 40
+            "y": 56
           },
           "id": 3013,
           "options": {
@@ -2213,7 +2396,7 @@
             "h": 11,
             "w": 6,
             "x": 18,
-            "y": 40
+            "y": 56
           },
           "id": 3014,
           "options": {
@@ -2262,104 +2445,6 @@
       ],
       "title": "🔴 Anomalies (3σ) — By Component Type",
       "type": "row"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 7
-      },
-      "id": 1000,
-      "panels": [],
-      "title": "AI Summary",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "uid": "bffvbhhjc42yoe"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "summary"
-            },
-            "properties": []
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 24,
-        "x": 0,
-        "y": 8
-      },
-      "id": 1001,
-      "options": {
-        "afterRender": "",
-        "content": "{{{summary}}}",
-        "contentPartials": [],
-        "defaultContent": "The query didn't return any results.",
-        "editor": {
-          "format": "markdown",
-          "language": "markdown"
-        },
-        "editors": [
-          "styles"
-        ],
-        "externalStyles": [],
-        "helpers": "",
-        "renderMode": "everyRow",
-        "styles": "",
-        "wrap": true
-      },
-      "pluginVersion": "6.2.0",
-      "targets": [
-        {
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT replace(summary, '\\n', E'\\n') AS summary\nFROM agent_summaries\nWHERE run_date BETWEEN\n    ($__timeFrom() AT TIME ZONE 'Asia/Kolkata')::date\n    AND\n    ($__timeTo() AT TIME ZONE 'Asia/Kolkata')::date\nORDER BY run_date ASC;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "AI Summary",
-      "type": "marcusolsson-dynamictext-panel"
     }
   ],
   "preload": false,
@@ -2407,6 +2492,6 @@
   "timezone": "browser",
   "title": "Simplified Alerts and Notification Dashboard",
   "uid": "degradation-anomaly-v1",
-  "version": 18,
+  "version": 2,
   "weekStart": ""
 }

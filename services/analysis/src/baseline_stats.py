@@ -18,14 +18,19 @@ ALLOWED_METRICS = {
     # "pallet_unclamping_time",
     # "pallet_lowering_time",
     # "exit_stopper_lowering_time",
-    "exit_stopper_raising_time",  
-    "pallet_movein_time",
+    #"exit_stopper_raising_time",  
+    #"pallet_movein_time",
     # "cavity_1_dispensing_time",
     # "cavity_2_dispensing_time",
     # "cavity_3_dispensing_time",
     # "cavity_4_dispensing_time",
     # "cavity_5_dispensing_time",
     # "cavity_6_dispensing_time",
+    'clamping_time',
+    'pre_data_handshake_wait',
+    'z_axis_positioning_time',
+    'gantry_positioning_time',
+    'z_axis_homing_time',
 }
 
 STEP_WINDOW       = 10

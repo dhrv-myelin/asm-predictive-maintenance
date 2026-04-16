@@ -1,143 +1,52 @@
--- seed_statistical_patterns.sql
- 
-INSERT INTO statistical_patterns (id, statistical_pattern, likely_causes_and_what_to_inspect, metric_name, type_of_motor)
-VALUES
- 
 -- ============================================================
 -- ACTUATOR METRICS
--- Patterns: Trend Acceleration, Step Jump, Random Spikes,
---           Increasing Outlier Frequency
 -- ============================================================
- 
--- actuator: entry_stopper_lowering_time
-(1,  'Trend Acceleration',          'Friction consuming pressure margin. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                                                    'entry_stopper_lowering_time',  'pneumatic_actuator'),
-(2,  'Step Jump',                   'Stiction onset or flow restriction. Check exhaust port contamination, piston rod seal lip rollover, needle valve partial closure.',                                                    'entry_stopper_lowering_time',  'pneumatic_actuator'),
-(3,  'Random Spikes',               'Solenoid valve contamination or sticking spool. Inspect air quality (particles/moisture) and valve seals.',                                                                           'entry_stopper_lowering_time',  'pneumatic_actuator'),
-(4,  'Increasing Outlier Frequency','Seal degradation or pressure drops causing inconsistent stroke. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                       'entry_stopper_lowering_time',  'pneumatic_actuator'),
-(5,  'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                      'entry_stopper_lowering_time',  'pneumatic_actuator'),
- 
--- actuator: entry_stopper_raising_time
-(6,  'Trend Acceleration',          'Friction consuming pressure margin. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                                                    'entry_stopper_raising_time',   'pneumatic_actuator'),
-(7,  'Step Jump',                   'Stiction onset or flow restriction. Check exhaust port contamination, piston rod seal lip rollover, needle valve partial closure.',                                                    'entry_stopper_raising_time',   'pneumatic_actuator'),
-(8,  'Random Spikes',               'Solenoid valve contamination or sticking spool. Inspect air quality (particles/moisture) and valve seals.',                                                                           'entry_stopper_raising_time',   'pneumatic_actuator'),
-(9,  'Increasing Outlier Frequency','Seal degradation or pressure drops causing inconsistent stroke. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                       'entry_stopper_raising_time',   'pneumatic_actuator'),
-(10, 'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                      'entry_stopper_raising_time',   'pneumatic_actuator'),
 
--- actuator: pallet_clamping_time
-(11, 'Trend Acceleration',          'Friction consuming pressure margin. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                                                    'pallet_clamping_time',         'pneumatic_actuator'),
-(12, 'Step Jump',                   'Stiction onset or flow restriction. Check exhaust port contamination, piston rod seal lip rollover, needle valve partial closure.',                                                    'pallet_clamping_time',         'pneumatic_actuator'),
-(13, 'Random Spikes',               'Solenoid valve contamination or sticking spool. Inspect air quality (particles/moisture) and valve seals.',                                                                           'pallet_clamping_time',         'pneumatic_actuator'),
-(14, 'Increasing Outlier Frequency','Seal degradation or pressure drops causing inconsistent stroke. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                       'pallet_clamping_time',         'pneumatic_actuator'),
-(15, 'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                      'pallet_clamping_time',         'pneumatic_actuator'),
+-- actuator: clamping_time
+(1,  'Trend Acceleration',          'Friction consuming pressure margin. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                                                   'clamping_time',           'pneumatic_actuator'),
+(2,  'Step Jump',                   'Stiction onset or flow restriction. Check exhaust port contamination, piston rod seal lip rollover, needle valve partial closure.',                                                   'clamping_time',           'pneumatic_actuator'),
+(3,  'Random Spikes',               'Solenoid valve contamination or sticking spool. Inspect air quality (particles/moisture) and valve seals.',                                                                          'clamping_time',           'pneumatic_actuator'),
+(4,  'Increasing Outlier Frequency','Seal degradation or pressure drops causing inconsistent stroke. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                      'clamping_time',           'pneumatic_actuator'),
+(5,  'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                     'clamping_time',           'pneumatic_actuator'),
+(6,  'Baseline Shift',              'Supply pressure change or new restriction. Check air lines, supply pressure at actuator port, upstream valves.',                                                                      'clamping_time',           'pneumatic_actuator'),
+(7,  'Slow Drift',                  'Seal wear and lubrication thinning. Review seal life rating and maintenance interval.',                                                                                               'clamping_time',           'pneumatic_actuator'),
 
--- actuator: pallet_lifting_time
-(16, 'Trend Acceleration',          'Friction consuming pressure margin. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                                                    'pallet_lifting_time',          'pneumatic_actuator'),
-(17, 'Step Jump',                   'Stiction onset or flow restriction. Check exhaust port contamination, piston rod seal lip rollover, needle valve partial closure.',                                                    'pallet_lifting_time',          'pneumatic_actuator'),
-(18, 'Random Spikes',               'Solenoid valve contamination or sticking spool. Inspect air quality (particles/moisture) and valve seals.',                                                                           'pallet_lifting_time',          'pneumatic_actuator'),
-(19, 'Increasing Outlier Frequency','Seal degradation or pressure drops causing inconsistent stroke. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                       'pallet_lifting_time',          'pneumatic_actuator'),
-(20, 'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                      'pallet_lifting_time',          'pneumatic_actuator'),
+-- actuator: pre_data_handshake_wait
+(8,  'Trend Acceleration',          'Friction consuming pressure margin. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                                                   'pre_data_handshake_wait', 'pneumatic_actuator'),
+(9,  'Step Jump',                   'Stiction onset or flow restriction. Check exhaust port contamination, piston rod seal lip rollover, needle valve partial closure.',                                                   'pre_data_handshake_wait', 'pneumatic_actuator'),
+(10, 'Random Spikes',               'Solenoid valve contamination or sticking spool. Inspect air quality (particles/moisture) and valve seals.',                                                                          'pre_data_handshake_wait', 'pneumatic_actuator'),
+(11, 'Increasing Outlier Frequency','Seal degradation or pressure drops causing inconsistent stroke. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                      'pre_data_handshake_wait', 'pneumatic_actuator'),
+(12, 'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                     'pre_data_handshake_wait', 'pneumatic_actuator'),
+(13, 'Baseline Shift',              'Supply pressure change or new restriction. Check air lines, supply pressure at actuator port, upstream valves.',                                                                      'pre_data_handshake_wait', 'pneumatic_actuator'),
+(14, 'Slow Drift',                  'Seal wear and lubrication thinning. Review seal life rating and maintenance interval.',                                                                                               'pre_data_handshake_wait', 'pneumatic_actuator'),
 
--- actuator: pallet_unclamping_time
-(21, 'Trend Acceleration',          'Friction consuming pressure margin. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                                                    'pallet_unclamping_time',       'pneumatic_actuator'),
-(22, 'Step Jump',                   'Stiction onset or flow restriction. Check exhaust port contamination, piston rod seal lip rollover, needle valve partial closure.',                                                    'pallet_unclamping_time',       'pneumatic_actuator'),
-(23, 'Random Spikes',               'Solenoid valve contamination or sticking spool. Inspect air quality (particles/moisture) and valve seals.',                                                                           'pallet_unclamping_time',       'pneumatic_actuator'),
-(24, 'Increasing Outlier Frequency','Seal degradation or pressure drops causing inconsistent stroke. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                       'pallet_unclamping_time',       'pneumatic_actuator'),
-(25, 'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                      'pallet_unclamping_time',       'pneumatic_actuator'),
-
--- actuator: pallet_lowering_time
-(26, 'Trend Acceleration',          'Friction consuming pressure margin. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                                                    'pallet_lowering_time',         'pneumatic_actuator'),
-(27, 'Step Jump',                   'Stiction onset or flow restriction. Check exhaust port contamination, piston rod seal lip rollover, needle valve partial closure.',                                                    'pallet_lowering_time',         'pneumatic_actuator'),
-(28, 'Random Spikes',               'Solenoid valve contamination or sticking spool. Inspect air quality (particles/moisture) and valve seals.',                                                                           'pallet_lowering_time',         'pneumatic_actuator'),
-(29, 'Increasing Outlier Frequency','Seal degradation or pressure drops causing inconsistent stroke. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                       'pallet_lowering_time',         'pneumatic_actuator'),
-(30, 'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                      'pallet_lowering_time',         'pneumatic_actuator'),
-
--- actuator: exit_stopper_lowering_time
-(31, 'Trend Acceleration',          'Friction approaching motor torque limit. Inspect conveyor rollers, pallet underside wear, belt tension, and motor temperature.',                                                       'exit_stopper_lowering_time',   'pneumatic_actuator'),
-(32, 'Step Jump',                   'Local mechanical obstruction or seized roller creating higher drag. Manually rotate rollers, check debris or pallet interference along travel path.',                                  'exit_stopper_lowering_time',   'pneumatic_actuator'),
-(33, 'Random Spikes',               'Transient pallet interference, vibration, or electrical noise affecting sensor or drive. Correlate timestamps with nearby machine events and inspect sensors and cabling.',            'exit_stopper_lowering_time',   'pneumatic_actuator'),
-(34, 'Periodic Oscillation',        'Rotating mechanical defect (eccentric pulley, worn roller, belt irregularity). Inspect rollers and pulleys for periodic drag or misalignment.',                                       'exit_stopper_lowering_time',   'pneumatic_actuator'),
-(35, 'Increasing Outlier Frequency','Seal degradation or pressure drops causing inconsistent stroke. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                       'exit_stopper_lowering_time',   'pneumatic_actuator'),
-(36, 'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                      'exit_stopper_lowering_time',   'pneumatic_actuator'),
- 
--- ============================================================
--- STEPPER METRICS
--- Patterns: Trend Acceleration, Step Jump, Random Spikes,
---           Periodic Oscillation, Increasing Outlier Frequency
--- ============================================================
- 
--- stepper: pallet_moveout_time
-(37, 'Trend Acceleration',          'Friction approaching motor torque limit. Inspect conveyor rollers, pallet underside wear, belt tension, and motor temperature.',                                                       'pallet_moveout_time',          'stepper'),
-(38, 'Step Jump',                   'Local mechanical obstruction or seized roller creating higher drag. Manually rotate rollers, check debris or pallet interference along travel path.',                                  'pallet_moveout_time',          'stepper'),
-(39, 'Random Spikes',               'Transient pallet interference, vibration, or electrical noise affecting sensor or drive. Correlate timestamps with nearby machine events and inspect sensors and cabling.',            'pallet_moveout_time',          'stepper'),
-(40, 'Increasing Outlier Frequency','Lost steps from mechanical overload or driver thermal throttling. Inspect coupling tightness, verify driver current limits, check for resonance at operating speeds.',                 'pallet_moveout_time',          'stepper'),
-(41, 'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                      'pallet_moveout_time',          'stepper'),
- 
--- stepper: pallet_movein_time
-(42, 'Trend Acceleration',          'Friction approaching motor torque limit. Inspect conveyor rollers, pallet underside wear, belt tension, and motor temperature.',                                                       'pallet_movein_time',           'stepper'),
-(43, 'Step Jump',                   'Local mechanical obstruction or seized roller creating higher drag. Manually rotate rollers, check debris or pallet interference along travel path.',                                  'pallet_movein_time',           'stepper'),
-(44, 'Random Spikes',               'Transient pallet interference, vibration, or electrical noise affecting sensor or drive. Correlate timestamps with nearby machine events and inspect sensors and cabling.',            'pallet_movein_time',           'stepper'),
-(45, 'Periodic Oscillation',        'Rotating mechanical defect (eccentric pulley, worn roller, belt irregularity). Inspect rollers and pulleys for periodic drag or misalignment.',                                       'pallet_movein_time',           'stepper'),
-(46, 'Increasing Outlier Frequency','Lost steps from mechanical overload or driver thermal throttling. Inspect coupling tightness, verify driver current limits, check for resonance at operating speeds.',                 'pallet_movein_time',           'stepper'),
-(47, 'Variance Growth',             'Pressure fluctuations, load variation, or mounting misalignment. Log supply pressure, inspect mounts, verify load consistency.',                                                      'pallet_movein_time',           'stepper'),
- 
 -- ============================================================
 -- SERVO METRICS
--- Patterns: Trend Acceleration, Step Jumps, Random Spikes,
---           Periodic Oscillation, Increasing Outlier Frequency
 -- ============================================================
- 
--- servo: cavity_1_dispensing_time
-(48, 'Trend Acceleration',          'Rapid friction growth; servo torque margin collapsing. Check RMS torque trend and motor temperature.',                                                                                 'cavity_1_dispensing_time',     'servo'),
-(49, 'Step Jumps',                  'Sudden friction change due to ball screw stiction, bearing damage, or gearbox defect. Check following error and position-linked behavior.',                                           'cavity_1_dispensing_time',     'servo'),
-(50, 'Random Spikes',               'Encoder noise, EMI, or intermittent load disturbance causing corrective motion. Inspect encoder cables and grounding.',                                                               'cavity_1_dispensing_time',     'servo'),
-(51, 'Periodic Oscillation',        'Repeating mechanical resistance due to cyclic defect or resonance. Inspect screw nut, guides, or couplings.',                                                                         'cavity_1_dispensing_time',     'servo'),
-(52, 'Increasing Outlier Frequency','Encoder noise or mechanical backlash corrupting position feedback. Inspect encoder disk and cable flex points, review drive fault history, verify PID tuning under load.',            'cavity_1_dispensing_time',     'servo'),
- 
--- servo: cavity_2_dispensing_time
-(53, 'Trend Acceleration',          'Rapid friction growth; servo torque margin collapsing. Check RMS torque trend and motor temperature.',                                                                                 'cavity_2_dispensing_time',     'servo'),
-(54, 'Step Jumps',                  'Sudden friction change due to ball screw stiction, bearing damage, or gearbox defect. Check following error and position-linked behavior.',                                           'cavity_2_dispensing_time',     'servo'),
-(55, 'Random Spikes',               'Encoder noise, EMI, or intermittent load disturbance causing corrective motion. Inspect encoder cables and grounding.',                                                               'cavity_2_dispensing_time',     'servo'),
-(56, 'Periodic Oscillation',        'Repeating mechanical resistance due to cyclic defect or resonance. Inspect screw nut, guides, or couplings.',                                                                         'cavity_2_dispensing_time',     'servo'),
-(57, 'Increasing Outlier Frequency','Encoder noise or mechanical backlash corrupting position feedback. Inspect encoder disk and cable flex points, review drive fault history, verify PID tuning under load.',            'cavity_2_dispensing_time',     'servo'),
- 
--- servo: cavity_3_dispensing_time
-(58, 'Trend Acceleration',          'Rapid friction growth; servo torque margin collapsing. Check RMS torque trend and motor temperature.',                                                                                 'cavity_3_dispensing_time',     'servo'),
-(59, 'Step Jumps',                  'Sudden friction change due to ball screw stiction, bearing damage, or gearbox defect. Check following error and position-linked behavior.',                                           'cavity_3_dispensing_time',     'servo'),
-(60, 'Random Spikes',               'Encoder noise, EMI, or intermittent load disturbance causing corrective motion. Inspect encoder cables and grounding.',                                                               'cavity_3_dispensing_time',     'servo'),
-(61, 'Periodic Oscillation',        'Repeating mechanical resistance due to cyclic defect or resonance. Inspect screw nut, guides, or couplings.',                                                                         'cavity_3_dispensing_time',     'servo'),
-(62, 'Increasing Outlier Frequency','Encoder noise or mechanical backlash corrupting position feedback. Inspect encoder disk and cable flex points, review drive fault history, verify PID tuning under load.',            'cavity_3_dispensing_time',     'servo'),
- 
--- servo: cavity_4_dispensing_time
-(63, 'Trend Acceleration',          'Rapid friction growth; servo torque margin collapsing. Check RMS torque trend and motor temperature.',                                                                                 'cavity_4_dispensing_time',     'servo'),
-(64, 'Step Jumps',                  'Sudden friction change due to ball screw stiction, bearing damage, or gearbox defect. Check following error and position-linked behavior.',                                           'cavity_4_dispensing_time',     'servo'),
-(65, 'Random Spikes',               'Encoder noise, EMI, or intermittent load disturbance causing corrective motion. Inspect encoder cables and grounding.',                                                               'cavity_4_dispensing_time',     'servo'),
-(66, 'Periodic Oscillation',        'Repeating mechanical resistance due to cyclic defect or resonance. Inspect screw nut, guides, or couplings.',                                                                         'cavity_4_dispensing_time',     'servo'),
-(67, 'Increasing Outlier Frequency','Encoder noise or mechanical backlash corrupting position feedback. Inspect encoder disk and cable flex points, review drive fault history, verify PID tuning under load.',            'cavity_4_dispensing_time',     'servo'),
- 
--- servo: cavity_5_dispensing_time
-(68, 'Trend Acceleration',          'Rapid friction growth; servo torque margin collapsing. Check RMS torque trend and motor temperature.',                                                                                 'cavity_5_dispensing_time',     'servo'),
-(69, 'Step Jumps',                  'Sudden friction change due to ball screw stiction, bearing damage, or gearbox defect. Check following error and position-linked behavior.',                                           'cavity_5_dispensing_time',     'servo'),
-(70, 'Random Spikes',               'Encoder noise, EMI, or intermittent load disturbance causing corrective motion. Inspect encoder cables and grounding.',                                                               'cavity_5_dispensing_time',     'servo'),
-(71, 'Periodic Oscillation',        'Repeating mechanical resistance due to cyclic defect or resonance. Inspect screw nut, guides, or couplings.',                                                                         'cavity_5_dispensing_time',     'servo'),
-(72, 'Increasing Outlier Frequency','Encoder noise or mechanical backlash corrupting position feedback. Inspect encoder disk and cable flex points, review drive fault history, verify PID tuning under load.',            'cavity_5_dispensing_time',     'servo'),
- 
--- servo: cavity_6_dispensing_time
-(73, 'Trend Acceleration',          'Rapid friction growth; servo torque margin collapsing. Check RMS torque trend and motor temperature.',                                                                                 'cavity_6_dispensing_time',     'servo'),
-(74, 'Step Jumps',                  'Sudden friction change due to ball screw stiction, bearing damage, or gearbox defect. Check following error and position-linked behavior.',                                           'cavity_6_dispensing_time',     'servo'),
-(75, 'Random Spikes',               'Encoder noise, EMI, or intermittent load disturbance causing corrective motion. Inspect encoder cables and grounding.',                                                               'cavity_6_dispensing_time',     'servo'),
-(76, 'Periodic Oscillation',        'Repeating mechanical resistance due to cyclic defect or resonance. Inspect screw nut, guides, or couplings.',                                                                         'cavity_6_dispensing_time',     'servo'),
-(77, 'Increasing Outlier Frequency','Encoder noise or mechanical backlash corrupting position feedback. Inspect encoder disk and cable flex points, review drive fault history, verify PID tuning under load.',            'cavity_6_dispensing_time',     'servo'),
- 
--- servo: inspection_time
-(78, 'Trend Acceleration',          'Rapid friction growth; servo torque margin collapsing. Check RMS torque trend and motor temperature.',                                                                                 'inspection_time',              'servo'),
-(79, 'Step Jumps',                  'Sudden friction change due to ball screw stiction, bearing damage, or gearbox defect. Check following error and position-linked behavior.',                                           'inspection_time',              'servo'),
-(80, 'Random Spikes',               'Encoder noise, EMI, or intermittent load disturbance causing corrective motion. Inspect encoder cables and grounding.',                                                               'inspection_time',              'servo'),
-(81, 'Periodic Oscillation',        'Repeating mechanical resistance due to cyclic defect or resonance. Inspect screw nut, guides, or couplings.',                                                                         'inspection_time',              'servo'),
-(82, 'Increasing Outlier Frequency','Encoder noise or mechanical backlash corrupting position feedback. Inspect encoder disk and cable flex points, review drive fault history, verify PID tuning under load.',            'inspection_time',              'servo'),
 
--- actuator: exit_stopper_raising_time
-(83, 'Trend Acceleration',          'Friction approaching motor torque limit. Inspect conveyor rollers, pallet underside wear, belt tension, and motor temperature.',                                                       'exit_stopper_raising_time',    'pneumatic_actuator'),
-(84, 'Step Jump',                   'Local mechanical obstruction or seized roller creating higher drag. Manually rotate rollers, check debris or pallet interference along travel path.',                                  'exit_stopper_raising_time',    'pneumatic_actuator'),
-(85, 'Random Spikes',               'Transient pallet interference, vibration, or electrical noise affecting sensor or drive. Correlate timestamps with nearby machine events and inspect sensors and cabling.',            'exit_stopper_raising_time',    'pneumatic_actuator'),
-(86, 'Periodic Oscillation',        'Rotating mechanical defect (eccentric pulley, worn roller, belt irregularity). Inspect rollers and pulleys for periodic drag or misalignment.',                                       'exit_stopper_raising_time',    'pneumatic_actuator'),
-(87, 'Increasing Outlier Frequency','Seal degradation or pressure drops causing inconsistent stroke. Inspect bore and seals for scoring/hardening, verify supply pressure, check lubrication unit.',                       'exit_stopper_raising_time',    'pneumatic_actuator');
+-- servo: z_axis_positioning_time
+(15, 'Trend Acceleration',          'Rapid friction growth; servo torque margin collapsing. Check RMS torque trend and motor temperature.',                                                                                'z_axis_positioning_time', 'servo'),
+(16, 'Step Jump',                   'Sudden friction change due to ball screw stiction, bearing damage, or gearbox defect. Check following error and position-linked behavior.',                                          'z_axis_positioning_time', 'servo'),
+(17, 'Random Spikes',               'Encoder noise, EMI, or intermittent load disturbance causing corrective motion. Inspect encoder cables and grounding.',                                                              'z_axis_positioning_time', 'servo'),
+(18, 'Periodic Oscillation',        'Repeating mechanical resistance due to cyclic defect or resonance. Inspect screw nut, guides, or couplings.',                                                                        'z_axis_positioning_time', 'servo'),
+(19, 'Increasing Outlier Frequency','Encoder noise or mechanical backlash corrupting position feedback. Inspect encoder disk and cable flex points, review drive fault history, verify PID tuning under load.',           'z_axis_positioning_time', 'servo'),
+(20, 'Baseline Shift',              'Persistent load change or servo parameter update. Verify PID tuning, check mechanical preload, inspect ball screw and guide lubrication.',                                            'z_axis_positioning_time', 'servo'),
+(21, 'Slow Drift',                  'Progressive bearing wear, thermal expansion, or lubrication degradation. Monitor motor temperature, lubricate guides and screw, track torque trend.',                                 'z_axis_positioning_time', 'servo'),
+
+-- servo: gantry_positioning_time
+(22, 'Trend Acceleration',          'Rapid friction growth; servo torque margin collapsing. Check RMS torque trend and motor temperature.',                                                                                'gantry_positioning_time','servo'),
+(23, 'Step Jump',                   'Sudden friction change due to ball screw stiction, bearing damage, or gearbox defect. Check following error and position-linked behavior.',                                          'gantry_positioning_time','servo'),
+(24, 'Random Spikes',               'Encoder noise, EMI, or intermittent load disturbance causing corrective motion. Inspect encoder cables and grounding.',                                                              'gantry_positioning_time','servo'),
+(25, 'Periodic Oscillation',        'Repeating mechanical resistance due to cyclic defect or resonance. Inspect screw nut, guides, or couplings.',                                                                        'gantry_positioning_time','servo'),
+(26, 'Increasing Outlier Frequency','Encoder noise or mechanical backlash corrupting position feedback. Inspect encoder disk and cable flex points, review drive fault history, verify PID tuning under load.',           'gantry_positioning_time','servo'),
+(27, 'Baseline Shift',              'Persistent load change or servo parameter update. Verify PID tuning, check mechanical preload, inspect ball screw and guide lubrication.',                                            'gantry_positioning_time','servo'),
+(28, 'Slow Drift',                  'Progressive bearing wear, thermal expansion, or lubrication degradation. Monitor motor temperature, lubricate guides and screw, track torque trend.',                                 'gantry_positioning_time','servo'),
+
+-- servo: z_axis_homing_time
+(29, 'Trend Acceleration',          'Rapid friction growth; servo torque margin collapsing. Check RMS torque trend and motor temperature.',                                                                                'z_axis_homing_time',     'servo'),
+(30, 'Step Jump',                   'Sudden friction change due to ball screw stiction, bearing damage, or gearbox defect. Check following error and position-linked behavior.',                                          'z_axis_homing_time',     'servo'),
+(31, 'Random Spikes',               'Encoder noise, EMI, or intermittent load disturbance causing corrective motion. Inspect encoder cables and grounding.',                                                              'z_axis_homing_time',     'servo'),
+(32, 'Periodic Oscillation',        'Repeating mechanical resistance due to cyclic defect or resonance. Inspect screw nut, guides, or couplings.',                                                                        'z_axis_homing_time',     'servo'),
+(33, 'Increasing Outlier Frequency','Encoder noise or mechanical backlash corrupting position feedback. Inspect encoder disk and cable flex points, review drive fault history, verify PID tuning under load.',           'z_axis_homing_time',     'servo'),
+(34, 'Baseline Shift',              'Persistent load change or servo parameter update. Verify PID tuning, check mechanical preload, inspect ball screw and guide lubrication.',                                            'z_axis_homing_time',     'servo'),
+(35, 'Slow Drift',                  'Progressive bearing wear, thermal expansion, or lubrication degradation. Monitor motor temperature, lubricate guides and screw, track torque trend.',                                 'z_axis_homing_time',     'servo');

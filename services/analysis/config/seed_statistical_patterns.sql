@@ -1,3 +1,6 @@
+INSERT INTO statistical_patterns (id, statistical_pattern, likely_causes_and_what_to_inspect, metric_name, type_of_motor)
+VALUES
+
 -- ============================================================
 -- ACTUATOR METRICS
 -- ============================================================

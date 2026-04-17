@@ -74,7 +74,7 @@
       "id": 1001,
       "options": {
         "afterRender": "",
-        "content": "{{{summary}}}",
+        "content": "{{{action_items}}}",
         "contentPartials": [],
         "defaultContent": "The query didn't return any results.",
         "editor": {
@@ -96,7 +96,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT replace(summary, '\\n', E'\\n') AS summary\nFROM agent_summaries\nWHERE run_date BETWEEN\n    ($__timeFrom() AT TIME ZONE 'Asia/Kolkata')::date\n    AND\n    ($__timeTo() AT TIME ZONE 'Asia/Kolkata')::date\nORDER BY run_date ASC;",
+          "rawSql": "SELECT replace(action_items, '\\n', E'\\n') AS action_items\nFROM agent_summaries\nWHERE run_date BETWEEN\n    ($__timeFrom() AT TIME ZONE 'Asia/Kolkata')::date\n    AND\n    ($__timeTo() AT TIME ZONE 'Asia/Kolkata')::date\nORDER BY run_date ASC;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -159,7 +159,7 @@
       "id": 3020,
       "options": {
         "afterRender": "",
-        "content": "{{{summary}}}",
+        "content": "{{{machine_health}}}",
         "contentPartials": [],
         "defaultContent": "The query didn't return any results.",
         "editor": {
@@ -181,7 +181,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT replace(summary, '\\n', E'\\n') AS summary\nFROM agent_summaries\nWHERE run_date BETWEEN\n    ($__timeFrom() AT TIME ZONE 'Asia/Kolkata')::date\n    AND\n    ($__timeTo() AT TIME ZONE 'Asia/Kolkata')::date\nORDER BY run_date ASC;",
+          "rawSql": "SELECT replace(machine_health, '\\n', E'\\n') AS machine_health\nFROM agent_summaries\nWHERE run_date BETWEEN\n    ($__timeFrom() AT TIME ZONE 'Asia/Kolkata')::date\n    AND\n    ($__timeTo() AT TIME ZONE 'Asia/Kolkata')::date\nORDER BY run_date ASC;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -2492,6 +2492,6 @@
   "timezone": "browser",
   "title": "Simplified Alerts and Notification Dashboard",
   "uid": "degradation-anomaly-v1",
-  "version": 2,
+  "version": 10,
   "weekStart": ""
 }

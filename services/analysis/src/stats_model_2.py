@@ -72,14 +72,19 @@ ALLOWED_METRICS = {
     # "pallet_unclamping_time",
     # "pallet_lowering_time",
     # "exit_stopper_lowering_time",
-    "exit_stopper_raising_time",  
-    "pallet_movein_time",
+    #"exit_stopper_raising_time",  
+    #"pallet_movein_time",
     # "cavity_1_dispensing_time",
     # "cavity_2_dispensing_time",
     # "cavity_3_dispensing_time",
     # "cavity_4_dispensing_time",
     # "cavity_5_dispensing_time",
     # "cavity_6_dispensing_time",
+    "clamping_time",
+    "gantry_positioning_time",
+    "pre_data_handshake_wait",
+    "z_axis_homing_time",
+    "z_axis_positioning_time",
 }
 
 
@@ -535,13 +540,13 @@ def detect_periodic_oscillation(df, bm, bs, cfg, metric):
 # ──────────────────────────────────────────────
 
 _BASE_DETECTORS = [
-    ("Random spikes",                detect_random_spikes),
-    ("Step jumps",                   detect_step_jumps),
-    ("Slow drift",                   detect_slow_drift),
-    ("Variance growth",              detect_variance_growth),
+    ("Random Spikes",                detect_random_spikes),
+    ("Step Jumps",                   detect_step_jumps),
+    ("Slow Drift",                   detect_slow_drift),
+    ("Variance Growth",              detect_variance_growth),
     ("Trend acceleration",           detect_trend_acceleration),
-    ("Baseline shift",               detect_baseline_shift),
-    ("Increasing outlier frequency", detect_increasing_outlier_frequency),
+    ("Baseline Shift",               detect_baseline_shift),
+    ("Increasing Outlier Frequency", detect_increasing_outlier_frequency),
 ]
 
 

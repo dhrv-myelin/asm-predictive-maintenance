@@ -83,7 +83,6 @@ target:
       save_name: rbw_machine__health_score
       model_type: sklearn
       required_features:
-        - rbw_station__marking_to_image_save_wait
         - rbw_station__z_axis_positioning_wait
         - rbw_station__pre_camera_positioning_wait
         - rbw_station__marking_galvo_positioning_time
@@ -91,7 +90,6 @@ target:
         - system__m1_position_actual
         - rbw_station__z_axis_target_height
         - rbw_station__pre_image_save_wait
-        - rbw_station__gantry_positioning_to_pre_marking_wait
         - rbw_station__m2_position_target
         - rbw_station__between_cluster_gantry_positioning_wait
         - rbw_station__gantry_move_z
@@ -99,7 +97,6 @@ target:
         - rbw_station__gantry_move_m2
         - rbw_station__marking_init_time
         - rbw_station__double_exposure_positioning_time
-        - rbw_station__skip_image_save_delay
         - rbw_station__z_axis_position_target
         - rbw_station__marking_result_wait
         - rbw_station__clamping_time

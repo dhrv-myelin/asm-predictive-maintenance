@@ -26,7 +26,7 @@ class DBPoller:
         # print("since : ",since)
 
         sql = text("""
-            SELECT timestamp, station_name, metric_name, value
+            SELECT timestamp, station_name, metric_name, value, cycle_count
             FROM process_metrics
             WHERE timestamp > :since
             ORDER BY timestamp ASC

@@ -18,7 +18,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "bffvbhhjc42yoe"
         },
-        "enable": true,
+        "enable": false,
         "hide": false,
         "iconColor": "red",
         "name": "error logs",
@@ -52,7 +52,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "bffvbhhjc42yoe"
         },
-        "enable": true,
+        "enable": false,
         "hide": false,
         "iconColor": "orange",
         "name": "warning logs",
@@ -86,7 +86,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 3,
   "links": [],
   "panels": [
     {
@@ -304,6 +304,16 @@
               {
                 "id": "custom.spanNulls",
                 "value": false
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Anomaly Breakdown ",
+                    "url": "/d/dfjnbts1cx0cgf/anomaly-breakdown?var-anomaly_time=${__value.time:date:iso}"
+                  }
+                ]
               }
             ]
           },
@@ -407,7 +417,8 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "multi",
+          "hoverProximity": 5,
+          "mode": "single",
           "sort": "none"
         }
       },
@@ -541,13 +552,13 @@
     ]
   },
   "time": {
-    "from": "2026-02-01T18:30:00.000Z",
-    "to": "2026-03-10T18:29:59.000Z"
+    "from": "2026-02-05T19:45:20.913Z",
+    "to": "2026-02-19T15:15:13.898Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "System — Process Metrics",
   "uid": "system-metrics",
-  "version": 3,
+  "version": 8,
   "weekStart": ""
 }

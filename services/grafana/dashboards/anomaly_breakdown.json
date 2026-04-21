@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 11,
+  "id": 9,
   "links": [],
   "panels": [
     {
@@ -115,6 +115,7 @@
           ],
           "show": false
         },
+        "frameIndex": 1,
         "showHeader": true
       },
       "pluginVersion": "11.4.0",
@@ -128,7 +129,7 @@
           "format": "table",
           "hide": true,
           "rawQuery": true,
-          "rawSql": "WITH base AS (\n  SELECT\n    p.timestamp,\n    p.metric_name,\n    p.value\n  FROM process_metrics p\n  WHERE\n    p.station_name = 'rbw_station'\n    AND p.unit = 'duration_seconds'\n    AND p.timestamp BETWEEN\n        CAST(NULLIF('${anomaly_time}', '') AS timestamptz) - INTERVAL '30 seconds'\n    AND CAST(NULLIF('${anomaly_time}', '') AS timestamptz) + INTERVAL '30 seconds'\n),\n\nbaseline AS (\n  SELECT\n    metric_name,\n    mean,\n    std_dev,\n    (mean + 3 * std_dev) AS ucl\n  FROM baseline_metrics\n  WHERE station_name = 'rbw_station'\n)\n\nSELECT\n  b.timestamp AS time,\n  b.metric_name,\n  b.value,\n\n  bl.mean,\n  bl.ucl,\n\n  CASE\n    WHEN b.value > bl.ucl THEN 'Anomaly'\n    ELSE 'Normal'\n  END AS status\n\nFROM base b\nLEFT JOIN baseline bl\n  ON b.metric_name = bl.metric_name\n\nORDER BY b.timestamp, b.metric_name;",
+          "rawSql": "WITH selected_cycle AS (\n  SELECT cycle_count\n  FROM process_metrics\n  WHERE station_name = 'rbw_station'\n  ORDER BY ABS(EXTRACT(EPOCH FROM (\n    timestamp - CAST(NULLIF('${anomaly_time}', '') AS timestamptz)\n  )))\n  LIMIT 1\n),\n\nbase AS (\n  SELECT\n    p.metric_name,\n    MAX(p.timestamp) AS timestamp,   -- keep a representative time\n    SUM(p.value) AS value            -- 👈 sum of values per metric\n  FROM process_metrics p\n  JOIN selected_cycle sc\n    ON p.cycle_count = sc.cycle_count\n  WHERE\n    p.station_name = 'rbw_station'\n    AND p.unit = 'duration_seconds'\n  GROUP BY p.metric_name\n),\n\nbaseline AS (\n  SELECT\n    metric_name,\n    (mean + 3 * std_dev) AS ucl\n  FROM baseline_metrics\n  WHERE station_name = 'rbw_station'\n)\n\nSELECT\n  b.timestamp AS time,\n  b.metric_name,\n  b.value,\n  bl.ucl,\n\n  CASE\n    WHEN b.value > bl.ucl THEN 'Anomaly'\n    ELSE 'Normal'\n  END AS status\n\nFROM base b\nLEFT JOIN baseline bl\n  ON b.metric_name = bl.metric_name\n\nORDER BY b.metric_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -157,7 +158,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "WITH selected_cycle AS (\n  SELECT cycle_count\n  FROM process_metrics\n  WHERE station_name = 'rbw_station'\n  ORDER BY ABS(EXTRACT(EPOCH FROM (\n    timestamp - CAST(NULLIF('${anomaly_time}', '') AS timestamptz)\n  )))\n  LIMIT 1\n),\n\nranked AS (\n  SELECT\n    p.*,\n    ROW_NUMBER() OVER (\n      PARTITION BY p.metric_name\n      ORDER BY p.timestamp DESC\n    ) AS rn\n  FROM process_metrics p\n  JOIN selected_cycle sc\n    ON p.cycle_count = sc.cycle_count\n  WHERE\n    p.station_name = 'rbw_station'\n    AND p.unit = 'duration_seconds'\n),\n\nbase AS (\n  SELECT *\n  FROM ranked\n  WHERE rn = 1\n),\n\nbaseline AS (\n  SELECT\n    metric_name,\n    (mean + 3 * std_dev) AS ucl\n  FROM baseline_metrics\n  WHERE station_name = 'rbw_station'\n)\n\nSELECT\n  b.timestamp AS time,\n  b.metric_name,\n  b.value,\n  bl.ucl,\n\n  CASE\n    WHEN b.value > bl.ucl THEN 'Anomaly'\n    ELSE 'Normal'\n  END AS status\n\nFROM base b\nLEFT JOIN baseline bl\n  ON b.metric_name = bl.metric_name\n\nORDER BY b.metric_name;",
+          "rawSql": "WITH selected_cycle AS (\n  SELECT cycle_count\n  FROM process_metrics\n  WHERE station_name = 'rbw_station'\n  ORDER BY ABS(EXTRACT(EPOCH FROM (\n    timestamp - CAST(NULLIF('${anomaly_time}', '') AS timestamptz)\n  )))\n  LIMIT 1\n),\n\n-- 👇 ONLY duration metrics (this is your 28 metrics list)\nmetrics AS (\n  SELECT DISTINCT metric_name\n  FROM process_metrics\n  WHERE station_name = 'rbw_station'\n    AND unit = 'duration_seconds'\n),\n\nbase AS (\n  SELECT\n    m.metric_name,\n    MAX(p.timestamp) AS timestamp,\n    SUM(p.value) AS value\n  FROM metrics m\n  CROSS JOIN selected_cycle sc\n  LEFT JOIN process_metrics p\n    ON p.metric_name = m.metric_name\n    AND p.cycle_count = sc.cycle_count\n    AND p.station_name = 'rbw_station'\n    AND p.unit = 'duration_seconds'\n  GROUP BY m.metric_name\n),\n\nbaseline AS (\n  SELECT\n    metric_name,\n    (mean + 3 * std_dev) AS ucl\n  FROM baseline_metrics\n  WHERE station_name = 'rbw_station'\n)\n\nSELECT\n  COALESCE(b.timestamp, CAST('${anomaly_time}' AS timestamptz)) AS time,\n  b.metric_name,\n  COALESCE(b.value, 0) AS value,\n  bl.ucl,\n\n  CASE\n    WHEN COALESCE(b.value, 0) > bl.ucl THEN 'Anomaly'\n    ELSE 'Normal'\n  END AS status\n\nFROM base b\nLEFT JOIN baseline bl\n  ON b.metric_name = bl.metric_name\n\nORDER BY status DESC, b.metric_name;",
           "refId": "B",
           "sql": {
             "columns": [
@@ -189,18 +190,18 @@
     "list": [
       {
         "current": {
-          "text": "2026-02-09T09:34:32.337Z",
-          "value": "2026-02-09T09:34:32.337Z"
+          "text": "2026-02-10T09:07:56.699Z",
+          "value": "2026-02-10T09:07:56.699Z"
         },
         "name": "anomaly_time",
         "options": [
           {
             "selected": true,
-            "text": "2026-02-09T09:34:32.337Z",
-            "value": "2026-02-09T09:34:32.337Z"
+            "text": "2026-02-10T09:07:56.699Z",
+            "value": "2026-02-10T09:07:56.699Z"
           }
         ],
-        "query": "2026-02-09T09:34:32.337Z",
+        "query": "2026-02-10T09:07:56.699Z",
         "type": "textbox"
       }
     ]
@@ -213,6 +214,6 @@
   "timezone": "browser",
   "title": "Anomaly Breakdown",
   "uid": "dfjnbts1cx0cgf",
-  "version": 4,
+  "version": 5,
   "weekStart": ""
 }

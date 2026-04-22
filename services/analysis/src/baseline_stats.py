@@ -31,6 +31,7 @@ ALLOWED_METRICS = {
     'z_axis_positioning_time',
     'gantry_positioning_time',
     'z_axis_homing_time',
+    'marking_galvo_positioning_time' #adding galvo metric
 }
 
 STEP_WINDOW       = 10

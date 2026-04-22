@@ -69,7 +69,7 @@ ALLOWED_METRICS = {
     # "pallet_clamping_time",
     # "pallet_lifting_time",
     # "inspection_time",
-    # "pallet_unclamping_time",
+    # "pallet_unclamping_time",marking_galvo_positioning_time
     # "pallet_lowering_time",
     # "exit_stopper_lowering_time",
     #"exit_stopper_raising_time",  
@@ -85,6 +85,7 @@ ALLOWED_METRICS = {
     "pre_data_handshake_wait",
     "z_axis_homing_time",
     "z_axis_positioning_time",
+    "marking_galvo_positioning_time", #adding galvo metric
 }
 
 

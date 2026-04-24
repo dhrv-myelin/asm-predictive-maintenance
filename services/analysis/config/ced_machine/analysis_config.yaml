@@ -132,6 +132,31 @@ global:
   mlflow:
     tracking_uri_env: MLFLOW_TRACKING_URI
     artifact_root_env: MLFLOW_ARTIFACT_ROOT
+    
+# ---------------------------------------------------------------------------
+# Allowed metrics used in stats_model_2.py and baseline_stats.py
+# ---------------------------------------------------------------------------
+allowed_metrics:
+  - entry_stopper_lowering_time
+  - entry_stopper_raising_time
+  - pallet_clamping_time
+  - pallet_lifting_time
+  - inspection_time
+  - pallet_unclamping_time
+  - pallet_lowering_time
+  - exit_stopper_lowering_time
+  - exit_stopper_raising_time
+  - pallet_movein_time
+  - gantry_safety_positioning_time
+  - maint_move_to_safe_time
+  - cavity_1_dispensing_time
+  - cavity_2_dispensing_time
+  - cavity_3_dispensing_time
+  - cavity_4_dispensing_time
+  - cavity_5_dispensing_time
+  - cavity_6_dispensing_time
+
+
 
 # ---------------------------------------------------------------------------
 # Per-metric configs. Unset fields inherit from global.

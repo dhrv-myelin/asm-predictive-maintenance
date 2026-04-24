@@ -17,9 +17,9 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from zoneinfo import ZoneInfo
 from typing import Optional
-
+from pathlib import Path
 # Stats pipeline imports
-from baseline_stats import analyse_metric, build_config, ALLOWED_METRICS
+from baseline_stats import analyse_metric, build_config #removed allowed_metrics import since it's now in the YAML config
 from stats_model_2 import run_pattern_pipeline, print_summary
 
 logger = logging.getLogger(__name__)
@@ -155,7 +155,7 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
 # --------------------------------------------------
 
 
-def run_stats_pipeline(db_util: DBUtils) -> None:
+def run_stats_pipeline(db_util: DBUtils, allowed_metrics: set) -> None: #allowed metrics is being taken as an argument now since it's defined in the YAML config, not as a global variable in baseline_stats.py
     """
     1. Pull process_metrics (full history) and baseline from DB
     2. Filter to ALLOWED_METRICS only
@@ -171,7 +171,7 @@ def run_stats_pipeline(db_util: DBUtils) -> None:
         return
 
     #  Filter BEFORE groupby loop — only allowed metrics proceed
-    df = df[df["metric_name"].isin(ALLOWED_METRICS)]
+    df = df[df["metric_name"].isin(allowed_metrics)]
 
     if df.empty:
         logger.error(
@@ -282,12 +282,22 @@ def main():
         default="Glue_Dispenser",
         help="MLflow experiment name",
     )
+    #for machines
+    parser.add_argument(
+    "--machine",
+    type=str,
+    default="rbw_machine",
+    help="Machine name, e.g. rbw_machine or ced_machine"
+    )
     args = parser.parse_args()
 
     # --------------------------------------------------
     # Config + DB setup
     # --------------------------------------------------
-    with open(args.config, "r") as f:
+    # with open(args.config, "r") as f:
+    #     cfg = yaml.safe_load(f)
+    config_path = Path(args.config).parent / args.machine / "analysis_config.yaml"
+    with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
     logger.info("[DEBUG] Loaded config: %s", cfg)
 
@@ -323,10 +333,13 @@ def main():
     # --------------------------------------------------
     # Stats mode — no DataHandler or Model needed
     # --------------------------------------------------
+    # if args.mode == "stats":
+    #     run_stats_pipeline(db_util)
+    #     return
     if args.mode == "stats":
-        run_stats_pipeline(db_util)
+        allowed_metrics = set(cfg["allowed_metrics"])
+        run_stats_pipeline(db_util, allowed_metrics)
         return
-
     # --------------------------------------------------
     # Init handlers + models (train / infer / backup only)
     # --------------------------------------------------

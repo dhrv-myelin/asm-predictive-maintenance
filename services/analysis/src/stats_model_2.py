@@ -5,7 +5,9 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from sklearn.linear_model import LinearRegression
-
+#imports for analysis_config.yaml
+import yaml
+from pathlib import Path
 # ──────────────────────────────────────────────
 # Config loading
 # ──────────────────────────────────────────────
@@ -63,31 +65,13 @@ STEP_WINDOW = 10
 BASELINE_REF_FRAC = 0.20
 _SPIKE_MASK_CAP = 8.0
 
-ALLOWED_METRICS = {
-    # "entry_stopper_lowering_time",
-    # "entry_stopper_raising_time",
-    # "pallet_clamping_time",
-    # "pallet_lifting_time",
-    # "inspection_time",
-    # "pallet_unclamping_time",marking_galvo_positioning_time
-    # "pallet_lowering_time",
-    # "exit_stopper_lowering_time",
-    #"exit_stopper_raising_time",  
-    #"pallet_movein_time",
-    # "cavity_1_dispensing_time",
-    # "cavity_2_dispensing_time",
-    # "cavity_3_dispensing_time",
-    # "cavity_4_dispensing_time",
-    # "cavity_5_dispensing_time",
-    # "cavity_6_dispensing_time",
-    "clamping_time",
-    "gantry_positioning_time",
-    "pre_data_handshake_wait",
-    "z_axis_homing_time",
-    "z_axis_positioning_time",
-    "marking_galvo_positioning_time", #adding galvo metric
-}
+#allowed metrics set from config yaml
+def _load_allowed_metrics(machine: str = "rbw_machine") -> set:
+    config_path = Path(__file__).parents[1] / "config" / machine / "analysis_config.yaml"
+    with open(config_path) as f:
+        return set(yaml.safe_load(f)["allowed_metrics"])
 
+ALLOWED_METRICS = _load_allowed_metrics()
 
 def load_baseline(baseline_csv_path: str) -> dict:
     df = pd.read_csv(baseline_csv_path)

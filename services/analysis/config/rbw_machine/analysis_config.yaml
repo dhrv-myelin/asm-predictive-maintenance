@@ -74,6 +74,16 @@ global:
     artifact_root_env: MLFLOW_ARTIFACT_ROOT
 
 # ---------------------------------------------------------------------------
+# Allowed metrics used in stats_model_2.py and baseline_stats.py
+# ---------------------------------------------------------------------------
+allowed_metrics:
+  - clamping_time
+  - pre_data_handshake_wait
+  - z_axis_positioning_time
+  - gantry_positioning_time
+  - z_axis_homing_time
+  - marking_galvo_positioning_time #for time based galvo data
+# ---------------------------------------------------------------------------
 # Per-metric configs. Unset fields inherit from global.
 # ---------------------------------------------------------------------------
 target:

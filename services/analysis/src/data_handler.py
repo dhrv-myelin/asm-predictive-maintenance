@@ -1,168 +1,36 @@
 from __future__ import annotations
-import copy
-import logging
-from collections import deque
 
-import pandas as pd
+import logging
+from datetime import date
+
 import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Static key-sets used to classify each new_metric_name
-# ─────────────────────────────────────────────────────────────────────────────
-# All known shuttle/fmt bare keys (regardless of required_features)
-_ALL_FMT_BARE_KEYS: set[str] = {""}
-
-# All known end/summary keys
-_ALL_END_KEYS: set[str] = {
-    "system__m1_position_actual",
-    "system__m1_position_target",
-    "system__x_axis_position_actual",
-    "system__x_axis_position_target",
-    "timestamp",
-}
-
-# All known L1 keys (excluding 'timestamp')
-_ALL_L1_KEYS: set[str] = {
-    "rbw_station__marking_to_image_save_wait",
-    "rbw_station__z_axis_positioning_wait",
-    "rbw_station__pre_camera_positioning_wait",
-    "rbw_station__marking_galvo_positioning_time",
-    "rbw_station__post_homing_wait",
-    "rbw_station__z_axis_target_height",
-    "rbw_station__pre_image_save_wait",
-    "rbw_station__gantry_positioning_to_pre_marking_wait",
-    "rbw_station__m2_position_target",
-    "rbw_station__between_cluster_gantry_positioning_wait",
-    "rbw_station__gantry_move_z",
-    "rbw_station__reinspection_time",
-    "rbw_station__gantry_move_m2",
-    "rbw_station__marking_init_time",
-    "rbw_station__double_exposure_positioning_time",
-    "rbw_station__skip_image_save_delay",
-    "rbw_station__z_axis_position_target",
-    "rbw_station__marking_result_wait",
-    "rbw_station__clamping_time",
-    "rbw_station__product_release_wait",
-    "rbw_station__pre_double_exposure_wait_time",
-    "rbw_station__pre_marking_wait",
-    "rbw_station__gantry_positioning_time",
-    "rbw_station__camera_positioning_time",
-    "rbw_station__gantry_move_x",
-    "rbw_station__galvo_1_position",
-    "rbw_station__camera_image_save_time",
-    "rbw_station__unclamping_time",
-    "rbw_station__marking_repeat_wait",
-    "rbw_station__galvo_2_position",
-    "rbw_station__marking_to_reinspection_wait",
-    "rbw_station__gantry_move_m1",
-    "rbw_station__m2_position_actual",
-    "rbw_station__upstream_waiting_time",
-    "rbw_station__pre_data_handshake_wait",
-    "rbw_station__data_handshake_time",
-    "rbw_station__z_axis_positioning_time",
-    "rbw_station__z_axis_homing_time",
-    "rbw_station__z_axis_position_actual",
-}
-
-# All known L2 keys (excluding 'timestamp')
-_ALL_L2_KEYS: set[str] = {
-    "exit_sink__cycle_time",
-    "exit_sink__throughput_total",
-}
-
-
-def _build_template(keys: list[str], sentinel=-1) -> dict:
-    """Return an ordered dict with every key set to the sentinel value."""
-    return {k: sentinel for k in keys}
-
 
 class DataHandler:
-    # ------------------------------------------------------------------
-    # Construction
-    # ------------------------------------------------------------------
-
     def __init__(self, config: dict, target_name: str):
         self.config = config
         self.target_name = target_name
 
-        # ── config extraction ──────────────────────────────────────────
         self.required_features: list[str] = config["required_features"]
         print("Required features : ", self.required_features)
-        self.format = config.get("format", None)  # 'wide' | None
+        self.format = config.get("format", None)
         self.history_window: int = config["history_window"]
         self.stride: int = config.get("stride", 0) or 0
         self.prediction_window: int = config["prediction_window"]
 
-        # ── derive templates from required_features ────────────────────
-        #    Each group only includes keys that appear in required_features
-        #    (plus 'timestamp' for l1/l2 which is always tracked internally).
-        self._fmt_keys = [k for k in self.required_features if k in _ALL_FMT_BARE_KEYS]
-        print("FMT KEYS : ", self._fmt_keys)
-        self._end_keys = [k for k in self.required_features if k in _ALL_END_KEYS]
-        print("END KEYS : ", self._end_keys)
-        self._l1_keys = [k for k in self.required_features if k in _ALL_L1_KEYS]
-        print("L1 KEYS : ", self._l1_keys)
-        self._l2_keys = [k for k in self.required_features if k in _ALL_L2_KEYS]
-        print("L2 KEYS : ", self._l2_keys)
+        self._feature_keys = [k for k in self.required_features if k != "timestamp"]
+        self._feature_set = set(self._feature_keys)
 
-        # 'timestamp' is always tracked internally for L1/L2/end even if not
-        # in required_features (used for queue ordering). IMPORTANT: keep
-        # _end_keys as the pure feature list — _try_flush uses it to decide
-        # whether an end queue entry is required. Only _end_internal_keys
-        # (used to build _active_end) gets the timestamp appended.
-        self._fmt_internal_keys = self._fmt_keys + (
-            ["timestamp"] if "timestamp" not in self._fmt_keys else []
-        )
-        self._end_internal_keys = self._end_keys + (
-            ["timestamp"] if "timestamp" not in self._end_keys else []
-        )
-        self._l1_internal_keys = self._l1_keys + (
-            ["timestamp"] if "timestamp" not in self._l1_keys else []
-        )
-        self._l2_internal_keys = self._l2_keys + (
-            ["timestamp"] if "timestamp" not in self._l2_keys else []
-        )
+        self._cycle_buffer: dict[tuple[date, int], dict] = {}
+        self._max_cycle_per_day: dict[date, int] = {}
 
-        # ── lookup sets ────────────────────────────────────────────────
-        self._fmt_bare_set = set(self._fmt_keys)
-        self._end_set = set(self._end_internal_keys)  # includes timestamp
-        self._l1_set = set(self._l1_keys)
-        self._l2_set = set(self._l2_keys)
-
-        # ── persistent active dicts (survive across ingest() calls) ───
-        self._active_fmt = _build_template(self._fmt_internal_keys)
-        self._active_l1 = _build_template(self._l1_internal_keys)
-        self._active_l2 = _build_template(self._l2_internal_keys)
-        self._active_end = _build_template(self._end_internal_keys)
-
-        # ── completed-dict queues (FIFO) ───────────────────────────────
-        self._fmt_queue: deque[dict] = deque()
-        self._l1_queue: deque[dict] = deque()
-        self._l2_queue: deque[dict] = deque()
-        self._end_queue: deque[dict] = deque()
-
-        # ── output row accumulators ────────────────────────────────────
-        self._l1_rows: list[dict] = []
-        self._l2_rows: list[dict] = []
-
-        # ── final wide DataFrame (grows as cycles complete) ────────────
-        self.df = pd.DataFrame(columns=self.required_features)
-
-        # Last timestamp seen across any completed cycle (used by inference_loop
-        # for models that don't store timestamp in self.df)
+        self.df: pd.DataFrame = pd.DataFrame(columns=self.required_features)
         self.last_timestamp = None
 
-    # ------------------------------------------------------------------
-    # Public: ingest rows from the poller
-    # ------------------------------------------------------------------
-
     def ingest(self, rows) -> pd.DataFrame | None:
-        """
-        Accept one or more raw poller rows, update the active dicts, flush
-        any newly completed cycles into self.df, and return self.df.
-        """
         print(f"[DEBUG] Ingesting rows: {len(rows)} rows")
         if not rows:
             return None
@@ -171,140 +39,86 @@ class DataHandler:
             ts = pd.to_datetime(r.timestamp)
             nmn = f"{r.station_name}__{r.metric_name}"
             val = r.value
-            self._process_one(nmn, val, ts)
-        # print(f"[DEBUG] Recieved :: {ts} : {nmn} : {val}")
+            cycle_count = int(r.cycle_count) if r.cycle_count is not None else None
+            if cycle_count is None:
+                continue
+            day = ts.date()
+            key = (day, cycle_count)
+            if key not in self._cycle_buffer:
+                self._cycle_buffer[key] = {"timestamp": ts}
+            self._cycle_buffer[key][nmn] = val
+            if ts > self._cycle_buffer[key]["timestamp"]:
+                self._cycle_buffer[key]["timestamp"] = ts
+
+            if day not in self._max_cycle_per_day or cycle_count > self._max_cycle_per_day[day]:
+                self._max_cycle_per_day[day] = cycle_count
+
+        self._flush_completed_cycles()
         return self.df if not self.df.empty else None
 
-    # ------------------------------------------------------------------
-    # Internal: process a single (new_metric_name, value, timestamp)
-    # ------------------------------------------------------------------
-    def _is_complete(self, d: dict) -> bool:
-        return all(v != -1 for v in d.values())
+    def _build_row(self, row_dict: dict) -> dict:
+        merged = {}
+        for col in self.required_features:
+            v = row_dict.get(col, np.nan)
+            if v is pd.NA:
+                v = np.nan
+            merged[col] = v
 
-    def _process_one(self, nmn: str, val, ts: pd.Timestamp) -> None:
+        if "timestamp" in row_dict and row_dict["timestamp"] is not None:
+            self.last_timestamp = row_dict["timestamp"]
 
-        # ── (a) shuttle / fmt metrics ──────────────────────────────────
-        if nmn in self._fmt_bare_set:
-            # print(f"[DEBUG] Processing fmt metric: {nmn} with value {val} at timestamp {ts}")
-            if self._active_fmt.get(nmn, -1) == -1:
-                self._active_fmt[nmn] = val
-                # print(f"[DEBUG] Updated active_fmt: {self._active_fmt}")
-            self._active_fmt["timestamp"] = ts  # always keep latest ts
-            if self._fmt_keys and self._is_complete(self._active_fmt):
-                # print("[DEBUG] Completed fmt dict: ", self._active_fmt)
-                self._fmt_queue.append(copy.copy(self._active_fmt))
-                self._active_fmt = _build_template(self._fmt_internal_keys)
-                self._try_flush()
+        return merged
+
+    def _append_rows(self, rows_to_append: list[dict]) -> None:
+        if not rows_to_append:
             return
 
-        # ── (b) end / summary metrics ──────────────────────────────────
-        if nmn in self._end_set:
-            # print(f"[DEBUG] Processing fmt metric: {nmn} with value {val} at timestamp {ts}")
-            if self._active_end.get(nmn, -1) == -1:
-                self._active_end[nmn] = val
-                # print(f"[DEBUG] Updated active_end: {self._active_end}")
-            self._active_end["timestamp"] = ts
-            if self._end_keys and self._is_complete(self._active_end):
-                self._end_queue.append(copy.copy(self._active_end))
-                self._active_end = _build_template(self._end_keys)
-                self._try_flush()
+        new_df = pd.DataFrame(rows_to_append, columns=self.required_features)
+
+        if not self.df.empty:
+            self.df = pd.concat([self.df, new_df], ignore_index=True)
+        else:
+            self.df = new_df
+
+        self.df.drop_duplicates(inplace=True)
+
+    def _flush_completed_cycles(self) -> None:
+        keys_to_flush = []
+        for key in self._cycle_buffer:
+            day, cycle = key
+            max_for_day = self._max_cycle_per_day.get(day, 0)
+            if cycle < max_for_day:
+                keys_to_flush.append(key)
+
+        keys_to_flush.sort()
+
+        rows_to_append = []
+        for key in keys_to_flush:
+            row_dict = self._cycle_buffer.pop(key)
+            rows_to_append.append(self._build_row(row_dict))
+
+        self._append_rows(rows_to_append)
+
+        if rows_to_append:
+            print(f"[DEBUG] Flushed {len(rows_to_append)} cycles, total df rows: {len(self.df)}")
+
+    def flush_remaining(self) -> None:
+        if not self._cycle_buffer:
             return
 
-        # ── (c) L1 metrics ─────────────────────────────────────────────
-        if nmn in self._l1_set:
-            if self._active_l1.get(nmn, -1) == -1:
-                self._active_l1[nmn] = val
-            self._active_l1["timestamp"] = ts  # always keep latest ts
-            if self._l1_keys and self._is_complete(self._active_l1):
-                # print("[DEBUG] Completed L1 dict: ", self._active_l1)
-                self._l1_queue.append(copy.copy(self._active_l1))
-                self._active_l1 = _build_template(self._l1_internal_keys)
-                self._try_flush()
-            return
+        keys_sorted = sorted(self._cycle_buffer.keys())
+        rows_to_append = []
+        for key in keys_sorted:
+            row_dict = self._cycle_buffer.pop(key)
+            rows_to_append.append(self._build_row(row_dict))
 
-        # ── (d) L2 metrics ─────────────────────────────────────────────
-        if nmn in self._l2_set:
-            # print(f"[DEBUG] Processing fmt metric: {nmn} with value {val} at timestamp {ts}")
-            if self._active_l2.get(nmn, -1) == -1:
-                self._active_l2[nmn] = val
-                # print(f"[DEBUG] Updated active_l2: {self._active_l2}")
-            self._active_l2["timestamp"] = ts
-            if self._l2_keys and self._is_complete(self._active_l2):
-                self._l2_queue.append(copy.copy(self._active_l2))
-                self._active_l2 = _build_template(self._l2_internal_keys)
-                self._try_flush()
-            return
+        self._append_rows(rows_to_append)
 
-    # ------------------------------------------------------------------
-    # Internal: flush completed cycles into output rows
-    # ------------------------------------------------------------------
-
-    def _try_flush(self) -> None:
-        """
-        Merge one entry from each queue into a single wide row and append
-        it to self.df.  Keeps flushing as long as all queues have entries.
-
-        If fmt_keys or end_keys are empty (not in required_features),
-        those dicts are treated as always-satisfied (empty dict).
-        """
-        while True:
-            fmt_ready = bool(self._fmt_queue) or not self._fmt_keys
-            end_ready = bool(self._end_queue) or not self._end_keys
-            line_has_keys = bool(self._l1_keys) or bool(self._l2_keys)
-            line_ready = (
-                bool(self._l1_queue) or bool(self._l2_queue)
-            ) or not line_has_keys
-
-            if not (fmt_ready and end_ready and line_ready):
-                break
-
-            fmt_part = self._fmt_queue.popleft() if self._fmt_keys else {}
-            end_part = self._end_queue.popleft() if self._end_keys else {}
-
-            # Only attempt to pop a line entry if there are line keys at all
-            if line_has_keys:
-                if self._l1_queue and self._l2_queue:
-                    ts1 = self._l1_queue[0].get("timestamp", pd.NaT)
-                    ts2 = self._l2_queue[0].get("timestamp", pd.NaT)
-                    use_l1 = ts1 <= ts2
-                else:
-                    use_l1 = bool(self._l1_queue)
-                line_part = (
-                    self._l1_queue.popleft() if use_l1 else self._l2_queue.popleft()
-                )
-            else:
-                line_part = {}
-
-            merged = {**fmt_part, **line_part, **end_part}
-
-            # Track the latest timestamp even if not in required_features
-            if "timestamp" in merged and merged["timestamp"] is not None:
-                self.last_timestamp = merged["timestamp"]
-
-            # Build a one-row DataFrame with only required_features columns
-            row_df = pd.DataFrame([merged])
-            # Keep only required_features (drops 'timestamp' if not requested)
-            for col in self.required_features:
-                if col not in row_df.columns:
-                    row_df[col] = pd.NA
-            row_df = row_df[self.required_features]
-
-            # Replace stray sentinels with NA
-            row_df = row_df.replace(-1, pd.NA)
-            # row_df = row_df.fillna(-1)
+        if rows_to_append:
             print(
-                f"[DEBUG] Completed one cycle (End timestamp : {merged['timestamp']}), appending to DataHandler df"
+                f"[DEBUG] Force-flushed {len(rows_to_append)} remaining cycles, "
+                f"total df rows: {len(self.df)}"
             )
-            self.df = (
-                pd.concat([self.df, row_df], ignore_index=True)
-                if not self.df.empty
-                else row_df.copy()
-            )
-            self.df.drop_duplicates(inplace=True)
-
-    # ------------------------------------------------------------------
-    # Public: sliding-window fetch (inference)
-    # ------------------------------------------------------------------
 
     def fetch_next_window(
         self,
@@ -343,27 +157,11 @@ class DataHandler:
 
         return X
 
-    # ------------------------------------------------------------------
-    # Public: return ALL available (X, y) training pairs
-    # ------------------------------------------------------------------
-
     def fetch_train_data(self):
-        """
-        Build training data in sequence format:
-        X.shape = (N, seq_len, num_features)
-        Y.shape = (N, num_targets), or None for unsupervised models.
-
-        Unsupervised detection: if target_name is not a column in self.df
-        (e.g. health_score targets like "l1_buffer_a__health_score" are never
-        ingested as feature columns), y is returned as None. Callers must
-        check for this and route to an unsupervised training path.
-        """
         if self.df.empty:
             print("[DEBUG] DataFrame is empty, no training data available.")
             return None, None, None
 
-        # health_score: target_name is e.g. "l1_buffer_a__health_score" —
-        # never a column in df, which only holds the 4 buffer feature cols.
         is_unsupervised = self.target_name not in self.df.columns
 
         X_list = []
@@ -371,8 +169,6 @@ class DataHandler:
         timestamps_list = []
         curr_first_timestamp = None
 
-        # For unsupervised models without a timestamp column, track position
-        # by integer index to avoid KeyError in fetch_next_window.
         curr_idx = 0
 
         while True:
@@ -382,16 +178,12 @@ class DataHandler:
                 if end > len(self.df):
                     break
                 X_df = self.df.iloc[start:end]
-                timestamps = (
-                    X_df["timestamp"].to_numpy()
-                    if "timestamp" in X_df.columns
-                    else None
-                )  # ← capture timestamps
+                timestamps = X_df["timestamp"].to_numpy() if "timestamp" in X_df.columns else None
                 X_seq = X_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
                 X_list.append(X_seq)
                 if timestamps is not None:
-                    timestamps_list.append(timestamps)  # ← store them
-                curr_idx += self.stride
+                    timestamps_list.append(timestamps)
+                curr_idx += self.stride if self.stride > 0 else 1
             else:
                 out = self.fetch_next_window(
                     curr_first_timestamp,
@@ -412,11 +204,10 @@ class DataHandler:
         print(f"[DEBUG] Total windows built: {len(X_list)}")
 
         if not X_list:
-            # print("[DEBUG] No training windows could be built from the data.")
             return None, None, None
 
-        X_train = np.stack(X_list)  # (N, seq_len, num_features)
-        Y_train = np.stack(Y_list) if Y_list else None  # None for unsupervised
+        X_train = np.stack(X_list)
+        Y_train = np.stack(Y_list) if Y_list else None
 
         print(
             f"[DEBUG] X_train shape: {X_train.shape}, "
@@ -428,19 +219,15 @@ class DataHandler:
 
 
 if __name__ == "__main__":
+    import time
+
+    import yaml
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
-    import yaml
-    import time
 
     logging.basicConfig(level=logging.INFO)
 
-    # --------------------------------------------------
-    # DB setup
-    # --------------------------------------------------
-
     DATABASE_URL = "postgresql://postgres:<password>@localhost:5432/glue-dispenser-db"
-    # ⬆️ change to your real DB URL
 
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(bind=engine)
@@ -453,14 +240,7 @@ if __name__ == "__main__":
             cfg = yaml.safe_load(f)
         return cfg
 
-    # --------------------------------------------------
-    # Minimal config for testing
-    # --------------------------------------------------
     test_config = load_config()["target"]["system__cycle_time"][0]
-    # print(test_config)
-    # --------------------------------------------------
-    # Init handler
-    # --------------------------------------------------
     print(test_config)
     handler = DataHandler(
         session_factory=session_factory,
@@ -471,7 +251,6 @@ if __name__ == "__main__":
     while True:
         start = time.time()
         X = handler.fetch_next_window(curr_first_timestamp, for_training=False)
-        # print(X)
         print("Time taken: ", time.time() - start)
         print("===================================================================")
         curr_first_timestamp = X.iloc[0]["timestamp"]
@@ -482,25 +261,3 @@ if __name__ == "__main__":
         else:
             print("✅ Window shape:", X.shape)
             print(X)
-
-        # --------------------------------------------------
-        # Training window test
-        # --------------------------------------------------
-        # start = time.time()
-        # XY = handler.fetch_next_window(curr_first_timestamp=None, for_training=True)
-        # print("Time taken: ", time.time()-start)
-
-        # if XY is None:
-        #     print("❌ Not enough data for training window")
-        # else:
-        #     X_tr, y_tr = XY
-        #     print("\nTraining X shape:", X_tr.shape)
-        #     print("Training y shape:", y_tr.shape)
-        #     print("\nX sample:")
-        #     print(X_tr.head())
-        #     print("\ny sample:")
-        #     print(y_tr.head())
-        # print("===================================================================")
-        # curr_first_timestamp = XY[0].iloc[0]['timestamp']
-
-    # print("\n✅ DataHandler verification complete")

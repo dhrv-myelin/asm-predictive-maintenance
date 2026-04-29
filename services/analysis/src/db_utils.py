@@ -1,6 +1,7 @@
-from sqlalchemy import text
 from datetime import timedelta
+
 import pandas as pd
+from sqlalchemy import text
 
 
 class DBUtils:
@@ -13,7 +14,7 @@ class DBUtils:
 
     def fetch_data(self, start_timestamp, end_timestamp):
         sql = text("""
-            SELECT timestamp, station_name, metric_name, value
+            SELECT timestamp, station_name, metric_name, value, cycle_count
             FROM process_metrics
             WHERE timestamp >= :start_ts
             AND timestamp <= :end_ts
@@ -45,7 +46,7 @@ class DBUtils:
         Used by the stats pipeline which operates over the full 36-day history.
         """
         sql = text("""
-            SELECT timestamp, station_name, metric_name, value
+            SELECT timestamp, station_name, metric_name, value, cycle_count
             FROM process_metrics
             ORDER BY timestamp ASC
         """)

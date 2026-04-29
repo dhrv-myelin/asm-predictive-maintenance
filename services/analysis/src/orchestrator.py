@@ -141,6 +141,7 @@ def infer_from_archive(start_ts, end_ts, data_handlers, models, db_util):
     threads = []
     for name, handler in data_handlers.items():
         handler.ingest(rows)
+        handler.flush_remaining()
         model = models[name]
 
         t = start(target_func=lambda h=handler, m=model: inference_loop(h, m, db_util))
@@ -390,6 +391,7 @@ def main():
 
         for name, handler in data_handlers.items():
             handler.ingest(rows)
+            handler.flush_remaining()
             XY = handler.fetch_train_data()
             if XY is not None:
                 X, y, timestamps = XY

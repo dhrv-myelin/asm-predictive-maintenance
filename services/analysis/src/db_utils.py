@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pandas as pd
+from polars import pl
 from sqlalchemy import text
 
 
@@ -31,7 +32,9 @@ class DBUtils:
             ).fetchall()
 
         if not rows:
-            print(f"[ERROR] No data found between {start_timestamp} and {end_timestamp}")
+            print(
+                f"[ERROR] No data found between {start_timestamp} and {end_timestamp}"
+            )
             return []
 
         return rows
@@ -56,9 +59,13 @@ class DBUtils:
 
         if not rows:
             print("[ERROR] process_metrics table is empty")
-            return pd.DataFrame(columns=["timestamp", "station_name", "metric_name", "value"])
+            return pd.DataFrame(
+                columns=["timestamp", "station_name", "metric_name", "value"]
+            )
 
-        df = pd.DataFrame(rows, columns=["timestamp", "station_name", "metric_name", "value"])
+        df = pd.DataFrame(
+            rows, columns=["timestamp", "station_name", "metric_name", "value"]
+        )
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
         return df
 
@@ -88,7 +95,9 @@ class DBUtils:
             rows = s.execute(sql).fetchall()
 
         if not rows:
-            print("[WARNING] baseline table is empty — stats pipeline will use local fallbacks")
+            print(
+                "[WARNING] baseline table is empty — stats pipeline will use local fallbacks"
+            )
             return {}
 
         baseline = {}
@@ -100,7 +109,9 @@ class DBUtils:
                 if mean is not None and std is not None:
                     baseline[name] = (mean, max(std, 1e-6))
                 else:
-                    print(f"[WARNING] Null mean/std for '{name}' in baseline — skipping")
+                    print(
+                        f"[WARNING] Null mean/std for '{name}' in baseline — skipping"
+                    )
             except Exception as e:
                 print(f"[WARNING] Could not parse baseline row for '{name}': {e}")
 
@@ -158,7 +169,9 @@ class DBUtils:
     # Existing: insert model prediction results
     # --------------------------------------------------
 
-    def insert_results(self, last_timestamp, values, station_name, metric_name, model_name):
+    def insert_results(
+        self, last_timestamp, values, station_name, metric_name, model_name
+    ):
         curr_ts = last_timestamp
 
         for v in values:

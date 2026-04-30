@@ -50,7 +50,10 @@ class DataHandler:
             if ts > self._cycle_buffer[key]["timestamp"]:
                 self._cycle_buffer[key]["timestamp"] = ts
 
-            if day not in self._max_cycle_per_day or cycle_count > self._max_cycle_per_day[day]:
+            if (
+                day not in self._max_cycle_per_day
+                or cycle_count > self._max_cycle_per_day[day]
+            ):
                 self._max_cycle_per_day[day] = cycle_count
 
         self._flush_completed_cycles()
@@ -100,7 +103,9 @@ class DataHandler:
         self._append_rows(rows_to_append)
 
         if rows_to_append:
-            print(f"[DEBUG] Flushed {len(rows_to_append)} cycles, total df rows: {len(self.df)}")
+            print(
+                f"[DEBUG] Flushed {len(rows_to_append)} cycles, total df rows: {len(self.df)}"
+            )
 
     def flush_remaining(self) -> None:
         if not self._cycle_buffer:
@@ -120,6 +125,8 @@ class DataHandler:
                 f"total df rows: {len(self.df)}"
             )
 
+    ##############################################################################################
+    # PUBLIC API. THIS SHOULD NOT BE CHANGED IN TERMS OF FUNCTIONALITY
     def fetch_next_window(
         self,
         curr_first_timestamp,
@@ -178,7 +185,11 @@ class DataHandler:
                 if end > len(self.df):
                     break
                 X_df = self.df.iloc[start:end]
-                timestamps = X_df["timestamp"].to_numpy() if "timestamp" in X_df.columns else None
+                timestamps = (
+                    X_df["timestamp"].to_numpy()
+                    if "timestamp" in X_df.columns
+                    else None
+                )
                 X_seq = X_df.drop(columns=["timestamp"], errors="ignore").to_numpy()
                 X_list.append(X_seq)
                 if timestamps is not None:

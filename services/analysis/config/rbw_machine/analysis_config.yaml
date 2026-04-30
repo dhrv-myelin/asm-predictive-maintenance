@@ -147,8 +147,8 @@ target:
         n_estimators: 100
         contamination: "auto"
         drift_percentile: 5
-        breakdown_sensitivity: 3.0
         random_state: 42
+        breakdown_sensitivity: 3.0
 
       train_params:
         n_estimators: 300
@@ -160,3 +160,47 @@ target:
 
       analysis_types: [score]
     #=================================================================================
+
+rbw_machine__stats_pattern:
+  #=================================================================================
+  - method: stats_pattern
+    save_name: rbw_machine__stats_pattern
+    model_type: stats_pattern
+    format: stats
+    required_features:
+      actuators:
+        - clamping_time
+        - pre_data_handshake_wait
+      servo:
+        - z_axis_positioning_time
+        - gantry_positioning_time
+        - z_axis_homing_time
+      galvo:
+        - marking_galvo_positioning_time
+
+    STEP_WINDOW: 10
+    BASELINE_REF_FRAC: 0.20
+    OSC_WINDOW: 50
+    OSC_STEP: 5
+    OSC_LAG: 3
+    TARGET_DETECTOR_WINDOW_S: 3600 # 60 minutes → rolling stat window
+    TARGET_ANOMALY_PERSIST_S: 600 # 10 minutes → persistence gate
+    TARGET_SHORT_WINDOW_S: 600 # 10 minutes → fast-react window for shift/drift
+    # clean.where(z: spike_z) passes every reading through, so shifted values
+    SPIKE_Z_CAP: 8.0
+    # STEP_SIGMA_MULT_CAP: 4.0
+    # STEP_SIGMA_MULT_FLOOR: 2.0
+    STEP_SIGMA_MULT_CAP: 2.5 # was 4.0 — only used to calibrate step_sigma_mult
+    STEP_SIGMA_MULT_FLOOR: 1.5
+    VARIANCE_MULT_MULTIPLIER: 2.0
+    VARIANCE_MULT_CAP: 3.0
+    VARIANCE_MULT_FLOOR: 1.5
+    STABILITY_RATIO_MULTIPLIER: 2.0 # median_roll_std × 2.0 / bs → ratio
+    STABILITY_RATIO_FLOOR: 0.6
+    STABILITY_RATIO_CAP: 2.0
+
+    # history_window: 1
+    # stride: 1
+    # prediction_window: 1
+
+    analysis_types: [stats_pattern]

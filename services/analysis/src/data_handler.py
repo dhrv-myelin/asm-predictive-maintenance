@@ -8,6 +8,29 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+class NewDataHandler
+
+
+    def __init__(self, config: dict, target_name: str):
+
+            self.config= config
+            self.target_name = target_name
+
+
+            # decide new configs
+
+
+            # this is to decide what data frame the model needs.  
+            # some models need wide, some need time stamp some dont blah blah    
+            self.format = config.get("format", None)
+
+            
+
+                
+        
+
+            
+
 
 class DataHandler:
     def __init__(self, config: dict, target_name: str):

@@ -5,9 +5,18 @@ from polars import pl
 from sqlalchemy import text
 
 
+class NewDbUtils:
+
+    def __init__(self, session_factory):
+        self._sf = session_factory
+
+
 class DBUtils:
     def __init__(self, session_factory):
         self._sf = session_factory
+
+    def run_query(self, query: str):
+        pass
 
     # --------------------------------------------------
     # Existing: fetch process_metrics rows

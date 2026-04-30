@@ -1,7 +1,8 @@
 from datetime import timedelta
 
 import pandas as pd
-from polars import pl
+
+# import polars as pl
 from sqlalchemy import text
 
 
@@ -10,13 +11,46 @@ class NewDbUtils:
     def __init__(self, session_factory):
         self._sf = session_factory
 
+    # runs a sql query
+    def run_query(self, raw_query: str, query_params: dict):
+
+        # make query from str into query format
+        query = text(raw_query)
+
+        with self._sf as s:
+
+            try:
+                rows = s.execute(query, query_params).fetchall()
+            except Exception as error:
+                print(f"Unexpected error: {error}")
+                rows = []
+
+        return rows
+
+    ## query scripts needed in analysis/src/datahandler.py
+
+    def _fetch_time_range_process_metrics(self, start_timestamp, end_timestamp):
+
+        # i will need a branching query soon
+        query = """
+            SELECT timestamp, station_name, metric_name, value, cycle_count
+            FROM process_metrics
+            WHERE timestamp >= :start_ts
+            AND timestamp <= :end_ts
+            ORDER BY timestamp ASC
+        """
+
+        query_params = {
+            "start_ts": start_timestamp,
+            "end_ts": end_timestamp,
+        }
+        return query, query_params
+
 
 class DBUtils:
+
     def __init__(self, session_factory):
         self._sf = session_factory
-
-    def run_query(self, query: str):
-        pass
 
     # --------------------------------------------------
     # Existing: fetch process_metrics rows

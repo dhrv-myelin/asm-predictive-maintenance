@@ -4,32 +4,36 @@ import logging
 from datetime import date
 
 import numpy as np
-import pandas as pd
+
+# import pandas as pd
+
+import polars as pl
 
 logger = logging.getLogger(__name__)
 
-class NewDataHandler
 
+class NewDataHandler:
 
     def __init__(self, config: dict, target_name: str):
 
-            self.config= config
-            self.target_name = target_name
+        self.config = config
+        self.target_name = target_name
 
+        # way to hold a cycle
+        self._cycle_buffer: dict[tuple[date, int], dict] = {}
 
-            # decide new configs
+        # decide new configs
 
+        # this is to decide what data frame the model needs.
+        # some models need wide, some need time stamp some dont blah blah
+        self.format = config.get("format", None)
 
-            # this is to decide what data frame the model needs.  
-            # some models need wide, some need time stamp some dont blah blah    
-            self.format = config.get("format", None)
+    def ingest_process_metric_rows(self, rows):
 
-            
+        if not rows:
+            return None
 
-                
-        
-
-            
+        fo
 
 
 class DataHandler:

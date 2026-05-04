@@ -1,156 +1,117 @@
 from __future__ import annotations
 
+import numpy as np
 import logging
 from datetime import date
-
-import numpy as np
-
-# import pandas as pd
-
-import polars as pl
+import pandas as pd
 
 logger = logging.getLogger(__name__)
-
-
-class NewDataHandler:
-
-    def __init__(self, config: dict, target_name: str):
-
-        self.config = config
-        self.target_name = target_name
-
-        # way to hold a cycle
-        self._cycle_buffer: dict[tuple[date, int], dict] = {}
-
-        # decide new configs
-
-        # this is to decide what data frame the model needs.
-        # some models need wide, some need time stamp some dont blah blah
-        self.format = config.get("format", None)
-
-    def ingest_process_metric_rows(self, rows):
-
-        if not rows:
-            return None
-
-        fo
 
 
 class DataHandler:
     def __init__(self, config: dict, target_name: str):
         self.config = config
         self.target_name = target_name
+        self.format = config.get("format", "cycle")
 
-        self.required_features: list[str] = config["required_features"]
-        print("Required features : ", self.required_features)
-        self.format = config.get("format", None)
-        self.history_window: int = config["history_window"]
-        self.stride: int = config.get("stride", 0) or 0
-        self.prediction_window: int = config["prediction_window"]
+        self.history_window = config["history_window"]
+        self.stride = config.get("stride", 0)
+        self.prediction_window = config["prediction_window"]
+        self.required_features = config["required_features"]
 
-        self._feature_keys = [k for k in self.required_features if k != "timestamp"]
-        self._feature_set = set(self._feature_keys)
+        # Buffers
+        if self.format == "cycle":
+            self._buffer: dict[tuple[date, int], dict] = {}  # noqa
+            self._max_cycle_per_day: dict[date, int] = {}
+        else:
+            self._time_bucket_seconds = config.get("bucket_duration", 60)
+            self._buffer: dict[int, dict] = {}
+            self._latest_bucket_seen = -1  # track using timestamp
 
-        self._cycle_buffer: dict[tuple[date, int], dict] = {}
-        self._max_cycle_per_day: dict[date, int] = {}
+        self.df = pd.DataFrame(columns=["timestamp"] + self.required_features)
 
-        self.df: pd.DataFrame = pd.DataFrame(columns=self.required_features)
-        self.last_timestamp = None
+    # ----------------------------
+    # Keying
+    # ----------------------------
+    def _get_buffer_key(self, ts, cycle_count):
+        if self.format == "cycle":
+            return (ts.date(), cycle_count)
+        else:
+            bucket_id = int(ts.timestamp() // self._time_bucket_seconds)
+            return bucket_id
 
-    def ingest(self, rows) -> pd.DataFrame | None:
-        print(f"[DEBUG] Ingesting rows: {len(rows)} rows")
+    # ----------------------------
+    # Completeness logic
+    # ----------------------------
+    def _is_complete(self, key) -> bool:
+        if self.format == "cycle":
+            day, cycle = key
+            max_cycle = self._max_cycle_per_day.get(day, 0)
+            return cycle < max_cycle
+
+        else:
+            # use latest seen bucket, not wall clock
+            return key < self._latest_bucket_seen
+
+    # ----------------------------
+    # Ingest
+    # ----------------------------
+    def ingest(self, rows):
         if not rows:
             return None
 
         for r in rows:
             ts = pd.to_datetime(r.timestamp)
             nmn = f"{r.station_name}__{r.metric_name}"
-            val = r.value
-            cycle_count = int(r.cycle_count) if r.cycle_count is not None else None
-            if cycle_count is None:
-                continue
-            day = ts.date()
-            key = (day, cycle_count)
-            if key not in self._cycle_buffer:
-                self._cycle_buffer[key] = {"timestamp": ts}
-            self._cycle_buffer[key][nmn] = val
-            if ts > self._cycle_buffer[key]["timestamp"]:
-                self._cycle_buffer[key]["timestamp"] = ts
+            cycle_count = r.cycle_count
 
-            if (
-                day not in self._max_cycle_per_day
-                or cycle_count > self._max_cycle_per_day[day]
-            ):
-                self._max_cycle_per_day[day] = cycle_count
+            key = self._get_buffer_key(ts, cycle_count)
 
-        self._flush_completed_cycles()
+            # initialize row
+            if key not in self._buffer:
+                self._buffer[key] = {"timestamp": ts}
+
+            # update feature
+            self._buffer[key][nmn] = r.value
+
+            # track cycle completeness
+            if self.format == "cycle":
+                day = ts.date()
+                if (
+                    day not in self._max_cycle_per_day
+                    or cycle_count > self._max_cycle_per_day[day]
+                ):
+                    self._max_cycle_per_day[day] = cycle_count
+
+            else:
+                # track latest bucket seen
+                self._latest_bucket_seen = max(self._latest_bucket_seen, key)
+
+        self._flush_completed()
         return self.df if not self.df.empty else None
 
-    def _build_row(self, row_dict: dict) -> dict:
-        merged = {}
-        for col in self.required_features:
-            v = row_dict.get(col, np.nan)
-            if v is pd.NA:
-                v = np.nan
-            merged[col] = v
-
-        if "timestamp" in row_dict and row_dict["timestamp"] is not None:
-            self.last_timestamp = row_dict["timestamp"]
-
-        return merged
-
-    def _append_rows(self, rows_to_append: list[dict]) -> None:
-        if not rows_to_append:
-            return
-
-        new_df = pd.DataFrame(rows_to_append, columns=self.required_features)
-
-        if not self.df.empty:
-            self.df = pd.concat([self.df, new_df], ignore_index=True)
-        else:
-            self.df = new_df
-
-        self.df.drop_duplicates(inplace=True)
-
-    def _flush_completed_cycles(self) -> None:
-        keys_to_flush = []
-        for key in self._cycle_buffer:
-            day, cycle = key
-            max_for_day = self._max_cycle_per_day.get(day, 0)
-            if cycle < max_for_day:
-                keys_to_flush.append(key)
-
+    # ----------------------------
+    # Flush
+    # ----------------------------
+    def _flush_completed(self):
+        keys_to_flush = [k for k in self._buffer if self._is_complete(k)]
         keys_to_flush.sort()
 
-        rows_to_append = []
         for key in keys_to_flush:
-            row_dict = self._cycle_buffer.pop(key)
-            rows_to_append.append(self._build_row(row_dict))
+            row = self._buffer.pop(key)
+            self._append_row(row)
 
-        self._append_rows(rows_to_append)
+    def flush_remaining(self):
+        for key in sorted(self._buffer.keys()):
+            self._append_row(self._buffer.pop(key))
 
-        if rows_to_append:
-            print(
-                f"[DEBUG] Flushed {len(rows_to_append)} cycles, total df rows: {len(self.df)}"
-            )
-
-    def flush_remaining(self) -> None:
-        if not self._cycle_buffer:
-            return
-
-        keys_sorted = sorted(self._cycle_buffer.keys())
-        rows_to_append = []
-        for key in keys_sorted:
-            row_dict = self._cycle_buffer.pop(key)
-            rows_to_append.append(self._build_row(row_dict))
-
-        self._append_rows(rows_to_append)
-
-        if rows_to_append:
-            print(
-                f"[DEBUG] Force-flushed {len(rows_to_append)} remaining cycles, "
-                f"total df rows: {len(self.df)}"
-            )
+    # ----------------------------
+    # Append
+    # ----------------------------
+    def _append_row(self, row_dict):
+        # ensure all columns exist
+        row = {col: row_dict.get(col, None) for col in self.df.columns}
+        self.df.loc[len(self.df)] = row
 
     ##############################################################################################
     # PUBLIC API. THIS SHOULD NOT BE CHANGED IN TERMS OF FUNCTIONALITY
@@ -257,45 +218,69 @@ class DataHandler:
 
 
 if __name__ == "__main__":
-    import time
 
-    import yaml
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
+    from types import SimpleNamespace
 
-    logging.basicConfig(level=logging.INFO)
+    def make_rows(df: pd.DataFrame):
+        """
+        Convert dataframe rows → objects with attribute access
+        """
+        return [
+            SimpleNamespace(
+                timestamp=row["timestamp"],
+                station_name=row["station_name"],
+                metric_name=row["metric_name"],
+                value=row["value"],
+                cycle_count=row.get("cycle_count", 0),
+            )
+            for _, row in df.iterrows()
+        ]
 
-    DATABASE_URL = "postgresql://postgres:<password>@localhost:5432/glue-dispenser-db"
+    def run_test(csv_path: str, format_mode: str):
+        print(f"\n=== Running test | format = {format_mode} ===")
 
-    engine = create_engine(DATABASE_URL)
-    SessionLocal = sessionmaker(bind=engine)
+        config = {
+            "format": format_mode,  # "cycle" or "time"
+            "history_window": 10,
+            "prediction_window": 2,
+            "required_features": [],  # optional for now
+            "window_duration": 60,  # used for time mode
+        }
 
-    def session_factory():
-        return SessionLocal()
+        handler = DataHandler(config=config, target_name="dummy")
 
-    def load_config(path="../../config/analysis_config.yaml"):
-        with open(path, "r") as f:
-            cfg = yaml.safe_load(f)
-        return cfg
+        # Read only a small portion
+        df = pd.read_csv(csv_path, nrows=200)
 
-    test_config = load_config()["target"]["system__cycle_time"][0]
-    print(test_config)
-    handler = DataHandler(
-        session_factory=session_factory,
-        config=test_config,
-        target_name="system__cycle_time",
-    )
-    curr_first_timestamp = None
-    while True:
-        start = time.time()
-        X = handler.fetch_next_window(curr_first_timestamp, for_training=False)
-        print("Time taken: ", time.time() - start)
-        print("===================================================================")
-        curr_first_timestamp = X.iloc[0]["timestamp"]
+        # Ensure timestamp is sorted (optional but useful for debugging)
+        df = df.sort_values("timestamp")
 
-        if X is None:
-            print("❌ Not enough data for window")
-            break
-        else:
-            print("✅ Window shape:", X.shape)
-            print(X)
+        # Simulate streaming in batches
+        batch_size = 10
+
+        for i in range(0, len(df), batch_size):
+            batch_df = df.iloc[i : i + batch_size]
+            rows = make_rows(batch_df)
+
+            print(f"\n--- Ingesting batch {i // batch_size} ---")
+            out = handler.ingest(rows)
+
+            if out is not None:
+                print("Flushed rows:")
+                print(out.tail(3))  # only last few rows
+            else:
+                print("No flush yet")
+
+        # Final flush
+        print("\n--- Final flush ---")
+        handler.flush_remaining()
+
+        if not handler.df.empty:
+            print(handler.df.tail(5))
+
+    if __name__ == "__main__":
+        csv_path = "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/dataset_gen/process_metrics.csv"
+
+        # Run both modes
+        run_test(csv_path, format_mode="cycle")
+        run_test(csv_path, format_mode="time")

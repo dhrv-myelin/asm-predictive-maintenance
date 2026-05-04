@@ -88,6 +88,7 @@ class DataHandler:
                 self._latest_bucket_seen = max(self._latest_bucket_seen, key)
 
         self._flush_completed()
+
         return self.df if not self.df.empty else None
 
     # ----------------------------
@@ -215,3 +216,117 @@ class DataHandler:
 
         timestamps_out = np.stack(timestamps_list) if timestamps_list else None
         return X_train, Y_train, timestamps_out
+
+
+if __name__ == "__main__":
+    from types import SimpleNamespace
+
+    def make_rows(df: pd.DataFrame):
+        """
+        Convert dataframe rows → objects with attribute access
+        """
+        return [
+            SimpleNamespace(
+                timestamp=row["timestamp"],
+                station_name=row["station_name"],
+                metric_name=row["metric_name"],
+                value=row["value"],
+                cycle_count=row.get("cycle_count", 0),
+            )
+            for _, row in df.iterrows()
+        ]
+
+    def run_test(csv_path: str, format_mode: str):
+        print(f"\n=== Running test | format = {format_mode} ===")
+
+        config = {
+            "format": format_mode,
+            "history_window": 10,
+            "prediction_window": 2,
+            "bucket_duration": 60,
+            "required_features": [
+                "rbw_station__z_axis_positioning_wait",
+                "rbw_station__pre_camera_positioning_wait",
+                "rbw_station__marking_galvo_positioning_time",
+                "rbw_station__post_homing_wait",
+                "system__m1_position_actual",
+                "rbw_station__z_axis_target_height",
+                "rbw_station__pre_image_save_wait",
+                "rbw_station__m2_position_target",
+                "rbw_station__between_cluster_gantry_positioning_wait",
+                "rbw_station__gantry_move_z",
+                "rbw_station__reinspection_time",
+                "rbw_station__gantry_move_m2",
+                "rbw_station__marking_init_time",
+                "rbw_station__double_exposure_positioning_time",
+                "rbw_station__z_axis_position_target",
+                "rbw_station__marking_result_wait",
+                "rbw_station__clamping_time",
+                "rbw_station__product_release_wait",
+                "rbw_station__pre_double_exposure_wait_time",
+                "rbw_station__pre_marking_wait",
+                "rbw_station__gantry_positioning_time",
+                "rbw_station__camera_positioning_time",
+                "rbw_station__gantry_move_x",
+                "rbw_station__galvo_1_position",
+                "rbw_station__camera_image_save_time",
+                "rbw_station__unclamping_time",
+                "rbw_station__marking_repeat_wait",
+                "system__x_axis_position_actual",
+                "system__x_axis_position_target",
+                "rbw_station__galvo_2_position",
+                "rbw_station__marking_to_reinspection_wait",
+                "rbw_station__gantry_move_m1",
+                "rbw_station__m2_position_actual",
+                "rbw_station__upstream_waiting_time",
+                "rbw_station__pre_data_handshake_wait",
+                "rbw_station__data_handshake_time",
+                "rbw_station__z_axis_positioning_time",
+                "rbw_station__z_axis_homing_time",
+                "system__m1_position_target",
+                "rbw_station__z_axis_position_actual",
+            ],
+        }
+
+        handler = DataHandler(config=config, target_name="dummy")
+
+        # ----------------------------
+        # Load + sort
+        # ----------------------------
+        df = pd.read_csv(csv_path, nrows=200)
+        df["timestamp"] = pd.to_datetime(df["timestamp"])
+        df = df.sort_values("timestamp").reset_index(drop=True)
+
+        # Sanity check (optional but useful)
+        if not df["timestamp"].is_monotonic_increasing:
+            raise ValueError("Timestamps are not monotonic after sorting")
+
+        # ----------------------------
+        # Ingest by timestamp (KEY FIX)
+        # ----------------------------
+        for ts, group in df.groupby("timestamp", sort=True):
+            rows = make_rows(group)
+
+            print(f"\n--- Ingesting timestamp {ts} ({len(group)} rows) ---")
+            out = handler.ingest(rows)
+
+            if out is not None:
+                print("Flushed rows:")
+                print(out.tail(3))
+            else:
+                print("No flush yet")
+
+        # ----------------------------
+        # Final flush
+        # ----------------------------
+        print("\n--- Final flush ---")
+        handler.flush_remaining()
+
+        if not handler.df.empty:
+            print(handler.df.tail(5))
+
+    csv_path = "/home/dhruvkumarjiguda/code/asm-predictive-maintenance/services/analysis/dataset_gen/process_metrics.csv"
+
+    # Run both modes
+    run_test(csv_path, format_mode="cycle")
+    run_test(csv_path, format_mode="time")

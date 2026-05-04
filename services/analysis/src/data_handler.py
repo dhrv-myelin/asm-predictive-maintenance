@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import numpy as np
 import logging
 from datetime import date
+
+import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -19,15 +20,21 @@ class DataHandler:
         self.prediction_window = config["prediction_window"]
         self.required_features = config["required_features"]
 
+        # ----------------------------
         # Buffers
+        # ----------------------------
         if self.format == "cycle":
-            self._buffer: dict[tuple[date, int], dict] = {}  # noqa
+            # one row per (day, cycle)
+            self._buffer: dict[tuple[date, int], dict] = {}
             self._max_cycle_per_day: dict[date, int] = {}
-        else:
-            self._time_bucket_seconds = config.get("bucket_duration", 60)
-            self._buffer: dict[int, dict] = {}
-            self._latest_bucket_seen = -1  # track using timestamp
 
+        elif self.format == "time":
+            # multiple rows (events) per bucket
+            self._time_bucket_seconds = config.get("bucket_duration", 60)
+            self._buffer: dict[int, list[dict]] = {}
+            self._latest_bucket_seen = -1
+
+        # dataframe stays wide schema, but time-mode will be sparse
         self.df = pd.DataFrame(columns=["timestamp"] + self.required_features)
 
     # ----------------------------
@@ -37,8 +44,7 @@ class DataHandler:
         if self.format == "cycle":
             return (ts.date(), cycle_count)
         else:
-            bucket_id = int(ts.timestamp() // self._time_bucket_seconds)
-            return bucket_id
+            return int(ts.timestamp() // self._time_bucket_seconds)
 
     # ----------------------------
     # Completeness logic
@@ -48,9 +54,7 @@ class DataHandler:
             day, cycle = key
             max_cycle = self._max_cycle_per_day.get(day, 0)
             return cycle < max_cycle
-
         else:
-            # use latest seen bucket, not wall clock
             return key < self._latest_bucket_seen
 
     # ----------------------------
@@ -67,15 +71,14 @@ class DataHandler:
 
             key = self._get_buffer_key(ts, cycle_count)
 
-            # initialize row
-            if key not in self._buffer:
-                self._buffer[key] = {"timestamp": ts}
-
-            # update feature
-            self._buffer[key][nmn] = r.value
-
-            # track cycle completeness
             if self.format == "cycle":
+                # --- wide aggregation ---
+                if key not in self._buffer:
+                    self._buffer[key] = {"timestamp": ts}
+
+                self._buffer[key][nmn] = r.value
+
+                # track cycle completeness
                 day = ts.date()
                 if (
                     day not in self._max_cycle_per_day
@@ -84,8 +87,15 @@ class DataHandler:
                     self._max_cycle_per_day[day] = cycle_count
 
             else:
+                # --- event-level storage ---
+                if key not in self._buffer:
+                    self._buffer[key] = []
+
+                self._buffer[key].append({"timestamp": ts, nmn: r.value})
+
                 # track latest bucket seen
-                self._latest_bucket_seen = max(self._latest_bucket_seen, key)
+                if key > self._latest_bucket_seen:
+                    self._latest_bucket_seen = key
 
         self._flush_completed()
 
@@ -99,18 +109,34 @@ class DataHandler:
         keys_to_flush.sort()
 
         for key in keys_to_flush:
-            row = self._buffer.pop(key)
-            self._append_row(row)
+            if self.format == "cycle":
+                row = self._buffer.pop(key)
+                self._append_row(row)
+
+            else:
+                rows = self._buffer.pop(key)
+
+                # enforce ordering within bucket
+                rows.sort(key=lambda x: x["timestamp"])
+
+                for row in rows:
+                    self._append_row(row)
 
     def flush_remaining(self):
         for key in sorted(self._buffer.keys()):
-            self._append_row(self._buffer.pop(key))
+            if self.format == "cycle":
+                self._append_row(self._buffer.pop(key))
+            else:
+                rows = self._buffer.pop(key)
+                rows.sort(key=lambda x: x["timestamp"])
+                for row in rows:
+                    self._append_row(row)
 
     # ----------------------------
     # Append
     # ----------------------------
     def _append_row(self, row_dict):
-        # ensure all columns exist
+        # ensure all columns exist (sparse-safe)
         row = {col: row_dict.get(col, None) for col in self.df.columns}
         self.df.loc[len(self.df)] = row
 
